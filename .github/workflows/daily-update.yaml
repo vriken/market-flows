@@ -1,0 +1,61 @@
+name: Daily Market Flows Update
+
+on:
+  schedule:
+    # 9 PM UTC Mon-Fri (catches Friday COT release at ~20:30 UTC)
+    - cron: '0 21 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main (code)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Checkout gh-pages (data + site)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r main/requirements.txt
+
+      - name: Copy data from gh-pages to working dir
+        run: |
+          mkdir -p main/data
+          cp -r gh-pages/data/* main/data/ 2>/dev/null || true
+
+      - name: Update data and generate dashboard
+        working-directory: main
+        run: python generate_dashboard.py --data-dir data --output ../gh-pages/index.html
+
+      - name: Copy updated data to gh-pages
+        run: |
+          mkdir -p gh-pages/data
+          cp -r main/data/* gh-pages/data/
+
+      - name: Commit and push to gh-pages
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update dashboard $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
