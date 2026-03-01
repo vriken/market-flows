@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Market Flows Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --blue: #58a6ff;
+      --orange: #f0883e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.8rem; margin-bottom: 4px; }
+    h2 { font-size: 1.3rem; margin: 32px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; }
+    .alert-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .alert-panel h3 { font-size: 1rem; margin-bottom: 12px; }
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-extreme-high { background: rgba(248,81,73,0.2); color: var(--red); }
+    .badge-extreme-low { background: rgba(248,81,73,0.2); color: var(--red); }
+    .badge-elevated { background: rgba(210,153,34,0.2); color: var(--yellow); }
+    .no-alerts { color: var(--text-muted); font-style: italic; }
+    .chart-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: var(--surface);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      background: rgba(110,118,129,0.1);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    td { padding: 8px 12px; border-top: 1px solid var(--border); }
+    tr:hover td { background: rgba(110,118,129,0.08); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+    .muted { color: var(--text-muted); }
+    footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Market Flows Dashboard</h1>
+  <p class="subtitle">COT positioning &amp; ETF flow tracker &mdash; updated {{ last_updated }}</p>
+
+  {# ── Alerts Panel ── #}
+  <div class="alert-panel">
+    <h3>Positioning Alerts</h3>
+    {% if alerts %}
+    {% for a in alerts %}
+    <div class="alert-item">
+      <span class="alert-badge badge-{{ a.level }}">{{ a.level_label }}</span>
+      <span><strong>{{ a.contract }}</strong> &mdash; {{ a.message }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="no-alerts">No positioning extremes detected.</p>
+    {% endif %}
+  </div>
+
+  {# ── COT Positioning ── #}
+  <h2>COT Positioning</h2>
+  <div class="chart-container">
+    {{ cot_bar_chart | safe }}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Contract</th>
+        <th>Trader Type</th>
+        <th class="num">Net Position</th>
+        <th class="num">% of OI</th>
+        <th class="num">Wk Change</th>
+        <th class="num">Percentile</th>
+        <th>Signal</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in cot_rows %}
+      <tr>
+        <td>{{ r.contract }}</td>
+        <td class="muted">{{ r.trader_type }}</td>
+        <td class="num {{ 'pos' if r.net > 0 else 'neg' }}">{{ "{:+,}".format(r.net) }}</td>
+        <td class="num">{{ "{:+.1f}%".format(r.net_pct_oi) }}</td>
+        <td class="num {{ 'pos' if r.change and r.change > 0 else 'neg' if r.change and r.change < 0 else '' }}">
+          {{ "{:+,}".format(r.change) if r.change is not none else "—" }}
+        </td>
+        <td class="num">{{ "{:.0f}%".format(r.percentile) }}</td>
+        <td>{{ r.signal }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if cot_history_charts %}
+  <h2>Historical Positioning — Extreme Contracts</h2>
+  {% for chart_html in cot_history_charts %}
+  <div class="chart-container">
+    {{ chart_html | safe }}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {# ── ETF Flows ── #}
+  {% if etf_rows %}
+  <h2>ETF Snapshot</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Name</th>
+        <th class="num">AUM ($B)</th>
+        <th class="num">Week Return</th>
+        <th class="num">Est. Flow ($M)</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in etf_rows %}
+      <tr>
+        <td><strong>{{ r.ticker }}</strong></td>
+        <td>{{ r.name }}</td>
+        <td class="num">{{ "{:.1f}".format(r.aum_b) if r.aum_b else "—" }}</td>
+        <td class="num {{ 'pos' if r.wk_ret and r.wk_ret > 0 else 'neg' if r.wk_ret and r.wk_ret < 0 else '' }}">
+          {{ "{:+.1f}%".format(r.wk_ret * 100) if r.wk_ret is not none else "—" }}
+        </td>
+        <td class="num {{ 'pos' if r.flow_m and r.flow_m > 0 else 'neg' if r.flow_m and r.flow_m < 0 else '' }}">
+          {{ "{:+,.0f}M".format(r.flow_m) if r.flow_m is not none else "—" }}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <footer>
+    <span>Data: CFTC Commitment of Traders, Yahoo Finance | Coverage: {{ data_range }}</span>
+    <span>Last updated: {{ last_updated }}</span>
+  </footer>
+</body>
+</html>
