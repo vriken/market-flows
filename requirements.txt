@@ -1,3 +1,6 @@
 pandas
 yfinance
 requests
+pyarrow
+jinja2
+plotly
