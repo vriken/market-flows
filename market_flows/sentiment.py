@@ -1,0 +1,165 @@
+"""Market leverage, sentiment indicators, and ratio calculations."""
+
+import yfinance as yf
+
+from .config import LEVERAGE_PAIRS, MARKET_RATIOS, VIX_TICKERS
+
+
+def fetch_vix_term_structure():
+    """Fetch VIX and VIX3M to compute term structure (contango/backwardation)."""
+    try:
+        vix = yf.Ticker(VIX_TICKERS["vix"])
+        vix3m = yf.Ticker(VIX_TICKERS["vix3m"])
+
+        vix_price = vix.info.get("regularMarketPrice") or vix.info.get("previousClose")
+        vix3m_price = vix3m.info.get("regularMarketPrice") or vix3m.info.get("previousClose")
+
+        if not vix_price or not vix3m_price:
+            return None
+
+        spread = vix3m_price - vix_price
+        ratio = vix_price / vix3m_price
+
+        if ratio > 1.0:
+            structure = "Backwardation"
+            signal = "Fear — near-term vol elevated"
+        elif ratio < 0.85:
+            structure = "Steep contango"
+            signal = "Complacency — potential snap-back risk"
+        else:
+            structure = "Contango"
+            signal = "Normal"
+
+        return {
+            "vix": vix_price,
+            "vix3m": vix3m_price,
+            "spread": spread,
+            "ratio": ratio,
+            "structure": structure,
+            "signal": signal,
+        }
+    except Exception:
+        return None
+
+
+def fetch_leverage_ratios():
+    """Fetch AUM for leveraged bull/bear ETF pairs and compute ratios."""
+    results = []
+    for bull_tick, bear_tick, label in LEVERAGE_PAIRS:
+        try:
+            bull = yf.Ticker(bull_tick)
+            bear = yf.Ticker(bear_tick)
+
+            bull_aum = bull.info.get("totalAssets")
+            bear_aum = bear.info.get("totalAssets")
+
+            if not bull_aum or not bear_aum:
+                continue
+
+            ratio = bull_aum / bear_aum
+            bull_b = bull_aum / 1e9
+            bear_b = bear_aum / 1e9
+
+            if ratio > 8:
+                signal = "Extreme bull crowding"
+            elif ratio > 5:
+                signal = "Heavy bull lean"
+            elif ratio > 3:
+                signal = "Moderate bull lean"
+            elif ratio > 1:
+                signal = "Slight bull lean"
+            else:
+                signal = "Bear lean — unusual"
+
+            results.append({
+                "label": label,
+                "bull_ticker": bull_tick,
+                "bear_ticker": bear_tick,
+                "bull_aum_b": bull_b,
+                "bear_aum_b": bear_b,
+                "ratio": ratio,
+                "signal": signal,
+            })
+        except Exception:
+            continue
+
+    return results
+
+
+def fetch_market_ratios():
+    """Fetch price ratios for key market pairs."""
+    results = []
+    # Batch-fetch all unique tickers
+    all_tickers = set()
+    for num, den, _, _ in MARKET_RATIOS:
+        all_tickers.add(num)
+        all_tickers.add(den)
+
+    prices = {}
+    for tick in all_tickers:
+        try:
+            tkr = yf.Ticker(tick)
+            hist = tkr.history(period="3mo")
+            if len(hist) >= 2:
+                prices[tick] = {
+                    "current": hist["Close"].iloc[-1],
+                    "prev_week": hist["Close"].iloc[-5] if len(hist) >= 5 else hist["Close"].iloc[0],
+                    "prev_month": hist["Close"].iloc[0],
+                }
+        except Exception:
+            continue
+
+    for num, den, label, interpretation in MARKET_RATIOS:
+        if num not in prices or den not in prices:
+            continue
+
+        current_ratio = prices[num]["current"] / prices[den]["current"]
+        prev_week_ratio = prices[num]["prev_week"] / prices[den]["prev_week"]
+        prev_month_ratio = prices[num]["prev_month"] / prices[den]["prev_month"]
+
+        wk_chg = (current_ratio / prev_week_ratio - 1) * 100
+        mo_chg = (current_ratio / prev_month_ratio - 1) * 100
+
+        results.append({
+            "label": label,
+            "numerator": num,
+            "denominator": den,
+            "ratio": current_ratio,
+            "wk_change_pct": wk_chg,
+            "mo_change_pct": mo_chg,
+            "interpretation": interpretation,
+        })
+
+    return results
+
+
+def print_sentiment():
+    """Print all sentiment indicators to terminal."""
+    print("  VIX Term Structure")
+    vix = fetch_vix_term_structure()
+    if vix:
+        print(f"    VIX: {vix['vix']:.1f}  |  VIX3M: {vix['vix3m']:.1f}  |  Ratio: {vix['ratio']:.2f}")
+        print(f"    Structure: {vix['structure']} — {vix['signal']}")
+    else:
+        print("    Unavailable")
+
+    print("\n  Leveraged ETF Bull/Bear Ratios")
+    lev = fetch_leverage_ratios()
+    if lev:
+        for r in lev:
+            print(f"    {r['label']:<12} {r['bull_ticker']}/{r['bear_ticker']}  "
+                  f"AUM: ${r['bull_aum_b']:.1f}B / ${r['bear_aum_b']:.1f}B  "
+                  f"Ratio: {r['ratio']:.1f}x  — {r['signal']}")
+    else:
+        print("    Unavailable")
+
+    print("\n  Market Ratios")
+    ratios = fetch_market_ratios()
+    if ratios:
+        print(f"    {'Ratio':<22} {'Value':>8} {'1W Chg':>8} {'1M Chg':>8}  Reading")
+        print(f"    {'─'*22} {'─'*8} {'─'*8} {'─'*8}  {'─'*20}")
+        for r in ratios:
+            print(f"    {r['label']:<22} {r['ratio']:>8.3f} {r['wk_change_pct']:>+7.1f}% {r['mo_change_pct']:>+7.1f}%  {r['interpretation']}")
+    else:
+        print("    Unavailable")
+    print()

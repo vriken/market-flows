@@ -8,6 +8,7 @@ import pandas as pd
 
 from .cot import backfill_cot_history, fetch_cot, print_cot, update_cot_history
 from .etf import fetch_etfs, print_etfs
+from .sentiment import print_sentiment
 
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
@@ -90,5 +91,12 @@ def main():
             print("\n  Note: flow estimates need 2+ snapshots.")
             print("  Run with --update weekly to build history.")
             print("  For instant data: https://www.etfdb.com/etf/flow-tool/")
+
+    if show_cot or (not has_cot_filter and not has_etf_filter):
+        print("\n━━━ Market Leverage & Sentiment ━━━\n")
+        try:
+            print_sentiment()
+        except Exception as e:
+            print(f"  Error fetching sentiment data: {e}")
 
     print()

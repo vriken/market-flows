@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from jinja2 import Environment, FileSystemLoader
 
-from .config import DATA_DIR
+from .config import DATA_DIR, ETF_GROUPS
 
 TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
 
@@ -91,17 +91,17 @@ def build_alerts(cot_rows):
     return alerts
 
 
-def build_cot_bar_chart(cot_rows):
-    """Build a horizontal bar chart of net positions colored by percentile."""
-    if not cot_rows:
+def _build_cot_bar_chart_single(rows, title, include_plotlyjs="cdn"):
+    """Build a horizontal bar chart for a group of COT rows."""
+    if not rows:
         return ""
 
-    labels = [r["contract"] for r in cot_rows]
-    nets = [r["net"] for r in cot_rows]
-    colors = [_percentile_color(r["percentile"]) for r in cot_rows]
+    labels = [r["contract"] for r in rows]
+    nets = [r["net"] for r in rows]
+    colors = [_percentile_color(r["percentile"]) for r in rows]
     hover = [
         f"{r['contract']}<br>Net: {r['net']:+,}<br>Percentile: {r['percentile']:.0f}%<br>{_signal_text(r)}"
-        for r in cot_rows
+        for r in rows
     ]
 
     fig = go.Figure(go.Bar(
@@ -112,10 +112,46 @@ def build_cot_bar_chart(cot_rows):
         hovertext=hover,
         hoverinfo="text",
     ))
-    _plotly_dark_layout(fig, "COT Net Positioning")
-    fig.update_layout(height=max(300, len(labels) * 28 + 80))
+    _plotly_dark_layout(fig, title)
+    fig.update_layout(height=max(250, len(labels) * 32 + 80))
     fig.update_yaxes(autorange="reversed")
-    return fig.to_html(full_html=False, include_plotlyjs="cdn", config={"displayModeBar": False})
+    return fig.to_html(full_html=False, include_plotlyjs=include_plotlyjs, config={"displayModeBar": False})
+
+
+def build_cot_groups(cot_rows):
+    """Split COT rows into logical groups and build charts + tables for each."""
+    commodities = [r for r in cot_rows if r["trader_type"] == "Managed Money"]
+    financials = [r for r in cot_rows if r["trader_type"] == "Leveraged Money"]
+
+    groups = []
+    first = True
+    for label, rows in [("Commodities (Managed Money)", commodities),
+                        ("Financials (Leveraged Money)", financials)]:
+        if not rows:
+            continue
+        # Only the first chart includes plotly.js CDN, rest reuse it
+        chart = _build_cot_bar_chart_single(rows, label, include_plotlyjs="cdn" if first else False)
+        first = False
+        groups.append({"label": label, "chart": chart, "rows": rows})
+
+    return groups
+
+
+def build_etf_groups(etf_rows):
+    """Split ETF rows into the configured ETF_GROUPS for grouped display."""
+    if not etf_rows:
+        return []
+
+    ticker_to_row = {r["ticker"]: r for r in etf_rows}
+    groups = []
+    for group_name, tickers in ETF_GROUPS.items():
+        group_rows = [ticker_to_row[t] for t in tickers if t in ticker_to_row]
+        if group_rows:
+            group_rows.sort(key=lambda r: r["flow_m"] or 0, reverse=True)
+            has_flow = any(r["flow_m"] is not None for r in group_rows)
+            groups.append({"label": group_name, "rows": group_rows, "has_flow": has_flow})
+
+    return groups
 
 
 def build_cot_history_charts(cot_rows, data_dir=None):
@@ -163,7 +199,8 @@ def build_cot_history_charts(cot_rows, data_dir=None):
     return charts
 
 
-def render_dashboard(cot_rows, etf_rows=None, data_dir=None, output_path=None):
+def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
+                     data_dir=None, output_path=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -175,8 +212,9 @@ def render_dashboard(cot_rows, etf_rows=None, data_dir=None, output_path=None):
         r["signal"] = _signal_text(r)
 
     alerts = build_alerts(cot_rows)
-    cot_bar_chart = build_cot_bar_chart(cot_rows)
+    cot_groups = build_cot_groups(cot_rows)
     cot_history_charts = build_cot_history_charts(cot_rows, data_dir)
+    etf_groups = build_etf_groups(etf_rows)
 
     # Data range
     parquet_path = Path(data_dir) / "cot_history.parquet"
@@ -192,10 +230,10 @@ def render_dashboard(cot_rows, etf_rows=None, data_dir=None, output_path=None):
     html = template.render(
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M UTC"),
         alerts=alerts,
-        cot_bar_chart=cot_bar_chart,
-        cot_rows=cot_rows,
+        cot_groups=cot_groups,
         cot_history_charts=cot_history_charts,
-        etf_rows=etf_rows or [],
+        etf_groups=etf_groups,
+        sentiment=sentiment_data or {},
         data_range=data_range,
     )
 

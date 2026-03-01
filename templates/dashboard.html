@@ -29,6 +29,7 @@
     }
     h1 { font-size: 1.8rem; margin-bottom: 4px; }
     h2 { font-size: 1.3rem; margin: 32px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    h3.group-title { font-size: 1.1rem; margin: 24px 0 12px; color: var(--text-muted); }
     .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; }
     .alert-panel {
       background: var(--surface);
@@ -37,7 +38,7 @@
       padding: 16px 20px;
       margin-bottom: 24px;
     }
-    .alert-panel h3 { font-size: 1rem; margin-bottom: 12px; }
+    .alert-panel h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text); }
     .alert-item {
       display: flex;
       align-items: center;
@@ -54,6 +55,7 @@
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
+      white-space: nowrap;
     }
     .badge-extreme-high { background: rgba(248,81,73,0.2); color: var(--red); }
     .badge-extreme-low { background: rgba(248,81,73,0.2); color: var(--red); }
@@ -64,8 +66,9 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
+    .section-group { margin-bottom: 32px; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -74,6 +77,7 @@
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid var(--border);
+      margin-bottom: 16px;
     }
     th {
       text-align: left;
@@ -123,40 +127,42 @@
     {% endif %}
   </div>
 
-  {# ── COT Positioning ── #}
+  {# ── COT Positioning by Group ── #}
   <h2>COT Positioning</h2>
-  <div class="chart-container">
-    {{ cot_bar_chart | safe }}
+  {% for group in cot_groups %}
+  <div class="section-group">
+    <h3 class="group-title">{{ group.label }}</h3>
+    <div class="chart-container">
+      {{ group.chart | safe }}
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Contract</th>
+          <th class="num">Net Position</th>
+          <th class="num">% of OI</th>
+          <th class="num">Wk Change</th>
+          <th class="num">Percentile</th>
+          <th>Signal</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in group.rows %}
+        <tr>
+          <td>{{ r.contract }}</td>
+          <td class="num {{ 'pos' if r.net > 0 else 'neg' }}">{{ "{:+,}".format(r.net) }}</td>
+          <td class="num">{{ "{:+.1f}%".format(r.net_pct_oi) }}</td>
+          <td class="num {{ 'pos' if r.change and r.change > 0 else 'neg' if r.change and r.change < 0 else '' }}">
+            {{ "{:+,}".format(r.change) if r.change is not none else "—" }}
+          </td>
+          <td class="num">{{ "{:.0f}%".format(r.percentile) }}</td>
+          <td>{{ r.signal }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
   </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Contract</th>
-        <th>Trader Type</th>
-        <th class="num">Net Position</th>
-        <th class="num">% of OI</th>
-        <th class="num">Wk Change</th>
-        <th class="num">Percentile</th>
-        <th>Signal</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for r in cot_rows %}
-      <tr>
-        <td>{{ r.contract }}</td>
-        <td class="muted">{{ r.trader_type }}</td>
-        <td class="num {{ 'pos' if r.net > 0 else 'neg' }}">{{ "{:+,}".format(r.net) }}</td>
-        <td class="num">{{ "{:+.1f}%".format(r.net_pct_oi) }}</td>
-        <td class="num {{ 'pos' if r.change and r.change > 0 else 'neg' if r.change and r.change < 0 else '' }}">
-          {{ "{:+,}".format(r.change) if r.change is not none else "—" }}
-        </td>
-        <td class="num">{{ "{:.0f}%".format(r.percentile) }}</td>
-        <td>{{ r.signal }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  {% endfor %}
 
   {% if cot_history_charts %}
   <h2>Historical Positioning — Extreme Contracts</h2>
@@ -167,35 +173,141 @@
   {% endfor %}
   {% endif %}
 
-  {# ── ETF Flows ── #}
-  {% if etf_rows %}
+  {# ── Market Leverage & Sentiment ── #}
+  {% if sentiment %}
+  <h2>Market Leverage &amp; Sentiment</h2>
+
+  {% if sentiment.vix %}
+  <div class="section-group">
+    <h3 class="group-title">VIX Term Structure</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">VIX</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.1f}".format(sentiment.vix.vix) }}</span>
+        </div>
+        <div>
+          <span class="muted">VIX3M</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.1f}".format(sentiment.vix.vix3m) }}</span>
+        </div>
+        <div>
+          <span class="muted">Ratio</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px; {{ 'color: var(--red);' if sentiment.vix.ratio > 1 else 'color: var(--green);' if sentiment.vix.ratio < 0.85 else '' }}">
+            {{ "{:.2f}".format(sentiment.vix.ratio) }}
+          </span>
+        </div>
+        <div>
+          <span class="alert-badge {{ 'badge-extreme-high' if sentiment.vix.ratio > 1 else 'badge-elevated' if sentiment.vix.ratio < 0.85 else '' }}" style="{{ 'background: rgba(63,185,80,0.2); color: var(--green);' if sentiment.vix.structure == 'Contango' else '' }}">
+            {{ sentiment.vix.structure }}
+          </span>
+          <span class="muted" style="margin-left: 8px;">{{ sentiment.vix.signal }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if sentiment.leverage %}
+  <div class="section-group">
+    <h3 class="group-title">Leveraged ETF Bull/Bear Ratios</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Index</th>
+          <th>Bull / Bear</th>
+          <th class="num">Bull AUM ($B)</th>
+          <th class="num">Bear AUM ($B)</th>
+          <th class="num">Ratio</th>
+          <th>Reading</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in sentiment.leverage %}
+        <tr>
+          <td><strong>{{ r.label }}</strong></td>
+          <td class="muted">{{ r.bull_ticker }} / {{ r.bear_ticker }}</td>
+          <td class="num">{{ "{:.1f}".format(r.bull_aum_b) }}</td>
+          <td class="num">{{ "{:.1f}".format(r.bear_aum_b) }}</td>
+          <td class="num" style="{{ 'color: var(--red);' if r.ratio > 8 else 'color: var(--orange);' if r.ratio > 5 else '' }}">{{ "{:.1f}x".format(r.ratio) }}</td>
+          <td>{{ r.signal }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if sentiment.ratios %}
+  <div class="section-group">
+    <h3 class="group-title">Market Ratios</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Ratio</th>
+          <th>Pair</th>
+          <th class="num">Value</th>
+          <th class="num">1W Change</th>
+          <th class="num">1M Change</th>
+          <th>Rising = </th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in sentiment.ratios %}
+        <tr>
+          <td><strong>{{ r.label }}</strong></td>
+          <td class="muted">{{ r.numerator }}/{{ r.denominator }}</td>
+          <td class="num">{{ "{:.3f}".format(r.ratio) }}</td>
+          <td class="num {{ 'pos' if r.wk_change_pct > 0 else 'neg' if r.wk_change_pct < 0 else '' }}">
+            {{ "{:+.1f}%".format(r.wk_change_pct) }}
+          </td>
+          <td class="num {{ 'pos' if r.mo_change_pct > 0 else 'neg' if r.mo_change_pct < 0 else '' }}">
+            {{ "{:+.1f}%".format(r.mo_change_pct) }}
+          </td>
+          <td class="muted">{{ r.interpretation }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {# ── ETF Flows by Group ── #}
+  {% if etf_groups %}
   <h2>ETF Snapshot</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Ticker</th>
-        <th>Name</th>
-        <th class="num">AUM ($B)</th>
-        <th class="num">Week Return</th>
-        <th class="num">Est. Flow ($M)</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for r in etf_rows %}
-      <tr>
-        <td><strong>{{ r.ticker }}</strong></td>
-        <td>{{ r.name }}</td>
-        <td class="num">{{ "{:.1f}".format(r.aum_b) if r.aum_b else "—" }}</td>
-        <td class="num {{ 'pos' if r.wk_ret and r.wk_ret > 0 else 'neg' if r.wk_ret and r.wk_ret < 0 else '' }}">
-          {{ "{:+.1f}%".format(r.wk_ret * 100) if r.wk_ret is not none else "—" }}
-        </td>
-        <td class="num {{ 'pos' if r.flow_m and r.flow_m > 0 else 'neg' if r.flow_m and r.flow_m < 0 else '' }}">
-          {{ "{:+,.0f}M".format(r.flow_m) if r.flow_m is not none else "—" }}
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  {% for group in etf_groups %}
+  <div class="section-group">
+    <h3 class="group-title">{{ group.label }}</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Name</th>
+          <th class="num">AUM ($B)</th>
+          <th class="num">Week Return</th>
+          {% if group.has_flow %}<th class="num">Est. Flow ($M)</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in group.rows %}
+        <tr>
+          <td><strong>{{ r.ticker }}</strong></td>
+          <td>{{ r.name }}</td>
+          <td class="num">{{ "{:.1f}".format(r.aum_b) if r.aum_b else "—" }}</td>
+          <td class="num {{ 'pos' if r.wk_ret and r.wk_ret > 0 else 'neg' if r.wk_ret and r.wk_ret < 0 else '' }}">
+            {{ "{:+.1f}%".format(r.wk_ret * 100) if r.wk_ret is not none else "—" }}
+          </td>
+          {% if group.has_flow %}
+          <td class="num {{ 'pos' if r.flow_m and r.flow_m > 0 else 'neg' if r.flow_m and r.flow_m < 0 else '' }}">
+            {{ "{:+,.0f}M".format(r.flow_m) if r.flow_m is not none else "—" }}
+          </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
   {% endif %}
 
   <footer>
