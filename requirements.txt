@@ -4,3 +4,4 @@ requests
 pyarrow
 jinja2
 plotly
+openpyxl

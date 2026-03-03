@@ -207,6 +207,45 @@
   </div>
   {% endif %}
 
+  {# ── Yield Curve ── #}
+  {% if sentiment.yield_curve %}
+  <div class="section-group">
+    <h3 class="group-title">Treasury Yield Curve</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: center;">
+        {% for mat, yld in sentiment.yield_curve.yields.items() %}
+        <div>
+          <span class="muted">{{ mat | upper }}</span>
+          <span style="font-size: 1.2rem; font-weight: 600; margin-left: 6px;">{{ "{:.3f}%".format(yld) }}</span>
+        </div>
+        {% endfor %}
+        {% if sentiment.yield_curve.spreads %}
+        <div style="margin-left: auto;">
+          {% for name, val in sentiment.yield_curve.spreads.items() %}
+          <span class="alert-badge {{ 'badge-extreme-high' if val < 0 else '' }}" style="{{ 'background: rgba(63,185,80,0.2); color: var(--green);' if val > 0 else '' }}">
+            {{ name }} {{ "{:+.3f}%".format(val) }}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div style="margin-top: 8px;">
+        <span class="muted">{{ sentiment.yield_curve.signal }}</span>
+      </div>
+    </div>
+    {% if yield_curve_chart %}
+    <div class="chart-container">
+      {{ yield_curve_chart | safe }}
+    </div>
+    {% endif %}
+    {% if yield_spread_chart %}
+    <div class="chart-container">
+      {{ yield_spread_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if sentiment.leverage %}
   <div class="section-group">
     <h3 class="group-title">Leveraged ETF Bull/Bear Ratios</h3>
@@ -278,6 +317,119 @@
   {% endif %}
   {% endif %}
 
+  {# ── Additional Market Indicators ── #}
+  {% if margin_data or aaii_data or putcall_data or fund_flows_chart %}
+  <h2>Additional Market Indicators</h2>
+
+  {# FINRA Margin Debt #}
+  {% if margin_data %}
+  <div class="section-group">
+    <h3 class="group-title">FINRA Margin Debt</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">Current Debit</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">${{ margin_data.current_debit }}{{ margin_data.unit }}</span>
+        </div>
+        <div>
+          <span class="muted">As of</span>
+          <span style="margin-left: 8px;">{{ margin_data.current_date }}</span>
+        </div>
+        {% if margin_data.yoy_change_pct is not none %}
+        <div>
+          <span class="muted">YoY Change</span>
+          <span style="font-size: 1.2rem; font-weight: 600; margin-left: 8px; {{ 'color: var(--green);' if margin_data.yoy_change_pct > 0 else 'color: var(--red);' }}">
+            {{ "{:+.1f}%".format(margin_data.yoy_change_pct) }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% if margin_chart %}
+    <div class="chart-container">
+      {{ margin_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# AAII Sentiment #}
+  {% if aaii_data %}
+  <div class="section-group">
+    <h3 class="group-title">AAII Investor Sentiment</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">Bullish</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px; color: var(--green);">{{ "{:.1f}%".format(aaii_data.current.bullish) }}</span>
+        </div>
+        <div>
+          <span class="muted">Neutral</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.1f}%".format(aaii_data.current.neutral) }}</span>
+        </div>
+        <div>
+          <span class="muted">Bearish</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px; color: var(--red);">{{ "{:.1f}%".format(aaii_data.current.bearish) }}</span>
+        </div>
+        {% if aaii_data.bull_bear_spread is not none %}
+        <div>
+          <span class="alert-badge {{ 'badge-extreme-high' if aaii_data.bull_bear_spread < -20 else '' }}" style="{{ 'background: rgba(63,185,80,0.2); color: var(--green);' if aaii_data.bull_bear_spread > 20 else '' }}">
+            Bull-Bear Spread: {{ "{:+.1f}%".format(aaii_data.bull_bear_spread) }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+      <div style="margin-top: 4px;">
+        <span class="muted">Survey date: {{ aaii_data.current.date }}</span>
+      </div>
+    </div>
+    {% if aaii_chart %}
+    <div class="chart-container">
+      {{ aaii_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# Put/Call Ratio #}
+  {% if putcall_data %}
+  <div class="section-group">
+    <h3 class="group-title">Equity Put/Call Ratio (CBOE)</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">Latest Ratio</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ putcall_data.current_ratio }}</span>
+        </div>
+        <div>
+          <span class="muted">As of</span>
+          <span style="margin-left: 8px;">{{ putcall_data.current_date }}</span>
+        </div>
+        <div>
+          <span class="muted" style="font-size: 0.8rem;">Historical data (2006–2019)</span>
+        </div>
+      </div>
+    </div>
+    {% if putcall_chart %}
+    <div class="chart-container">
+      {{ putcall_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# Fund Flows (FRED) #}
+  {% if fund_flows_chart %}
+  <div class="section-group">
+    <h3 class="group-title">Fund Flows (FRED, Quarterly)</h3>
+    <div class="chart-container">
+      {{ fund_flows_chart | safe }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
   {# ── Sector Rotation Heatmap ── #}
   {% if rotation_chart %}
   <h2>Sector Rotation</h2>
@@ -344,7 +496,7 @@
   {% endif %}
 
   <footer>
-    <span>Data: CFTC Commitment of Traders, Yahoo Finance | Coverage: {{ data_range }}</span>
+    <span>Data: CFTC, Yahoo Finance, FINRA, FRED, AAII, CBOE | Coverage: {{ data_range }}</span>
     <span>Last updated: {{ last_updated }}</span>
   </footer>
 </body>

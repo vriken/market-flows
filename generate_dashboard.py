@@ -10,12 +10,18 @@ import pandas as pd
 from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
 from market_flows.etf import build_flow_history, fetch_etfs
+from market_flows.external import (
+    fetch_margin_debt,
+    fetch_putcall_ratio,
+)
 from market_flows.sentiment import (
     fetch_leverage_ratios,
     fetch_market_ratios,
     fetch_ratio_time_series,
     fetch_sector_rotation,
     fetch_vix_term_structure,
+    fetch_yield_curve,
+    fetch_yield_curve_history,
 )
 
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -78,6 +84,32 @@ def main():
         print("  Market ratios: OK")
     except Exception as e:
         print(f"  Market ratios failed: {e}")
+    try:
+        sentiment_data["yield_curve"] = fetch_yield_curve()
+        print(f"  Yield curve: {'OK' if sentiment_data['yield_curve'] else 'no data'}")
+    except Exception as e:
+        print(f"  Yield curve failed: {e}")
+    try:
+        sentiment_data["yield_history"] = fetch_yield_curve_history()
+        print(f"  Yield history: {'OK' if sentiment_data['yield_history'] else 'no data'}")
+    except Exception as e:
+        print(f"  Yield history failed: {e}")
+
+    print("\n━━━ Fetching external data sources ━━━\n")
+    external_data = {}
+    try:
+        external_data["margin_debt"] = fetch_margin_debt()
+        print(f"  Margin debt: {'OK' if external_data['margin_debt'] else 'no data'}")
+    except Exception as e:
+        print(f"  Margin debt failed: {e}")
+    try:
+        external_data["putcall"] = fetch_putcall_ratio()
+        print(f"  Put/call ratio: {'OK' if external_data.get('putcall') else 'no data'}")
+    except Exception as e:
+        print(f"  Put/call ratio failed: {e}")
+    # FRED fund flows and AAII sentiment require API keys — enable later:
+    # external_data["fred_flows"] = fetch_fred_fund_flows()   # needs FRED_API_KEY
+    # external_data["aaii"] = fetch_aaii_sentiment()           # needs NASDAQ_DATA_LINK_API_KEY
 
     print("\n━━━ Building historical visualizations ━━━\n")
     ratio_series = None
@@ -112,6 +144,7 @@ def main():
         ratio_series=ratio_series,
         rotation_data=rotation_data,
         flow_data=flow_data,
+        external_data=external_data,
     )
 
 
