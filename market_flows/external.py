@@ -275,27 +275,10 @@ def fetch_putcall_ratio():
         resp.raise_for_status()
 
         from io import StringIO
-        df = pd.read_csv(StringIO(resp.text))
+        df = pd.read_csv(StringIO(resp.text), skiprows=2)
 
-        # Normalize column names
-        df.columns = [c.strip().lower() for c in df.columns]
-
-        # Find date and ratio columns
-        date_col = None
-        ratio_col = None
-        for col in df.columns:
-            if "date" in col or "trade" in col:
-                date_col = col
-            if "p/c" in col or "put" in col or "ratio" in col:
-                ratio_col = col
-
-        if date_col is None:
-            date_col = df.columns[0]
-        if ratio_col is None:
-            ratio_col = df.columns[-1]
-
-        df["date"] = pd.to_datetime(df[date_col], errors="coerce")
-        df["ratio"] = pd.to_numeric(df[ratio_col], errors="coerce")
+        df["date"] = pd.to_datetime(df["DATE"], format="%m/%d/%Y", errors="coerce")
+        df["ratio"] = pd.to_numeric(df["P/C Ratio"], errors="coerce")
         df = df[["date", "ratio"]].dropna().sort_values("date")
 
         # Compute 20-day moving average

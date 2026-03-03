@@ -10,10 +10,7 @@ import pandas as pd
 from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
 from market_flows.etf import build_flow_history, fetch_etfs
-from market_flows.external import (
-    fetch_margin_debt,
-    fetch_putcall_ratio,
-)
+from market_flows.external import fetch_margin_debt
 from market_flows.sentiment import (
     fetch_leverage_ratios,
     fetch_market_ratios,
@@ -102,14 +99,10 @@ def main():
         print(f"  Margin debt: {'OK' if external_data['margin_debt'] else 'no data'}")
     except Exception as e:
         print(f"  Margin debt failed: {e}")
-    try:
-        external_data["putcall"] = fetch_putcall_ratio()
-        print(f"  Put/call ratio: {'OK' if external_data.get('putcall') else 'no data'}")
-    except Exception as e:
-        print(f"  Put/call ratio failed: {e}")
-    # FRED fund flows and AAII sentiment require API keys — enable later:
+    # These require API keys — enable when keys are configured:
     # external_data["fred_flows"] = fetch_fred_fund_flows()   # needs FRED_API_KEY
     # external_data["aaii"] = fetch_aaii_sentiment()           # needs NASDAQ_DATA_LINK_API_KEY
+    # external_data["putcall"] = fetch_putcall_ratio()         # needs FRED_API_KEY (EQUITYPC series)
 
     print("\n━━━ Building historical visualizations ━━━\n")
     ratio_series = None
