@@ -3,9 +3,102 @@
 import pandas as pd
 import yfinance as yf
 
-from .config import LEVERAGE_PAIRS, MARKET_RATIOS, VIX_TICKERS
+from .config import LEVERAGE_PAIRS, MARKET_RATIOS, VIX_TICKERS, YIELD_CURVE_TICKERS
 
 SECTOR_TICKERS = ["XLK", "XLF", "XLE", "XLV", "XLB", "XLI", "XLY", "XLP", "XLU", "XLRE", "XLC"]
+
+
+def fetch_yield_curve():
+    """Fetch current Treasury yields and compute key spreads.
+
+    Returns dict with yields, spreads (2s10s, 3m10y), and inversion signal.
+    Handles ^IRX scaling quirk (divide by 10 if > 20).
+    """
+    try:
+        maturity_order = ["3m", "2y", "5y", "10y", "30y"]
+        yields = {}
+
+        for label, ticker in YIELD_CURVE_TICKERS.items():
+            try:
+                tkr = yf.Ticker(ticker)
+                price = tkr.info.get("regularMarketPrice") or tkr.info.get("previousClose")
+                if price is not None:
+                    # ^IRX reports in basis-point-like format; normalize
+                    if ticker == "^IRX" and price > 20:
+                        price = price / 10
+                    yields[label] = round(price, 3)
+            except Exception:
+                continue
+
+        if "10y" not in yields:
+            return None
+
+        spreads = {}
+        if "2y" in yields:
+            spreads["2s10s"] = round(yields["10y"] - yields["2y"], 3)
+        if "3m" in yields:
+            spreads["3m10y"] = round(yields["10y"] - yields["3m"], 3)
+
+        # Determine signal
+        inverted = any(v < 0 for v in spreads.values())
+        if inverted:
+            signal = "Inverted — recession risk elevated"
+        elif all(v > 0.5 for v in spreads.values()):
+            signal = "Normal — healthy steepness"
+        else:
+            signal = "Flat — late-cycle or transition"
+
+        return {
+            "yields": {k: yields[k] for k in maturity_order if k in yields},
+            "spreads": spreads,
+            "signal": signal,
+        }
+    except Exception:
+        return None
+
+
+def fetch_yield_curve_history(period="1y"):
+    """Fetch historical yield data and compute daily spread series.
+
+    Returns dict with dates, spread_2s10s, spread_3m10y, and individual yields.
+    """
+    try:
+        histories = {}
+        for label, ticker in YIELD_CURVE_TICKERS.items():
+            try:
+                tkr = yf.Ticker(ticker)
+                hist = tkr.history(period=period)
+                if not hist.empty:
+                    series = hist["Close"].copy()
+                    # Normalize ^IRX
+                    if ticker == "^IRX":
+                        series = series.where(series <= 20, series / 10)
+                    histories[label] = series
+            except Exception:
+                continue
+
+        if "10y" not in histories:
+            return None
+
+        # Align all series on shared dates
+        combined = pd.DataFrame(histories).dropna()
+        if combined.empty:
+            return None
+
+        dates = [d.strftime("%Y-%m-%d") for d in combined.index]
+        result = {
+            "dates": dates,
+            "yields": {col: combined[col].tolist() for col in combined.columns},
+        }
+
+        if "2y" in combined.columns:
+            result["spread_2s10s"] = (combined["10y"] - combined["2y"]).round(3).tolist()
+        if "3m" in combined.columns:
+            result["spread_3m10y"] = (combined["10y"] - combined["3m"]).round(3).tolist()
+
+        return result
+    except Exception:
+        return None
 
 
 def fetch_vix_term_structure():

@@ -281,9 +281,215 @@ def build_etf_flow_history_chart(flow_data):
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
+def build_yield_curve_chart(yield_data):
+    """Build a line chart of current yield curve (maturities vs yield %)."""
+    if not yield_data or "yields" not in yield_data:
+        return ""
+
+    yields = yield_data["yields"]
+    maturities = list(yields.keys())
+    values = list(yields.values())
+
+    # Color segments: green if normal (rising), red if inverted (falling)
+    colors = []
+    for i in range(len(values)):
+        if i == 0:
+            colors.append("#3fb950")
+        elif values[i] >= values[i - 1]:
+            colors.append("#3fb950")
+        else:
+            colors.append("#f85149")
+
+    fig = go.Figure()
+    # Draw segments with appropriate colors
+    for i in range(len(maturities) - 1):
+        segment_color = colors[i + 1]
+        fig.add_trace(go.Scatter(
+            x=[maturities[i], maturities[i + 1]],
+            y=[values[i], values[i + 1]],
+            mode="lines+markers",
+            line=dict(color=segment_color, width=3),
+            marker=dict(size=8, color=segment_color),
+            showlegend=False,
+            hovertemplate="%{x}: %{y:.3f}%<extra></extra>",
+        ))
+
+    _plotly_dark_layout(fig, "Treasury Yield Curve")
+    fig.update_layout(
+        height=350,
+        xaxis_title="Maturity",
+        yaxis_title="Yield (%)",
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_yield_spread_chart(yield_history):
+    """Build a dual-line chart of 2s10s and 3m10y spreads over time."""
+    if not yield_history:
+        return ""
+
+    dates = yield_history["dates"]
+    fig = go.Figure()
+
+    if "spread_2s10s" in yield_history:
+        fig.add_trace(go.Scatter(
+            x=dates, y=yield_history["spread_2s10s"],
+            mode="lines", name="2s10s Spread",
+            line=dict(color="#58a6ff", width=2),
+            hovertemplate="%{x}<br>2s10s: %{y:.3f}%<extra></extra>",
+        ))
+
+    if "spread_3m10y" in yield_history:
+        fig.add_trace(go.Scatter(
+            x=dates, y=yield_history["spread_3m10y"],
+            mode="lines", name="3m10y Spread",
+            line=dict(color="#bc8cff", width=2),
+            hovertemplate="%{x}<br>3m10y: %{y:.3f}%<extra></extra>",
+        ))
+
+    # Zero line for inversion threshold
+    fig.add_hline(y=0, line_dash="dash", line_color="#8b949e", opacity=0.5,
+                  annotation_text="Inversion", annotation_position="bottom right",
+                  annotation_font_color="#8b949e")
+
+    _plotly_dark_layout(fig, "Yield Spreads (1Y)")
+    fig.update_layout(
+        height=350,
+        yaxis_title="Spread (%)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_margin_debt_chart(margin_data):
+    """Build a line chart of FINRA margin debit balances over time."""
+    if not margin_data:
+        return ""
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=margin_data["dates"], y=margin_data["debit_balances"],
+        mode="lines", name="Debit Balances",
+        line=dict(color="#58a6ff", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(88,166,255,0.08)",
+        hovertemplate="%{x}<br>$%{y:,.1f}" + margin_data.get("unit", "M") + "<extra></extra>",
+    ))
+
+    _plotly_dark_layout(fig, "FINRA Margin Debt — Debit Balances")
+    fig.update_layout(
+        height=400,
+        yaxis_title=f"Debit Balances (${margin_data.get('unit', 'M')})",
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_fund_flows_chart(flows_data):
+    """Build a multi-line chart of FRED fund flow series."""
+    if not flows_data or not flows_data.get("has_data"):
+        return ""
+
+    colors = ["#58a6ff", "#3fb950", "#f0883e", "#bc8cff"]
+    fig = go.Figure()
+
+    for i, s in enumerate(flows_data["series"]):
+        fig.add_trace(go.Scatter(
+            x=s["dates"], y=s["values"],
+            mode="lines+markers",
+            name=s["name"],
+            line=dict(color=colors[i % len(colors)], width=2),
+            marker=dict(size=3),
+            hovertemplate="%{x}<br>%{y:,.0f}<extra>" + s["name"] + "</extra>",
+        ))
+
+    _plotly_dark_layout(fig, "Fund Flows (FRED, Quarterly)")
+    fig.update_layout(
+        height=400,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_aaii_sentiment_chart(aaii_data):
+    """Build a stacked area chart of AAII bull/neutral/bear sentiment."""
+    if not aaii_data:
+        return ""
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=aaii_data["dates"], y=aaii_data["bullish"],
+        mode="lines", name="Bullish",
+        line=dict(width=0.5, color="#3fb950"),
+        fillcolor="rgba(63,185,80,0.4)",
+        stackgroup="sentiment",
+        hovertemplate="%{x}<br>Bullish: %{y:.1f}%<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=aaii_data["dates"], y=aaii_data["neutral"],
+        mode="lines", name="Neutral",
+        line=dict(width=0.5, color="#8b949e"),
+        fillcolor="rgba(139,148,158,0.3)",
+        stackgroup="sentiment",
+        hovertemplate="%{x}<br>Neutral: %{y:.1f}%<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=aaii_data["dates"], y=aaii_data["bearish"],
+        mode="lines", name="Bearish",
+        line=dict(width=0.5, color="#f85149"),
+        fillcolor="rgba(248,81,73,0.4)",
+        stackgroup="sentiment",
+        hovertemplate="%{x}<br>Bearish: %{y:.1f}%<extra></extra>",
+    ))
+
+    _plotly_dark_layout(fig, "AAII Investor Sentiment")
+    fig.update_layout(
+        height=400,
+        yaxis_title="Percentage (%)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_putcall_chart(putcall_data):
+    """Build a line chart of equity put/call ratio with 20-day MA overlay."""
+    if not putcall_data:
+        return ""
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=putcall_data["dates"], y=putcall_data["ratios"],
+        mode="lines", name="P/C Ratio",
+        line=dict(color="rgba(88,166,255,0.3)", width=1),
+        hovertemplate="%{x}<br>P/C: %{y:.3f}<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=putcall_data["dates"], y=putcall_data["ma_20"],
+        mode="lines", name="20-Day MA",
+        line=dict(color="#58a6ff", width=2),
+        hovertemplate="%{x}<br>MA(20): %{y:.3f}<extra></extra>",
+    ))
+
+    # Reference lines
+    fig.add_hline(y=0.7, line_dash="dash", line_color="#3fb950", opacity=0.5,
+                  annotation_text="0.70 (Bullish)", annotation_position="bottom right",
+                  annotation_font_color="#3fb950")
+    fig.add_hline(y=1.0, line_dash="dash", line_color="#f85149", opacity=0.5,
+                  annotation_text="1.00 (Bearish)", annotation_position="top right",
+                  annotation_font_color="#f85149")
+
+    _plotly_dark_layout(fig, "Equity Put/Call Ratio (CBOE)")
+    fig.update_layout(
+        height=400,
+        yaxis_title="Put/Call Ratio",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
 def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      data_dir=None, output_path=None,
-                     ratio_series=None, rotation_data=None, flow_data=None):
+                     ratio_series=None, rotation_data=None, flow_data=None,
+                     external_data=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -312,6 +518,20 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     rotation_chart_html = build_sector_rotation_heatmap(rotation_data) if rotation_data else ""
     flow_chart_html = build_etf_flow_history_chart(flow_data) if flow_data else ""
 
+    # Build yield curve charts (from sentiment_data)
+    yield_curve_chart = ""
+    yield_spread_chart = ""
+    if sentiment_data:
+        yield_curve_chart = build_yield_curve_chart(sentiment_data.get("yield_curve"))
+        yield_spread_chart = build_yield_spread_chart(sentiment_data.get("yield_history"))
+
+    # Build external data charts
+    ext = external_data or {}
+    margin_chart = build_margin_debt_chart(ext.get("margin_debt"))
+    fund_flows_chart = build_fund_flows_chart(ext.get("fred_flows"))
+    aaii_chart = build_aaii_sentiment_chart(ext.get("aaii"))
+    putcall_chart = build_putcall_chart(ext.get("putcall"))
+
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=False)
     template = env.get_template("dashboard.html")
 
@@ -327,6 +547,15 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         rotation_chart=rotation_chart_html,
         flow_chart=flow_chart_html,
         flow_data=flow_data or {},
+        yield_curve_chart=yield_curve_chart,
+        yield_spread_chart=yield_spread_chart,
+        margin_data=ext.get("margin_debt"),
+        margin_chart=margin_chart,
+        aaii_data=ext.get("aaii"),
+        aaii_chart=aaii_chart,
+        putcall_data=ext.get("putcall"),
+        putcall_chart=putcall_chart,
+        fund_flows_chart=fund_flows_chart,
     )
 
     output_path = Path(output_path)

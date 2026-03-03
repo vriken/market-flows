@@ -99,3 +99,20 @@ COT_CONTRACTS = [
     ("VIX FUTURES", "VIX", "fin"),
     ("BITCOIN -", "Bitcoin", "fin"),
 ]
+
+# Treasury yield curve tickers (Yahoo Finance)
+YIELD_CURVE_TICKERS = {
+    "3m": "^IRX",
+    "2y": "2YY=F",
+    "5y": "^FVX",
+    "10y": "^TNX",
+    "30y": "^TYX",
+}
+
+# FRED economic data series (requires FRED_API_KEY)
+FRED_SERIES = {
+    "money_market": ("MMMFFAQ027S", "Money Market Fund Assets"),
+    "equity_flows": ("BOGZ1FA653064100Q", "Equity Fund Net Acquisitions"),
+    "muni_bond_flows": ("BOGZ1FA654091203Q", "Municipal Bond Fund Flows"),
+    "total_mf_etf": ("BOGZ1FA484090005Q", "Combined MF+ETF Total"),
+}
