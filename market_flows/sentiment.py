@@ -1,8 +1,11 @@
 """Market leverage, sentiment indicators, and ratio calculations."""
 
+import pandas as pd
 import yfinance as yf
 
 from .config import LEVERAGE_PAIRS, MARKET_RATIOS, VIX_TICKERS
+
+SECTOR_TICKERS = ["XLK", "XLF", "XLE", "XLV", "XLB", "XLI", "XLY", "XLP", "XLU", "XLRE", "XLC"]
 
 
 def fetch_vix_term_structure():
@@ -86,8 +89,12 @@ def fetch_leverage_ratios():
     return results
 
 
-def fetch_market_ratios():
-    """Fetch price ratios for key market pairs."""
+def fetch_market_ratios(period="1y", include_history=False):
+    """Fetch price ratios for key market pairs.
+
+    When include_history=True, returns (results, prices) where prices contains
+    full history DataFrames for reuse by fetch_ratio_time_series().
+    """
     results = []
     # Batch-fetch all unique tickers
     all_tickers = set()
@@ -99,12 +106,13 @@ def fetch_market_ratios():
     for tick in all_tickers:
         try:
             tkr = yf.Ticker(tick)
-            hist = tkr.history(period="3mo")
+            hist = tkr.history(period=period)
             if len(hist) >= 2:
                 prices[tick] = {
                     "current": hist["Close"].iloc[-1],
                     "prev_week": hist["Close"].iloc[-5] if len(hist) >= 5 else hist["Close"].iloc[0],
-                    "prev_month": hist["Close"].iloc[0],
+                    "prev_month": hist["Close"].iloc[-22] if len(hist) >= 22 else hist["Close"].iloc[0],
+                    "hist": hist,
                 }
         except Exception:
             continue
@@ -130,7 +138,66 @@ def fetch_market_ratios():
             "interpretation": interpretation,
         })
 
+    if include_history:
+        return results, prices
     return results
+
+
+def fetch_ratio_time_series(price_data=None):
+    """Compute daily ratio time series for each MARKET_RATIOS pair.
+
+    Reuses price_data from fetch_market_ratios(include_history=True) to avoid
+    additional API calls.
+    """
+    if price_data is None:
+        return []
+
+    series = []
+    for num, den, label, interpretation in MARKET_RATIOS:
+        if num not in price_data or den not in price_data:
+            continue
+        num_hist = price_data[num]["hist"]["Close"]
+        den_hist = price_data[den]["hist"]["Close"]
+        # Align on shared dates
+        aligned = pd.concat([num_hist, den_hist], axis=1, keys=["num", "den"]).dropna()
+        if aligned.empty:
+            continue
+        ratio = aligned["num"] / aligned["den"]
+        series.append({
+            "label": label,
+            "interpretation": interpretation,
+            "dates": [d.strftime("%Y-%m-%d") for d in ratio.index],
+            "values": ratio.tolist(),
+        })
+
+    return series
+
+
+def fetch_sector_rotation(weeks=12):
+    """Fetch sector ETF prices and compute weekly returns for a heatmap.
+
+    Single batch yf.download() call for all 11 sector tickers.
+    """
+    try:
+        data = yf.download(SECTOR_TICKERS, period="6mo", progress=False)
+        if data.empty:
+            return None
+        close = data["Close"] if "Close" in data.columns else data
+        # Resample to weekly (Friday close)
+        weekly = close.resample("W-FRI").last()
+        returns = weekly.pct_change().dropna()
+        if returns.empty:
+            return None
+        # Keep only the last N weeks
+        returns = returns.tail(weeks)
+        week_labels = [d.strftime("%b %d") for d in returns.index]
+        return {
+            "sectors": list(returns.columns),
+            "week_labels": week_labels,
+            "returns": returns.values.tolist(),
+        }
+    except Exception:
+        return None
 
 
 def print_sentiment():

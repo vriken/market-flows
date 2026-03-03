@@ -268,8 +268,25 @@
       {% endfor %}
       </tbody>
     </table>
+    {% if ratio_chart %}
+    <h3 class="group-title">Ratio Time Series (1Y)</h3>
+    <div class="chart-container">
+      {{ ratio_chart | safe }}
+    </div>
+    {% endif %}
   </div>
   {% endif %}
+  {% endif %}
+
+  {# ── Sector Rotation Heatmap ── #}
+  {% if rotation_chart %}
+  <h2>Sector Rotation</h2>
+  <div class="section-group">
+    <h3 class="group-title">Weekly Returns — S&amp;P 500 Sectors</h3>
+    <div class="chart-container">
+      {{ rotation_chart | safe }}
+    </div>
+  </div>
   {% endif %}
 
   {# ── ETF Flows by Group ── #}
@@ -308,6 +325,22 @@
     </table>
   </div>
   {% endfor %}
+  {% endif %}
+
+  {# ── ETF Flow History ── #}
+  {% if flow_chart %}
+  <div class="section-group">
+    <h3 class="group-title">Cumulative Estimated Flows</h3>
+    <div class="chart-container">
+      {{ flow_chart | safe }}
+    </div>
+  </div>
+  {% elif flow_data and flow_data.message %}
+  <div class="section-group">
+    <div class="alert-panel">
+      <p class="muted">{{ flow_data.message }}</p>
+    </div>
+  </div>
   {% endif %}
 
   <footer>

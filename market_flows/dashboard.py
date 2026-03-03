@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from jinja2 import Environment, FileSystemLoader
 
 from .config import DATA_DIR, ETF_GROUPS
@@ -199,8 +200,90 @@ def build_cot_history_charts(cot_rows, data_dir=None):
     return charts
 
 
+def build_ratio_time_series_chart(ratio_series):
+    """Build a subplot grid of ratio time series line charts."""
+    if not ratio_series:
+        return ""
+    n = len(ratio_series)
+    rows = (n + 1) // 2
+    fig = make_subplots(
+        rows=rows, cols=2,
+        subplot_titles=[s["label"] for s in ratio_series],
+        vertical_spacing=0.08,
+        horizontal_spacing=0.06,
+    )
+    for i, s in enumerate(ratio_series):
+        r = i // 2 + 1
+        c = i % 2 + 1
+        fig.add_trace(go.Scatter(
+            x=s["dates"], y=s["values"],
+            mode="lines",
+            line=dict(color="#58a6ff", width=1.5),
+            fill="tozeroy",
+            fillcolor="rgba(88,166,255,0.08)",
+            hovertemplate="%{x}<br>%{y:.3f}<extra></extra>",
+            showlegend=False,
+        ), row=r, col=c)
+    _plotly_dark_layout(fig, "")
+    fig.update_layout(height=280 * rows, margin=dict(l=50, r=30, t=40, b=30))
+    fig.update_annotations(font_size=12, font_color="#8b949e")
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_sector_rotation_heatmap(rotation_data):
+    """Build a heatmap of weekly sector returns."""
+    if not rotation_data:
+        return ""
+    returns = rotation_data["returns"]
+    fig = go.Figure(go.Heatmap(
+        z=list(zip(*returns)),  # transpose: sectors on Y, weeks on X
+        x=rotation_data["week_labels"],
+        y=rotation_data["sectors"],
+        colorscale=[
+            [0.0, "#f85149"],
+            [0.5, "#161b22"],
+            [1.0, "#3fb950"],
+        ],
+        zmid=0,
+        text=[[f"{v*100:+.1f}%" for v in week] for week in zip(*returns)],
+        texttemplate="%{text}",
+        textfont=dict(size=10),
+        hovertemplate="Sector: %{y}<br>Week: %{x}<br>Return: %{text}<extra></extra>",
+        colorbar=dict(title="Return", tickformat=".0%"),
+    ))
+    _plotly_dark_layout(fig, "")
+    fig.update_layout(height=450, margin=dict(l=80, r=30, t=20, b=40))
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_etf_flow_history_chart(flow_data):
+    """Build a multi-line chart of cumulative ETF flows."""
+    if not flow_data or not flow_data.get("has_data"):
+        return ""
+    colors = ["#58a6ff", "#3fb950", "#f0883e", "#f85149", "#d29922",
+              "#bc8cff", "#79c0ff", "#56d364", "#ffa657", "#ff7b72"]
+    fig = go.Figure()
+    for i, s in enumerate(flow_data["series"]):
+        fig.add_trace(go.Scatter(
+            x=s["dates"], y=s["cumulative_flows"],
+            mode="lines+markers",
+            name=s["ticker"],
+            line=dict(color=colors[i % len(colors)], width=2),
+            marker=dict(size=5),
+            hovertemplate="%{x}<br>$%{y:+,.0f}M<extra>" + s["ticker"] + "</extra>",
+        ))
+    _plotly_dark_layout(fig, "")
+    fig.update_layout(
+        height=400,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        yaxis_title="Cumulative Est. Flow ($M)",
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
 def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
-                     data_dir=None, output_path=None):
+                     data_dir=None, output_path=None,
+                     ratio_series=None, rotation_data=None, flow_data=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -224,6 +307,11 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     else:
         data_range = "Current year only"
 
+    # Build new visualization charts
+    ratio_chart_html = build_ratio_time_series_chart(ratio_series) if ratio_series else ""
+    rotation_chart_html = build_sector_rotation_heatmap(rotation_data) if rotation_data else ""
+    flow_chart_html = build_etf_flow_history_chart(flow_data) if flow_data else ""
+
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=False)
     template = env.get_template("dashboard.html")
 
@@ -235,6 +323,10 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         etf_groups=etf_groups,
         sentiment=sentiment_data or {},
         data_range=data_range,
+        ratio_chart=ratio_chart_html,
+        rotation_chart=rotation_chart_html,
+        flow_chart=flow_chart_html,
+        flow_data=flow_data or {},
     )
 
     output_path = Path(output_path)

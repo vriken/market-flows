@@ -112,6 +112,60 @@ def fetch_etfs(filter_tickers=None, update=False):
     return results
 
 
+def build_flow_history(min_snapshots=3):
+    """Build cumulative flow history from saved AUM snapshots.
+
+    Returns {has_data, series, message} where series is a list of
+    {ticker, dates, cumulative_flows} for tickers with enough snapshots.
+    """
+    hist = _load_history()
+    if not hist:
+        return {"has_data": False, "series": [], "message": "No AUM history available yet."}
+
+    # Filter to sector + major index tickers for readability
+    relevant_groups = {"S&P 500 Sectors", "Major Indices"}
+    relevant_tickers = {t for grp_name, grp in ETF_GROUPS.items()
+                        if grp_name in relevant_groups for t in grp}
+
+    series = []
+    for ticker, snapshots in hist.items():
+        if ticker not in relevant_tickers:
+            continue
+        if len(snapshots) < min_snapshots:
+            continue
+
+        dates = []
+        cumulative_flows = []
+        cumulative = 0.0
+        for i in range(1, len(snapshots)):
+            prev = snapshots[i - 1]
+            curr = snapshots[i]
+            if not (prev.get("aum") and prev.get("price") and
+                    curr.get("aum") and curr.get("price")):
+                continue
+            price_ret = curr["price"] / prev["price"] - 1
+            flow = curr["aum"] - prev["aum"] * (1 + price_ret)
+            cumulative += flow / 1e6  # convert to $M
+            dates.append(curr.get("date", ""))
+            cumulative_flows.append(round(cumulative, 1))
+
+        if dates:
+            series.append({
+                "ticker": ticker,
+                "dates": dates,
+                "cumulative_flows": cumulative_flows,
+            })
+
+    if not series:
+        return {
+            "has_data": False,
+            "series": [],
+            "message": f"Need at least {min_snapshots} snapshots per ETF. Keep running the dashboard to accumulate data.",
+        }
+
+    return {"has_data": True, "series": series, "message": ""}
+
+
 def print_etfs(results, filter_tickers=None):
     has_flow = any(r["flow_m"] is not None for r in results)
 
