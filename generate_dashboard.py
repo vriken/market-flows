@@ -9,10 +9,12 @@ import pandas as pd
 
 from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
-from market_flows.etf import fetch_etfs
+from market_flows.etf import build_flow_history, fetch_etfs
 from market_flows.sentiment import (
     fetch_leverage_ratios,
     fetch_market_ratios,
+    fetch_ratio_time_series,
+    fetch_sector_rotation,
     fetch_vix_term_structure,
 )
 
@@ -59,6 +61,7 @@ def main():
 
     print("\n━━━ Fetching sentiment data ━━━\n")
     sentiment_data = {}
+    price_data = None
     try:
         sentiment_data["vix"] = fetch_vix_term_structure()
         print("  VIX term structure: OK")
@@ -70,10 +73,34 @@ def main():
     except Exception as e:
         print(f"  Leverage ratios failed: {e}")
     try:
-        sentiment_data["ratios"] = fetch_market_ratios()
+        ratios_result = fetch_market_ratios(period="1y", include_history=True)
+        sentiment_data["ratios"], price_data = ratios_result
         print("  Market ratios: OK")
     except Exception as e:
         print(f"  Market ratios failed: {e}")
+
+    print("\n━━━ Building historical visualizations ━━━\n")
+    ratio_series = None
+    rotation_data = None
+    flow_data = None
+
+    try:
+        ratio_series = fetch_ratio_time_series(price_data=price_data)
+        print(f"  Ratio time series: {len(ratio_series)} series")
+    except Exception as e:
+        print(f"  Ratio time series failed: {e}")
+
+    try:
+        rotation_data = fetch_sector_rotation(weeks=12)
+        print(f"  Sector rotation: {'OK' if rotation_data else 'no data'}")
+    except Exception as e:
+        print(f"  Sector rotation failed: {e}")
+
+    try:
+        flow_data = build_flow_history()
+        print(f"  ETF flow history: {'OK' if flow_data.get('has_data') else flow_data.get('message', 'no data')}")
+    except Exception as e:
+        print(f"  ETF flow history failed: {e}")
 
     print("\n━━━ Generating dashboard ━━━\n")
     render_dashboard(
@@ -82,6 +109,9 @@ def main():
         sentiment_data=sentiment_data,
         data_dir=args.data_dir,
         output_path=args.output,
+        ratio_series=ratio_series,
+        rotation_data=rotation_data,
+        flow_data=flow_data,
     )
 
 
