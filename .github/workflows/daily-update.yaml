@@ -3,7 +3,7 @@ name: Daily Market Flows Update
 on:
   schedule:
     # 9 PM UTC Mon-Fri (catches Friday COT release at ~20:30 UTC)
-    - cron: '0 21 * * 1-5'
+    - cron: '0 07 * * 1-5'
   workflow_dispatch:
 
 permissions:
