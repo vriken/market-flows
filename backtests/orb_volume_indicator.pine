@@ -1,0 +1,342 @@
+// ORB + Monday Range + Volume Spike Indicator
+// Draws ORB box, Monday range, volume spikes, and entry zone rectangles
+// Based on backtest findings from orb_monday_range.py
+//
+// Quality score (0-4): T=trend-aligned + M=inside Monday(Tue-Fri) + B=breakout ≥1% + V=vol spike
+// Green box = high quality entry zone (3-4), Yellow = decent (2), Gray = low (0-1)
+// G = SMA gradient strong in trade direction (runner candidate — consider holding overnight)
+
+//@version=6
+indicator("ORB + Monday Range + Volume", overlay=true, max_bars_back=500, max_boxes_count=500, max_labels_count=500)
+
+// ── Inputs ──────────────────────────────────────────────────────────────────
+grp_orb    = "Opening Range"
+orbMinutes = input.int(5, "ORB window (minutes)", minval=1, maxval=60, group=grp_orb)
+showORB    = input.bool(true, "Show ORB box", group=grp_orb)
+
+grp_mon    = "Monday Range"
+showMonday = input.bool(true, "Show Monday range", group=grp_mon)
+monColor   = input.color(color.new(color.blue, 80), "Monday range fill", group=grp_mon)
+
+grp_vol    = "Volume"
+volSmaLen  = input.int(20, "Volume SMA length", minval=5, maxval=100, group=grp_vol)
+volSpikeMult = input.float(2.0, "Volume spike multiplier", minval=1.0, maxval=10.0, step=0.5, group=grp_vol)
+showVolBg  = input.bool(true, "Highlight volume spike candles", group=grp_vol)
+
+grp_trend  = "Trend (SMA)"
+trendSmaLen = input.int(50, "Trend SMA length", minval=10, maxval=200, group=grp_trend)
+showTrend   = input.bool(true, "Show trend SMA", group=grp_trend)
+gradLookback = input.int(5, "Gradient lookback (daily bars)", minval=2, maxval=20, group=grp_trend, tooltip="How many daily bars to measure SMA slope over")
+gradThreshold = input.float(0.3, "Gradient threshold (%)", minval=0.0, maxval=5.0, step=0.1, group=grp_trend, tooltip="Min SMA slope (%) to consider trend strong enough to hold overnight")
+
+grp_sig    = "Signals & Entry Zones"
+showSignals  = input.bool(true, "Show entry zones", group=grp_sig)
+showNoWick   = input.bool(true, "Require no-wick (entire candle beyond ORB)", group=grp_sig)
+signalTf     = input.timeframe("5", "Signal candle timeframe", group=grp_sig, tooltip="Timeframe for evaluating breakout candles. Use '5' (5-min) to match backtest. On a 1-min chart this ensures signals only fire on completed 5-min candles.")
+minQuality   = input.int(2, "Min quality to draw zone (0-4)", minval=0, maxval=4, group=grp_sig, tooltip="0=show all, 2=decent, 3=high quality only")
+entryZoneBars = input.int(6, "Entry zone width (bars)", minval=2, maxval=20, group=grp_sig, tooltip="How many bars wide the entry zone rectangle is")
+
+// ── Session detection (works on any exchange) ──────────────────────────────
+isRTH  = session.ismarket
+newDay = ta.change(time("D")) != 0
+
+// Detect session open: first RTH bar after a non-RTH bar, OR new calendar day during RTH
+// The fallback handles exchanges without pre/post-market data (e.g. Swedish stocks)
+var bool prevRTH = false
+sessionOpen = (isRTH and not prevRTH) or (newDay and isRTH)
+prevRTH := isRTH
+
+// ── ORB Calculation ─────────────────────────────────────────────────────────
+var float orbHigh = na
+var float orbLow  = na
+var float orbOpen = na
+var bool  orbSet  = false
+var int   barsSinceOpen = 0
+var int   orbStartBar = na
+
+tfMinutes = timeframe.in_seconds() / 60
+orbBars   = math.max(1, int(math.ceil(orbMinutes / tfMinutes)))
+
+// Reset ORB on session open
+if sessionOpen
+    orbHigh := high
+    orbLow  := low
+    orbOpen := open
+    orbSet  := false
+    barsSinceOpen := 0
+    orbStartBar := bar_index
+else if isRTH
+    barsSinceOpen += 1
+
+if barsSinceOpen < orbBars and isRTH and not orbSet
+    orbHigh := math.max(nz(orbHigh, high), high)
+    orbLow  := math.min(nz(orbLow, low), low)
+
+if barsSinceOpen >= orbBars and not orbSet and isRTH
+    orbSet := true
+
+// ── ORB Box ─────────────────────────────────────────────────────────────────
+var box orbBox = na
+
+if orbSet and barsSinceOpen == orbBars and showORB
+    orbBox := box.new(
+         nz(orbStartBar, bar_index), orbHigh,
+         bar_index + 1, orbLow,
+         border_color=color.new(color.gray, 40),
+         border_width=2,
+         border_style=line.style_solid,
+         bgcolor=color.new(color.gray, 85))
+
+if showORB and orbSet and not na(orbBox) and isRTH
+    box.set_right(orbBox, bar_index + 1)
+
+// ── Monday Range ────────────────────────────────────────────────────────────
+var float monHigh = na
+var float monLow  = na
+var bool  monSet  = false
+var bool  monBuilding = false
+var bool  insideMonday = false
+var box   monBox = na
+var bool  hadMondayThisWeek = false
+
+isMonday  = dayofweek == dayofweek.monday
+isTuesday = dayofweek == dayofweek.tuesday
+
+// New week starts on Monday (or Tuesday if Monday is a holiday)
+if newDay and isMonday
+    monHigh := high
+    monLow  := low
+    monSet  := false
+    monBuilding := true
+    hadMondayThisWeek := true
+    // Create box immediately on Monday open
+    if showMonday
+        monBox := box.new(bar_index, high, bar_index + 1, low, border_color=color.new(color.blue, 60), border_width=1, border_style=line.style_dashed, bgcolor=monColor)
+
+if newDay and not hadMondayThisWeek and isTuesday
+    // Holiday Monday — use Tuesday as first day
+    monHigh := high
+    monLow  := low
+    monSet  := false
+    monBuilding := true
+    hadMondayThisWeek := true
+    if showMonday
+        monBox := box.new(bar_index, high, bar_index + 1, low, border_color=color.new(color.blue, 60), border_width=1, border_style=line.style_dashed, bgcolor=monColor)
+
+// Lock the range at start of next day (before updating, so Tuesday doesn't leak in)
+if newDay and not isMonday and monBuilding and not monSet
+    monSet := true
+    monBuilding := false
+
+// Update high/low during the first day only (Monday or holiday-Tuesday)
+if monBuilding and not newDay and isRTH and not monSet
+    monHigh := math.max(monHigh, high)
+    monLow  := math.min(monLow, low)
+    if showMonday and not na(monBox)
+        box.set_top(monBox, monHigh)
+        box.set_bottom(monBox, monLow)
+        box.set_right(monBox, bar_index + 1)
+
+// Reset week tracking on Monday
+if newDay and isMonday
+    hadMondayThisWeek := true
+
+// Inside Monday check (Tue-Fri opening)
+if newDay and monSet and not na(monHigh)
+    insideMonday := open >= monLow and open <= monHigh
+
+// Keep extending the box through the whole week
+if showMonday and not na(monBox) and isRTH
+    box.set_right(monBox, bar_index + 1)
+
+// ── Volume Analysis ─────────────────────────────────────────────────────────
+volSma     = ta.sma(volume, volSmaLen)
+volRatio   = volume / math.max(nz(volSma, 1), 1)
+isVolSpike = volRatio >= volSpikeMult
+
+bgcolor(showVolBg and isVolSpike and isRTH ? color.new(color.yellow, 88) : na, title="Volume Spike BG")
+
+// ── Trend & SMA Gradient ────────────────────────────────────────────────────
+trendSma  = ta.sma(close, trendSmaLen)
+isUpTrend = close > trendSma
+
+// SMA gradient: % change of SMA over lookback period (daily)
+// On intraday charts, use request.security to get daily SMA and its gradient
+dailySma       = request.security(syminfo.tickerid, "D", ta.sma(close, trendSmaLen))
+dailySmaLag    = request.security(syminfo.tickerid, "D", ta.sma(close, trendSmaLen)[gradLookback])
+smaGradient    = not na(dailySma) and not na(dailySmaLag) and dailySmaLag != 0 ? (dailySma - dailySmaLag) / dailySmaLag * 100 : 0.0
+isStrongUp     = smaGradient > gradThreshold
+isStrongDown   = smaGradient < -gradThreshold
+isRunnerGrad   = isStrongUp or isStrongDown
+
+// Color SMA by gradient strength: bright = strong slope, dim = flat
+trendColor = isStrongUp ? color.new(color.green, 0) : isStrongDown ? color.new(color.red, 0) : isUpTrend ? color.new(color.green, 60) : color.new(color.red, 60)
+plot(showTrend and isRunnerGrad ? trendSma : na, "Trend SMA (strong)", color=trendColor, linewidth=2)
+plot(showTrend and not isRunnerGrad ? trendSma : na, "Trend SMA (flat)", color=trendColor, linewidth=1)
+
+// ── Signal Detection ────────────────────────────────────────────────────────
+// Evaluate signals on the signal timeframe (default 5-min) regardless of chart TF.
+// On a 1-min chart, this uses completed 5-min candles so tiny 1-min spikes don't trigger.
+// On a 5-min chart, this is a no-op (same values).
+[sigOpen, sigHigh, sigLow, sigClose] = request.security(syminfo.tickerid, signalTf, [open, high, low, close])
+
+bullishNoWick = orbSet and barsSinceOpen > orbBars and isRTH and sigLow > orbHigh
+bearishNoWick = orbSet and barsSinceOpen > orbBars and isRTH and sigHigh < orbLow
+
+bullishBreak = orbSet and barsSinceOpen > orbBars and isRTH and sigClose > orbHigh and sigOpen > orbHigh
+bearishBreak = orbSet and barsSinceOpen > orbBars and isRTH and sigClose < orbLow and sigOpen < orbLow
+
+bullish = showNoWick ? bullishNoWick : bullishBreak
+bearish = showNoWick ? bearishNoWick : bearishBreak
+
+// First signal per day only
+var bool signaledToday = false
+if sessionOpen
+    signaledToday := false
+
+firstBullish = bullish and not signaledToday
+firstBearish = bearish and not signaledToday
+
+if firstBullish or firstBearish
+    signaledToday := true
+
+// ── Quality Score (0-4) ─────────────────────────────────────────────────────
+// T = trend-aligned | M = inside Monday (Tue-Fri only) | B = breakout momentum ≥1% | V = vol spike
+// Use signal-TF close for breakout distance (consistent with signal evaluation)
+bullRisk = firstBullish ? (sigClose - orbHigh) / sigClose * 100 : na
+bearRisk = firstBearish ? (orbLow - sigClose) / sigClose * 100 : na
+risk     = nz(bullRisk, nz(bearRisk, 0.0))
+
+// B: Breakout momentum — entry ≥1% from ORB level = strong conviction breakout
+isBreakoutMomentum = (firstBullish or firstBearish) and risk >= 1.0
+
+trendAligned = (firstBullish and isUpTrend) or (firstBearish and not isUpTrend)
+
+// M: Skip on Monday (range not finalized yet — would be look-ahead bias)
+mondayToday = dayofweek == dayofweek.monday
+useMonday = insideMonday and not mondayToday
+
+quality = 0
+quality += trendAligned ? 1 : 0
+quality += useMonday ? 1 : 0
+quality += isBreakoutMomentum ? 1 : 0
+quality += isVolSpike ? 1 : 0
+
+// ── Entry Zone Rectangle ────────────────────────────────────────────────────
+showThisSignal = showSignals and (firstBullish or firstBearish) and quality >= minQuality
+
+if showThisSignal
+    // Entry zone = rectangle around the signal candle's range, extended a few bars
+    zoneTop    = math.max(open, close) + (high - low) * 0.1
+    zoneBottom = math.min(open, close) - (high - low) * 0.1
+    zoneRight  = bar_index + entryZoneBars
+
+    // Color based on quality
+    zoneColor  = quality >= 3 ? color.new(color.green, 70) : quality == 2 ? color.new(color.yellow, 75) : color.new(color.gray, 80)
+    zoneBorder = quality >= 3 ? color.new(color.green, 20) : quality == 2 ? color.new(color.yellow, 30) : color.new(color.gray, 40)
+
+    box.new(bar_index, zoneTop, zoneRight, zoneBottom, border_color=zoneBorder, border_width=2, border_style=line.style_solid, bgcolor=zoneColor)
+
+    // Label inside the zone
+    dir  = firstBullish ? "LONG" : "SHORT"
+    tagT = trendAligned ? " T" : ""
+    tagM = useMonday ? " M" : ""
+    tagB = isBreakoutMomentum ? " B" : ""
+    tagV = isVolSpike ? " V" : ""
+
+    // Runner gradient tag: strong slope in trade direction → likely runner
+    runnerFavorable = (firstBullish and isStrongUp) or (firstBearish and isStrongDown)
+    tagG = runnerFavorable ? " G" : ""
+
+    labelText = dir + " [" + str.tostring(quality) + "/4]" + tagT + tagM + tagB + tagV + tagG + "\nBrkout: " + str.tostring(risk, "#.##") + "%" + "\nVol: " + str.tostring(volRatio, "#.#") + "x" + "\nGrad: " + str.tostring(smaGradient, "#.##") + "%"
+
+    labelColor = quality >= 3 ? color.new(color.green, 0) : quality == 2 ? color.new(#b8860b, 0) : color.new(color.gray, 0)
+
+    // Offset labels away from bars so they're readable (not hidden behind candles)
+    candleRange = high - low
+    labelY     = firstBullish ? low - candleRange * 1.5 : high + candleRange * 1.5
+    labelStyle = firstBullish ? label.style_label_up : label.style_label_down
+
+    label.new(bar_index + math.round(entryZoneBars / 2), labelY, labelText, style=labelStyle, color=labelColor, textcolor=color.white, size=size.normal)
+
+// ── Trade Tracking & Exit Detection ─────────────────────────────────────────
+var bool  inTrade       = false
+var bool  tradeLong     = false
+var float tradeEntry    = na
+var float tradeOrbHigh  = na
+var float tradeOrbLow   = na
+var int   tradeEntryBar = na
+var float lastRthClose  = na
+var int   lastRthBar    = na
+
+// Enter trade on signal (use signal-TF close as entry price)
+if showThisSignal
+    inTrade       := true
+    tradeLong     := firstBullish
+    tradeEntry    := sigClose
+    tradeOrbHigh  := orbHigh
+    tradeOrbLow   := orbLow
+    tradeEntryBar := bar_index
+
+// ── Exit detection ──────────────────────────────────────────────────────────
+stopExit = false
+eodExit  = false
+
+// 1. EOD exit: new session starts while still in a trade → close at previous session's last price
+//    This takes priority — don't check stops on sessionOpen bars
+if inTrade and sessionOpen
+    eodExit := true
+
+// 2. Intraday reversal stop: price must close THROUGH the entire ORB range
+//    SHORT entered below ORB low → only stop if close goes back above ORB HIGH
+//    LONG entered above ORB high → only stop if close drops back below ORB LOW
+//    A bounce within the ORB range is not a reversal, just noise
+if inTrade and isRTH and not sessionOpen and not eodExit and bar_index > tradeEntryBar
+    if tradeLong and close < tradeOrbLow
+        stopExit := true
+    if not tradeLong and close > tradeOrbHigh
+        stopExit := true
+
+// ── Draw exit markers ───────────────────────────────────────────────────────
+drawExit = inTrade and (stopExit or eodExit)
+
+if drawExit
+    // EOD: use last RTH close from previous session; Stop: use current close
+    exitPrice = eodExit ? nz(lastRthClose, close[1]) : close
+    exitBar   = eodExit ? nz(lastRthBar, bar_index - 1) : bar_index
+
+    exitPnlPct = tradeLong ? (exitPrice - tradeEntry) / tradeEntry * 100 : (tradeEntry - exitPrice) / tradeEntry * 100
+    isWin = exitPnlPct > 0
+
+    exitBoxColor    = isWin ? color.new(color.green, 75) : color.new(color.red, 75)
+    exitBorderColor = isWin ? color.new(color.green, 30) : color.new(color.red, 30)
+    exitStyle       = eodExit ? line.style_dashed : line.style_dotted
+
+    // Box around exit price level
+    exitCR  = math.max(math.abs(exitPrice - tradeEntry) * 0.05, exitPrice * 0.002)
+    exitTop = exitPrice + exitCR
+    exitBot = exitPrice - exitCR
+
+    box.new(exitBar, exitTop, exitBar + 2, exitBot, border_color=exitBorderColor, border_width=2, border_style=exitStyle, bgcolor=exitBoxColor)
+
+    exitType  = eodExit ? "CLOSE" : "STOP"
+
+    // For EOD exits: check if SMA gradient suggests holding overnight (runner)
+    eodGradFavorable = eodExit and ((tradeLong and isStrongUp) or (not tradeLong and isStrongDown))
+    holdTag = eodGradFavorable and isWin ? " [HOLD?]" : ""
+    exitLabel = exitType + " " + str.tostring(exitPnlPct, "#.##") + "%" + holdTag
+
+    // Label above for longs, below for shorts
+    exitLabelY     = tradeLong ? exitTop + exitCR : exitBot - exitCR
+    exitLabelStyle = tradeLong ? label.style_label_down : label.style_label_up
+    exitLabelColor = eodGradFavorable and isWin ? color.new(color.blue, 0) : isWin ? color.new(color.green, 0) : color.new(color.red, 0)
+
+    label.new(exitBar + 1, exitLabelY, exitLabel, style=exitLabelStyle, color=exitLabelColor, textcolor=color.white, size=size.small)
+
+    inTrade := false
+
+// Track last RTH close/bar for EOD exit pricing
+// Must be AFTER exit detection so eodExit uses previous session's last close, not today's first bar
+if isRTH
+    lastRthClose := close
+    lastRthBar   := bar_index
