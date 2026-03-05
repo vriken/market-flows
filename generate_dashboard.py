@@ -11,6 +11,7 @@ from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
 from market_flows.etf import build_flow_history, fetch_etfs
 from market_flows.external import fetch_margin_debt
+from market_flows.regime import classify_regime
 from market_flows.sentiment import (
     fetch_leverage_ratios,
     fetch_market_ratios,
@@ -137,6 +138,16 @@ def main():
     except Exception as e:
         print(f"  ETF flow history failed: {e}")
 
+    print("\n━━━ Classifying regime ━━━\n")
+    try:
+        regime = classify_regime(sentiment_data, cot_rows)
+        print(f"  Regime: {regime['composite_label']} (confidence: {regime['confidence']:.0%})")
+        for dim in regime["dimensions"]:
+            print(f"    {dim['name']}: {dim['state']}")
+    except Exception as e:
+        print(f"  Regime classification failed: {e}")
+        regime = None
+
     print("\n━━━ Generating dashboard ━━━\n")
     render_dashboard(
         cot_rows=cot_rows,
@@ -149,6 +160,7 @@ def main():
         flow_data=flow_data,
         external_data=external_data,
         orb_conditions=orb_conditions,
+        regime=regime,
     )
 
 

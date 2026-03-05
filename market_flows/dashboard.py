@@ -38,13 +38,13 @@ def _signal_text(row):
         return "Extreme high" if inverse else "Extreme low"
     if row.get("change") is not None:
         if row["change"] > 0 and row["net"] > 0:
-            return "Bearish" if inverse else "Bullish"
+            return "Adding Short" if inverse else "Adding Long"
         if row["change"] < 0 and row["net"] < 0:
-            return "Bullish" if inverse else "Bearish"
+            return "Adding Long" if inverse else "Adding Short"
         if row["change"] > 0:
-            return "Reducing" if inverse else "Covering"
+            return "Trimming Longs" if inverse else "Covering Shorts"
         if row["change"] < 0:
-            return "Covering" if inverse else "Reducing"
+            return "Covering Shorts" if inverse else "Trimming Longs"
     return ""
 
 
@@ -489,7 +489,7 @@ def build_putcall_chart(putcall_data):
 def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      data_dir=None, output_path=None,
                      ratio_series=None, rotation_data=None, flow_data=None,
-                     external_data=None, orb_conditions=None):
+                     external_data=None, orb_conditions=None, regime=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -537,6 +537,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
 
     html = template.render(
         last_updated=datetime.now().strftime("%Y-%m-%d %H:%M UTC"),
+        regime=regime or {},
         alerts=alerts,
         cot_groups=cot_groups,
         cot_history_charts=cot_history_charts,
