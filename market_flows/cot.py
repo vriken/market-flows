@@ -261,12 +261,14 @@ def fetch_cot(filter_contracts=None, use_history=True):
             prev_net = int(prev[long_col]) - int(prev[short_col])
             chg = net - prev_net
 
-        # Percentile: use 5-year history if available, else YTD
+        # Percentile and z-score: use 5-year history if available, else YTD
         if history is not None and label in history["contract"].values:
             hist_nets = history.loc[history["contract"] == label, "net_position"]
             percentile = _rank_percentile(hist_nets, net)
             percentile_label = "5Y %ile"
             weeks = len(hist_nets)
+            std = hist_nets.std()
+            zscore = (net - hist_nets.mean()) / std if std > 0 else 0.0
         else:
             all_nets = (
                 all_rows[long_col].astype(int) - all_rows[short_col].astype(int)
@@ -274,6 +276,8 @@ def fetch_cot(filter_contracts=None, use_history=True):
             percentile = _rank_percentile(all_nets, net)
             percentile_label = "YTD %ile"
             weeks = len(all_nets)
+            std = all_nets.std()
+            zscore = (net - all_nets.mean()) / std if std > 0 else 0.0
 
         rows.append({
             "contract": label,
@@ -282,6 +286,7 @@ def fetch_cot(filter_contracts=None, use_history=True):
             "change": chg,
             "percentile": percentile,
             "percentile_label": percentile_label,
+            "zscore": round(zscore, 2),
             "weeks": weeks,
             "date": latest["date"].strftime("%Y-%m-%d"),
             "trader_type": trader_label,
@@ -307,14 +312,15 @@ def print_cot(rows):
         if not group:
             continue
         print(f"  {label}")
-        print(f"  {'Contract':<16} {'Net Pos':>11} {'% of OI':>8} {'Wk Chg':>10} {ptile_label:>8}  Signal")
-        print(f"  {'─'*16} {'─'*11} {'─'*8} {'─'*10} {'─'*8}  {'─'*12}")
+        print(f"  {'Contract':<16} {'Net Pos':>11} {'% of OI':>8} {'Wk Chg':>10} {ptile_label:>8} {'Z-Score':>8}  Signal")
+        print(f"  {'─'*16} {'─'*11} {'─'*8} {'─'*10} {'─'*8} {'─'*8}  {'─'*16}")
 
         for r in group:
             net_s = f"{r['net']:>+11,}"
             pct_s = f"{r['net_pct_oi']:>+7.1f}%"
             chg_s = f"{r['change']:>+10,}" if r["change"] is not None else f"{'—':>10}"
             ptile = f"{r['percentile']:>7.0f}%"
+            zs = f"{r['zscore']:>+7.2f}" if r.get("zscore") is not None else f"{'—':>8}"
 
             inverse = r["contract"] == "VIX"
 
@@ -325,13 +331,13 @@ def print_cot(rows):
                 sig = "!! Extreme high" if inverse else "!! Extreme low"
             elif r["change"] is not None:
                 if r["change"] > 0 and r["net"] > 0:
-                    sig = "▼ Bearish" if inverse else "▲ Bullish"
+                    sig = "▼ Adding Short" if inverse else "▲ Adding Long"
                 elif r["change"] < 0 and r["net"] < 0:
-                    sig = "▲ Bullish" if inverse else "▼ Bearish"
+                    sig = "▲ Adding Long" if inverse else "▼ Adding Short"
                 elif r["change"] > 0:
-                    sig = "↘ Reducing" if inverse else "↗ Covering"
+                    sig = "↘ Trimming Longs" if inverse else "↗ Covering Shorts"
                 elif r["change"] < 0:
-                    sig = "↗ Covering" if inverse else "↘ Reducing"
+                    sig = "↗ Covering Shorts" if inverse else "↘ Trimming Longs"
 
-            print(f"  {r['contract']:<16} {net_s} {pct_s} {chg_s} {ptile}  {sig}")
+            print(f"  {r['contract']:<16} {net_s} {pct_s} {chg_s} {ptile} {zs}  {sig}")
         print()

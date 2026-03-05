@@ -112,6 +112,49 @@
   <h1>Market Flows Dashboard</h1>
   <p class="subtitle">COT positioning &amp; ETF flow tracker &mdash; updated {{ last_updated }}</p>
 
+  {# ── ORB Trade Today Box ── #}
+  {% if orb and orb.overall %}
+  {% set oc = orb.overall_color|default('') %}
+  <div style="padding: 20px 24px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px;
+    {% if oc == 'green' %}background: rgba(63,185,80,0.12); border: 2px solid rgba(63,185,80,0.4);
+    {% elif oc == 'yellow' %}background: rgba(210,153,34,0.12); border: 2px solid rgba(210,153,34,0.4);
+    {% elif oc == 'red' %}background: rgba(248,81,73,0.12); border: 2px solid rgba(248,81,73,0.4);
+    {% endif %}">
+    <span style="font-size: 2rem; font-weight: 700; letter-spacing: 0.02em;
+      {% if oc == 'green' %}color: var(--green);{% elif oc == 'yellow' %}color: var(--yellow);{% else %}color: var(--red);{% endif %}">
+      {% if oc == 'green' %}TRADE TODAY{% elif oc == 'yellow' %}BE SELECTIVE{% else %}SIT OUT{% endif %}
+    </span>
+    <span style="color: var(--text-muted); font-size: 0.95rem;">{{ orb.overall_reason|default('') }}
+      {% if orb.vix is not none %}&mdash; VIX {{ "{:.1f}".format(orb.vix) }}{% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  {# ── Regime Panel ── #}
+  {% if regime and regime.composite_label %}
+  <div class="alert-panel" style="margin-bottom: 24px; border-left: 4px solid {{ regime.color }};">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;">
+      <span style="font-size: 1.6rem; font-weight: 700; color: {{ regime.color }};">{{ regime.composite_label }}</span>
+      <span class="muted" style="font-size: 0.8rem;">Confidence: {{ "{:.0f}%".format(regime.confidence * 100) }}</span>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+      {% for dim in regime.dimensions %}
+      <span class="alert-badge" style="background: {{ dim.color }}22; color: {{ dim.color }}; border: 1px solid {{ dim.color }}44;">
+        {{ dim.name }}: {{ dim.state }}
+      </span>
+      {% endfor %}
+    </div>
+    {% if regime.signals %}
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+      {% for sig in regime.signals %}
+      <span style="display: inline-block; padding: 2px 8px; background: rgba(110,118,129,0.15); border-radius: 12px; font-size: 0.72rem; color: var(--text-muted);">{{ sig }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="muted" style="font-size: 0.85rem;">{{ regime.narrative }}</p>
+  </div>
+  {% endif %}
+
   {# ── Alerts Panel ── #}
   <div class="alert-panel">
     <h3>Positioning Alerts</h3>
@@ -215,6 +258,7 @@
           <th class="num">% of OI</th>
           <th class="num">Wk Change</th>
           <th class="num">Percentile</th>
+          <th class="num">Z-Score</th>
           <th>Signal</th>
         </tr>
       </thead>
@@ -228,6 +272,9 @@
             {{ "{:+,}".format(r.change) if r.change is not none else "—" }}
           </td>
           <td class="num">{{ "{:.0f}%".format(r.percentile) }}</td>
+          <td class="num {{ 'pos' if r.zscore is defined and r.zscore and r.zscore > 0 else 'neg' if r.zscore is defined and r.zscore and r.zscore < 0 else '' }}">
+            {{ "{:+.2f}".format(r.zscore) if r.zscore is defined and r.zscore is not none else "—" }}
+          </td>
           <td>{{ r.signal }}</td>
         </tr>
       {% endfor %}
