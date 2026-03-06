@@ -112,6 +112,24 @@
   <h1>Market Flows Dashboard</h1>
   <p class="subtitle">COT positioning &amp; ETF flow tracker &mdash; updated {{ last_updated }}</p>
 
+  {# ── ORB Trade Today Box ── #}
+  {% if orb and orb.overall %}
+  {% set oc = orb.overall_color|default('') %}
+  <div style="padding: 20px 24px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px;
+    {% if oc == 'green' %}background: rgba(63,185,80,0.12); border: 2px solid rgba(63,185,80,0.4);
+    {% elif oc == 'yellow' %}background: rgba(210,153,34,0.12); border: 2px solid rgba(210,153,34,0.4);
+    {% elif oc == 'red' %}background: rgba(248,81,73,0.12); border: 2px solid rgba(248,81,73,0.4);
+    {% endif %}">
+    <span style="font-size: 2rem; font-weight: 700; letter-spacing: 0.02em;
+      {% if oc == 'green' %}color: var(--green);{% elif oc == 'yellow' %}color: var(--yellow);{% else %}color: var(--red);{% endif %}">
+      {% if oc == 'green' %}TRADE TODAY{% elif oc == 'yellow' %}BE SELECTIVE{% else %}SIT OUT{% endif %}
+    </span>
+    <span style="color: var(--text-muted); font-size: 0.95rem;">{{ orb.overall_reason|default('') }}
+      {% if orb.vix is not none %}&mdash; VIX {{ "{:.1f}".format(orb.vix) }}{% endif %}
+    </span>
+  </div>
+  {% endif %}
+
   {# ── Alerts Panel ── #}
   <div class="alert-panel">
     <h3>Positioning Alerts</h3>
