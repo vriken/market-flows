@@ -489,7 +489,7 @@ def build_putcall_chart(putcall_data):
 def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      data_dir=None, output_path=None,
                      ratio_series=None, rotation_data=None, flow_data=None,
-                     external_data=None):
+                     external_data=None, orb_conditions=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -556,6 +556,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         putcall_data=ext.get("putcall"),
         putcall_chart=putcall_chart,
         fund_flows_chart=fund_flows_chart,
+        orb=orb_conditions or {},
     )
 
     output_path = Path(output_path)

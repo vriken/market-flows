@@ -127,6 +127,78 @@
     {% endif %}
   </div>
 
+  {# ── ORB Strategy Conditions ── #}
+  {% if orb and orb.vix is not none %}
+  <h2>ORB Strategy Conditions</h2>
+  <div class="alert-panel">
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: center;">
+      {# Overall signal #}
+      <div>
+        {% set oc = orb.overall_color|default('') %}
+        <span class="alert-badge" style="font-size: 0.9rem; padding: 4px 12px;
+          {% if oc == 'green' %}background: rgba(63,185,80,0.2); color: var(--green);
+          {% elif oc == 'yellow' %}background: rgba(210,153,34,0.2); color: var(--yellow);
+          {% elif oc == 'red' %}background: rgba(248,81,73,0.2); color: var(--red);
+          {% endif %}">
+          {{ orb.overall|default('?') }}
+        </span>
+      </div>
+      {# VIX #}
+      <div>
+        <span class="muted">VIX</span>
+        <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;
+          {% if orb.vix < 18 %}color: var(--green);{% elif orb.vix < 22 %}color: var(--yellow);{% else %}color: var(--red);{% endif %}">
+          {{ "{:.1f}".format(orb.vix) }}
+        </span>
+        <span class="alert-badge" style="margin-left: 6px;
+          {% if orb.vix_color == 'green' %}background: rgba(63,185,80,0.2); color: var(--green);
+          {% elif orb.vix_color == 'yellow' %}background: rgba(210,153,34,0.2); color: var(--yellow);
+          {% else %}background: rgba(248,81,73,0.2); color: var(--red);{% endif %}">
+          {{ orb.vix_regime|default('?') }}
+        </span>
+      </div>
+      {# SPY #}
+      {% if orb.spy_close %}
+      <div>
+        <span class="muted">SPY</span>
+        <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ orb.spy_close }}</span>
+        {% if orb.spy_daily_return is not none %}
+        <span style="font-size: 1rem; margin-left: 6px;
+          {% if orb.spy_daily_return > 0 %}color: var(--green);{% elif orb.spy_daily_return < -0.5 %}color: var(--red);{% elif orb.spy_daily_return < 0 %}color: var(--orange);{% else %}color: var(--text-muted);{% endif %}">
+          {{ "{:+.2f}%".format(orb.spy_daily_return) }}
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
+      {# SPY Trend #}
+      {% if orb.spy_trend %}
+      <div>
+        <span class="muted">Trend</span>
+        <span style="font-size: 1.2rem; font-weight: 600; margin-left: 8px;
+          {% if orb.spy_trend == 'UP' %}color: var(--green);{% elif orb.spy_trend == 'DOWN' %}color: var(--red);{% else %}color: var(--text-muted);{% endif %}">
+          {{ orb.spy_trend }}
+        </span>
+      </div>
+      {% endif %}
+      {# Day of week #}
+      {% if orb.day_of_week %}
+      <div>
+        <span class="muted">{{ orb.day_of_week }}</span>
+        {% if orb.is_friday %}
+        <span class="alert-badge" style="margin-left: 6px; background: rgba(63,185,80,0.2); color: var(--green);">BEST DAY</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div style="margin-top: 8px;">
+      <span class="muted">{{ orb.overall_reason|default('') }}</span>
+    </div>
+    <div style="margin-top: 6px;">
+      <span class="muted" style="font-size: 0.75rem;">Based on 60-day backtest: VIX &lt; 18 = +28% ROI, VIX &gt; 22 = &minus;57% ROI, SPY down &gt; 0.5% = &minus;10% ROI, Fridays = +47% ROI</span>
+    </div>
+  </div>
+  {% endif %}
+
   {# ── COT Positioning by Group ── #}
   <h2>COT Positioning</h2>
   {% for group in cot_groups %}

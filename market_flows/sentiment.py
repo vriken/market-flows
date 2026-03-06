@@ -293,6 +293,99 @@ def fetch_sector_rotation(weeks=12):
         return None
 
 
+def fetch_orb_conditions(vix_price=None):
+    """Compute ORB strategy regime conditions based on VIX and SPY.
+
+    Backtest findings (60d, 71 US tickers):
+      VIX < 18  → +28% ROI (go)
+      VIX 18-22 → -6% ROI  (caution)
+      VIX > 22  → -57% ROI (sit out)
+      SPY up days → +36% ROI, SPY down >0.5% → -10.3% ROI
+      Fridays → +46.6% ROI (best day)
+    """
+    from datetime import datetime
+
+    result = {}
+
+    # VIX — reuse if already fetched, otherwise fetch
+    if vix_price is None:
+        try:
+            vix = yf.Ticker("^VIX")
+            vix_price = vix.info.get("regularMarketPrice") or vix.info.get("previousClose")
+        except Exception:
+            pass
+
+    result["vix"] = vix_price
+    if vix_price is not None:
+        if vix_price < 18:
+            result["vix_regime"] = "GO"
+            result["vix_color"] = "green"
+        elif vix_price < 22:
+            result["vix_regime"] = "CAUTION"
+            result["vix_color"] = "yellow"
+        else:
+            result["vix_regime"] = "SIT OUT"
+            result["vix_color"] = "red"
+
+    # SPY — 30d history for SMA20 and daily return
+    try:
+        spy = yf.Ticker("SPY")
+        spy_hist = spy.history(period="30d")
+        if not spy_hist.empty and len(spy_hist) >= 2:
+            result["spy_close"] = round(spy_hist["Close"].iloc[-1], 2)
+            daily_ret = (spy_hist["Close"].iloc[-1] / spy_hist["Close"].iloc[-2] - 1) * 100
+            result["spy_daily_return"] = round(daily_ret, 2)
+
+            if len(spy_hist) >= 20:
+                sma20 = spy_hist["Close"].rolling(20).mean()
+                sma_vals = sma20.dropna()
+                if len(sma_vals) >= 5:
+                    slope = (sma_vals.iloc[-1] - sma_vals.iloc[-5]) / sma_vals.iloc[-5] * 100
+                    result["spy_sma20_slope"] = round(slope, 3)
+                    if slope > 0.1:
+                        result["spy_trend"] = "UP"
+                    elif slope < -0.1:
+                        result["spy_trend"] = "DOWN"
+                    else:
+                        result["spy_trend"] = "FLAT"
+                result["spy_above_sma20"] = spy_hist["Close"].iloc[-1] > sma20.iloc[-1]
+    except Exception:
+        pass
+
+    # Day of week
+    now = datetime.now()
+    result["day_of_week"] = now.strftime("%A")
+    result["is_friday"] = now.weekday() == 4
+
+    # Overall signal
+    vix_ok = vix_price is not None and vix_price < 18
+    spy_down_big = result.get("spy_daily_return", 0) is not None and result.get("spy_daily_return", 0) < -0.5
+    vix_danger = vix_price is not None and vix_price >= 22
+
+    if vix_danger:
+        result["overall"] = "SIT OUT"
+        result["overall_color"] = "red"
+        result["overall_reason"] = "VIX too high — strategy loses money in high-vol regimes"
+    elif spy_down_big and not vix_ok:
+        result["overall"] = "SIT OUT"
+        result["overall_color"] = "red"
+        result["overall_reason"] = "VIX elevated + SPY down > 0.5%"
+    elif not vix_ok:
+        result["overall"] = "CAUTION"
+        result["overall_color"] = "yellow"
+        result["overall_reason"] = "VIX elevated — reduced edge"
+    elif spy_down_big:
+        result["overall"] = "CAUTION"
+        result["overall_color"] = "yellow"
+        result["overall_reason"] = "SPY down > 0.5% today — breakouts less reliable"
+    else:
+        result["overall"] = "GO"
+        result["overall_color"] = "green"
+        result["overall_reason"] = "Low VIX + favorable conditions"
+
+    return result
+
+
 def print_sentiment():
     """Print all sentiment indicators to terminal."""
     print("  VIX Term Structure")
