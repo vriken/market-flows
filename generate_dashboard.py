@@ -14,6 +14,7 @@ from market_flows.external import fetch_margin_debt
 from market_flows.sentiment import (
     fetch_leverage_ratios,
     fetch_market_ratios,
+    fetch_orb_conditions,
     fetch_ratio_time_series,
     fetch_sector_rotation,
     fetch_vix_term_structure,
@@ -92,6 +93,15 @@ def main():
     except Exception as e:
         print(f"  Yield history failed: {e}")
 
+    print("\n━━━ ORB strategy conditions ━━━\n")
+    orb_conditions = None
+    try:
+        vix_price = sentiment_data.get("vix", {}).get("vix") if sentiment_data.get("vix") else None
+        orb_conditions = fetch_orb_conditions(vix_price=vix_price)
+        print(f"  ORB regime: {orb_conditions.get('overall', 'unknown')} (VIX: {orb_conditions.get('vix', '?')})")
+    except Exception as e:
+        print(f"  ORB conditions failed: {e}")
+
     print("\n━━━ Fetching external data sources ━━━\n")
     external_data = {}
     try:
@@ -138,6 +148,7 @@ def main():
         rotation_data=rotation_data,
         flow_data=flow_data,
         external_data=external_data,
+        orb_conditions=orb_conditions,
     )
 
 
