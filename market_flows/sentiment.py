@@ -276,14 +276,39 @@ def fetch_sector_rotation(weeks=12):
         if data.empty:
             return None
         close = data["Close"] if "Close" in data.columns else data
+        last_date = close.index[-1]
+        has_partial_week = last_date.weekday() != 4  # not a Friday
+
         # Resample to weekly (Friday close)
         weekly = close.resample("W-FRI").last()
-        returns = weekly.pct_change().dropna()
-        if returns.empty:
+
+        # If partial week exists, the last bucket is incomplete — separate it
+        if has_partial_week and len(weekly) >= 2:
+            complete_weekly = weekly.iloc[:-1]
+            current_close = close.iloc[-1]
+            last_friday_close = complete_weekly.iloc[-1]
+            wtd_return = current_close / last_friday_close - 1
+        else:
+            complete_weekly = weekly
+            wtd_return = None
+
+        returns = complete_weekly.pct_change().dropna()
+        if returns.empty and wtd_return is None:
             return None
+
+        # Append WTD row
+        if wtd_return is not None:
+            wtd_row = pd.DataFrame([wtd_return.values], columns=returns.columns,
+                                   index=[last_date])
+            returns = pd.concat([returns, wtd_row])
+
         # Keep only the last N weeks
         returns = returns.tail(weeks)
-        week_labels = [d.strftime("%b %d") for d in returns.index]
+        week_labels = [
+            "WTD" if i == len(returns) - 1 and has_partial_week
+            else d.strftime("%b %d")
+            for i, d in enumerate(returns.index)
+        ]
         return {
             "sectors": list(returns.columns),
             "week_labels": week_labels,
