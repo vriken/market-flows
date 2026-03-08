@@ -10,7 +10,8 @@ import pandas as pd
 from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
 from market_flows.etf import build_flow_history, fetch_etfs
-from market_flows.external import fetch_margin_debt
+from market_flows.breadth import fetch_market_breadth
+from market_flows.external import fetch_credit_spreads, fetch_fed_liquidity, fetch_margin_debt
 from market_flows.regime import classify_regime
 from market_flows.sentiment import (
     fetch_leverage_ratios,
@@ -115,6 +116,27 @@ def main():
     # external_data["aaii"] = fetch_aaii_sentiment()           # needs NASDAQ_DATA_LINK_API_KEY
     # external_data["putcall"] = fetch_putcall_ratio()         # needs FRED_API_KEY (EQUITYPC series)
 
+    print("\n━━━ Fetching macro & liquidity data ━━━\n")
+    credit_data = None
+    liquidity_data = None
+    breadth_data = None
+    try:
+        credit_data = fetch_credit_spreads()
+        print(f"  Credit spreads: {'OK' if credit_data else 'no data (need FRED_API_KEY)'}")
+    except Exception as e:
+        print(f"  Credit spreads failed: {e}")
+    try:
+        liquidity_data = fetch_fed_liquidity()
+        print(f"  Fed liquidity: {'OK' if liquidity_data else 'no data (need FRED_API_KEY)'}")
+    except Exception as e:
+        print(f"  Fed liquidity failed: {e}")
+    try:
+        breadth_data = fetch_market_breadth()
+        status = f"OK — {breadth_data.get('total_tickers', 0)} tickers" if breadth_data else "no data"
+        print(f"  Market breadth: {status}")
+    except Exception as e:
+        print(f"  Market breadth failed: {e}")
+
     print("\n━━━ Building historical visualizations ━━━\n")
     ratio_series = None
     rotation_data = None
@@ -140,7 +162,10 @@ def main():
 
     print("\n━━━ Classifying regime ━━━\n")
     try:
-        regime = classify_regime(sentiment_data, cot_rows)
+        regime = classify_regime(sentiment_data, cot_rows,
+                                credit_data=credit_data,
+                                liquidity_data=liquidity_data,
+                                breadth_data=breadth_data)
         print(f"  Regime: {regime['composite_label']} (confidence: {regime['confidence']:.0%})")
         for dim in regime["dimensions"]:
             print(f"    {dim['name']}: {dim['state']}")
@@ -161,6 +186,9 @@ def main():
         external_data=external_data,
         orb_conditions=orb_conditions,
         regime=regime,
+        credit_data=credit_data,
+        liquidity_data=liquidity_data,
+        breadth_data=breadth_data,
     )
 
 

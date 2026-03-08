@@ -513,10 +513,177 @@ def build_putcall_chart(putcall_data):
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
+def build_credit_spread_chart(credit_data):
+    """Build a dual-line chart of HY OAS and IG OAS credit spreads."""
+    if not credit_data:
+        return ""
+
+    fig = go.Figure()
+
+    if "hy_oas" in credit_data:
+        hy = credit_data["hy_oas"]
+        fig.add_trace(go.Scatter(
+            x=hy["dates"], y=hy["values"],
+            mode="lines", name="HY OAS",
+            line=dict(color="#f85149", width=2),
+            hovertemplate="%{x}<br>HY OAS: %{y:.0f} bps<extra></extra>",
+        ))
+
+    if "ig_oas" in credit_data:
+        ig = credit_data["ig_oas"]
+        fig.add_trace(go.Scatter(
+            x=ig["dates"], y=ig["values"],
+            mode="lines", name="IG OAS",
+            line=dict(color="#58a6ff", width=2),
+            yaxis="y2",
+            hovertemplate="%{x}<br>IG OAS: %{y:.0f} bps<extra></extra>",
+        ))
+
+    _plotly_dark_layout(fig, "Credit Spreads (OAS)")
+    fig.update_layout(
+        height=400,
+        yaxis=dict(title="HY OAS (bps)", titlefont_color="#f85149"),
+        yaxis2=dict(
+            title="IG OAS (bps)", titlefont_color="#58a6ff",
+            overlaying="y", side="right",
+            gridcolor="rgba(48,54,61,0.3)",
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+
+    # Annotate current values
+    annotations = []
+    if credit_data.get("current_hy") is not None:
+        annotations.append(f"HY: {credit_data['current_hy']:.0f}bps ({credit_data.get('hy_percentile', 0):.0f}th %ile)")
+    if credit_data.get("current_ig") is not None:
+        annotations.append(f"IG: {credit_data['current_ig']:.0f}bps ({credit_data.get('ig_percentile', 0):.0f}th %ile)")
+    if annotations:
+        fig.add_annotation(
+            text=" · ".join(annotations),
+            xref="paper", yref="paper", x=0.5, y=-0.12,
+            showarrow=False, font=dict(color="#8b949e", size=11),
+        )
+
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_fed_liquidity_chart(liquidity_data):
+    """Build an area chart of Fed Net Liquidity with component lines."""
+    if not liquidity_data:
+        return ""
+
+    dates = liquidity_data["dates"]
+    fig = go.Figure()
+
+    # Net liquidity as filled area (primary)
+    fig.add_trace(go.Scatter(
+        x=dates, y=liquidity_data["net_liquidity"],
+        mode="lines", name="Net Liquidity",
+        line=dict(color="#3fb950", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(63,185,80,0.1)",
+        hovertemplate="%{x}<br>Net Liq: $%{y:,.0f}M<extra></extra>",
+    ))
+
+    # Component lines (secondary, thinner)
+    if "walcl" in liquidity_data:
+        fig.add_trace(go.Scatter(
+            x=dates, y=liquidity_data["walcl"],
+            mode="lines", name="Fed Balance Sheet",
+            line=dict(color="#58a6ff", width=1, dash="dot"),
+            visible="legendonly",
+            hovertemplate="%{x}<br>WALCL: $%{y:,.0f}M<extra></extra>",
+        ))
+    if "rrp" in liquidity_data:
+        fig.add_trace(go.Scatter(
+            x=dates, y=liquidity_data["rrp"],
+            mode="lines", name="Reverse Repo",
+            line=dict(color="#f0883e", width=1, dash="dot"),
+            visible="legendonly",
+            hovertemplate="%{x}<br>RRP: $%{y:,.0f}M<extra></extra>",
+        ))
+    if "tga" in liquidity_data:
+        fig.add_trace(go.Scatter(
+            x=dates, y=liquidity_data["tga"],
+            mode="lines", name="TGA",
+            line=dict(color="#bc8cff", width=1, dash="dot"),
+            visible="legendonly",
+            hovertemplate="%{x}<br>TGA: $%{y:,.0f}M<extra></extra>",
+        ))
+
+    _plotly_dark_layout(fig, "Fed Net Liquidity (WALCL − RRP − TGA)")
+    fig.update_layout(
+        height=400,
+        yaxis_title="$ Millions",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+
+    # Annotate 4-week change
+    if liquidity_data.get("net_change_4w_pct") is not None:
+        chg = liquidity_data["net_change_4w_pct"]
+        color = "#3fb950" if chg > 0 else "#f85149"
+        fig.add_annotation(
+            text=f"4W Change: {chg:+.2f}%",
+            xref="paper", yref="paper", x=0.98, y=0.95,
+            showarrow=False, font=dict(color=color, size=12),
+            xanchor="right",
+        )
+
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_breadth_chart(breadth_data):
+    """Build a dual-line chart of S&P 500 % above 50 DMA and 200 DMA."""
+    if not breadth_data:
+        return ""
+
+    fig = go.Figure()
+
+    if "pct_above_50dma" in breadth_data:
+        d50 = breadth_data["pct_above_50dma"]
+        fig.add_trace(go.Scatter(
+            x=d50["dates"], y=d50["values"],
+            mode="lines", name="% > 50 DMA",
+            line=dict(color="#58a6ff", width=2),
+            hovertemplate="%{x}<br>Above 50 DMA: %{y:.1f}%<extra></extra>",
+        ))
+
+    if "pct_above_200dma" in breadth_data:
+        d200 = breadth_data["pct_above_200dma"]
+        fig.add_trace(go.Scatter(
+            x=d200["dates"], y=d200["values"],
+            mode="lines", name="% > 200 DMA",
+            line=dict(color="#3fb950", width=2),
+            hovertemplate="%{x}<br>Above 200 DMA: %{y:.1f}%<extra></extra>",
+        ))
+
+    # Reference lines
+    fig.add_hline(y=50, line_dash="dash", line_color="#8b949e", opacity=0.4,
+                  annotation_text="50% (neutral)", annotation_position="bottom right",
+                  annotation_font_color="#8b949e")
+    fig.add_hline(y=80, line_dash="dot", line_color="#3fb950", opacity=0.3,
+                  annotation_text="80%", annotation_position="top right",
+                  annotation_font_color="#3fb950")
+    fig.add_hline(y=20, line_dash="dot", line_color="#f85149", opacity=0.3,
+                  annotation_text="20%", annotation_position="bottom right",
+                  annotation_font_color="#f85149")
+
+    _plotly_dark_layout(fig, "S&P 500 Market Breadth")
+    fig.update_layout(
+        height=400,
+        yaxis_title="% of Constituents",
+        yaxis=dict(range=[0, 100]),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
 def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      data_dir=None, output_path=None,
                      ratio_series=None, rotation_data=None, flow_data=None,
-                     external_data=None, orb_conditions=None, regime=None):
+                     external_data=None, orb_conditions=None, regime=None,
+                     credit_data=None, liquidity_data=None, breadth_data=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -559,6 +726,11 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     aaii_chart = build_aaii_sentiment_chart(ext.get("aaii"))
     putcall_chart = build_putcall_chart(ext.get("putcall"))
 
+    # Build macro & liquidity charts
+    credit_chart = build_credit_spread_chart(credit_data)
+    liquidity_chart = build_fed_liquidity_chart(liquidity_data)
+    breadth_chart = build_breadth_chart(breadth_data)
+
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=False)
     template = env.get_template("dashboard.html")
 
@@ -585,6 +757,12 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         putcall_chart=putcall_chart,
         fund_flows_chart=fund_flows_chart,
         orb=orb_conditions or {},
+        credit_data=credit_data,
+        credit_chart=credit_chart,
+        liquidity_data=liquidity_data,
+        liquidity_chart=liquidity_chart,
+        breadth_data=breadth_data,
+        breadth_chart=breadth_chart,
     )
 
     output_path = Path(output_path)

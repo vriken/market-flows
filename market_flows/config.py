@@ -74,6 +74,7 @@ MARKET_RATIOS = [
     ("HYG", "LQD", "High Yield/Inv Grade", "Credit risk appetite"),
     ("IWM", "SPY", "Small Cap/Large Cap", "Breadth / risk-on"),
     ("EEM", "SPY", "Emerging/US", "Global risk appetite"),
+    ("SMH", "SPY", "Semis/S&P 500", "Tech/AI leadership"),
 ]
 
 # COT contracts: (search_pattern, display_name, report_type)
@@ -101,6 +102,19 @@ COT_CONTRACTS = [
     ("VIX FUTURES", "VIX", "fin"),
     ("BITCOIN -", "Bitcoin", "fin"),
 ]
+
+# Credit spread FRED series (ICE BofA OAS indices)
+CREDIT_SPREAD_SERIES = {
+    "HY OAS": "BAMLH0A0HYM2",    # ICE BofA US High Yield OAS
+    "IG OAS": "BAMLC0A0CM",       # ICE BofA US Corporate Index OAS
+}
+
+# Fed liquidity FRED series
+FED_LIQUIDITY_SERIES = {
+    "Fed Balance Sheet": "WALCL",       # Total Assets (weekly)
+    "Reverse Repo": "RRPONTSYD",        # ON RRP (daily)
+    "Treasury General Account": "WTREGEN",  # TGA (weekly)
+}
 
 # Treasury yield curve tickers (Yahoo Finance)
 YIELD_CURVE_TICKERS = {

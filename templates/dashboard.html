@@ -453,6 +453,126 @@
   {% endif %}
   {% endif %}
 
+  {# ── Macro & Liquidity ── #}
+  {% if credit_data or liquidity_data or breadth_data %}
+  <h2>Macro &amp; Liquidity</h2>
+
+  {# Credit Spreads #}
+  {% if credit_data %}
+  <div class="section-group">
+    <h3 class="group-title">Credit Spreads</h3>
+    {% if credit_data._stale is defined and credit_data._stale %}
+    <p class="muted" style="font-size:0.75rem;font-style:italic">Using cached data — live fetch failed</p>
+    {% endif %}
+    {% if credit_chart %}
+    <div class="chart-container">
+      {{ credit_chart | safe }}
+    </div>
+    {% endif %}
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        {% if credit_data.current_hy is defined and credit_data.current_hy is not none %}
+        <div>
+          <span class="muted">HY OAS</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.0f}".format(credit_data.current_hy) }} bps</span>
+          <span class="muted" style="margin-left: 6px;">({{ "{:.0f}".format(credit_data.hy_percentile) }}th %ile)</span>
+        </div>
+        {% endif %}
+        {% if credit_data.current_ig is defined and credit_data.current_ig is not none %}
+        <div>
+          <span class="muted">IG OAS</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.0f}".format(credit_data.current_ig) }} bps</span>
+          <span class="muted" style="margin-left: 6px;">({{ "{:.0f}".format(credit_data.ig_percentile) }}th %ile)</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="data-unavailable">Credit spread data unavailable</div>
+  {% endif %}
+
+  {# Fed Liquidity #}
+  {% if liquidity_data %}
+  <div class="section-group">
+    <h3 class="group-title">Fed Liquidity</h3>
+    {% if liquidity_data._stale is defined and liquidity_data._stale %}
+    <p class="muted" style="font-size:0.75rem;font-style:italic">Using cached data — live fetch failed</p>
+    {% endif %}
+    {% if liquidity_chart %}
+    <div class="chart-container">
+      {{ liquidity_chart | safe }}
+    </div>
+    {% endif %}
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">Net Liquidity</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">${{ "{:.2f}".format(liquidity_data.net_current / 1e6) }}T</span>
+        </div>
+        {% if liquidity_data.net_change_4w_pct is defined and liquidity_data.net_change_4w_pct is not none %}
+        <div>
+          <span class="muted">4W Change</span>
+          <span style="font-size: 1.2rem; font-weight: 600; margin-left: 8px; {{ 'color: var(--green);' if liquidity_data.net_change_4w_pct > 0 else 'color: var(--red);' }}">
+            {{ "{:+.2f}%".format(liquidity_data.net_change_4w_pct) }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="data-unavailable">Fed liquidity data unavailable</div>
+  {% endif %}
+
+  {# Market Breadth #}
+  {% if breadth_data %}
+  <div class="section-group">
+    <h3 class="group-title">Market Breadth</h3>
+    {% if breadth_data._stale is defined and breadth_data._stale %}
+    <p class="muted" style="font-size:0.75rem;font-style:italic">Using cached data — live fetch failed</p>
+    {% endif %}
+    {% if breadth_chart %}
+    <div class="chart-container">
+      {{ breadth_chart | safe }}
+    </div>
+    {% endif %}
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        {% if breadth_data.current_50 is defined and breadth_data.current_50 is not none %}
+        <div>
+          <span class="muted">&gt; 50 DMA</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.1f}%".format(breadth_data.current_50) }}</span>
+        </div>
+        {% endif %}
+        {% if breadth_data.current_200 is defined and breadth_data.current_200 is not none %}
+        <div>
+          <span class="muted">&gt; 200 DMA</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.1f}%".format(breadth_data.current_200) }}</span>
+        </div>
+        {% endif %}
+        {% if breadth_data.ad_ratio is defined and breadth_data.ad_ratio is not none %}
+        <div>
+          <span class="muted">A/D Ratio</span>
+          <span style="font-size: 1.2rem; font-weight: 600; margin-left: 8px; {{ 'color: var(--green);' if breadth_data.ad_ratio > 1 else 'color: var(--red);' }}">
+            {{ "{:.2f}".format(breadth_data.ad_ratio) }}
+          </span>
+        </div>
+        {% endif %}
+        {% if breadth_data.total_tickers is defined %}
+        <div>
+          <span class="muted" style="font-size: 0.8rem;">{{ breadth_data.total_tickers }} tickers</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="data-unavailable">Market breadth data unavailable</div>
+  {% endif %}
+
+  {% endif %}
+
   {# ── Additional Market Indicators ── #}
   {% if margin_data or aaii_data or putcall_data or fund_flows_chart %}
   <h2>Additional Market Indicators</h2>
@@ -647,7 +767,7 @@
   {% endif %}
 
   <footer>
-    <span>Data: CFTC, Yahoo Finance, FINRA, FRED, AAII, CBOE | Coverage: {{ data_range }}</span>
+    <span>Data: CFTC, Yahoo Finance, FINRA, FRED, AAII, CBOE, Wikipedia | Coverage: {{ data_range }}</span>
     <span>Last updated: {{ last_updated }}</span>
   </footer>
 </body>

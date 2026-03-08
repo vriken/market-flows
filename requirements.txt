@@ -5,3 +5,4 @@ pyarrow
 jinja2
 plotly
 openpyxl
+lxml

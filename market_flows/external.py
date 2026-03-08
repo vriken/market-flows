@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from .config import DATA_DIR, FRED_SERIES
+from .config import DATA_DIR, FRED_SERIES, CREDIT_SPREAD_SERIES, FED_LIQUIDITY_SERIES
 from .http import get_session
 
 
@@ -310,6 +310,189 @@ def fetch_putcall_ratio():
 
     except Exception as e:
         print(f"  Put/call ratio fetch failed: {e}")
+        if cache.exists():
+            try:
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+            except Exception:
+                pass
+        return None
+
+
+def _fetch_fred_series(series_id, api_key, start_date="2019-01-01"):
+    """Fetch a single FRED series. Returns list of (date_str, float) tuples."""
+    url = (
+        f"https://api.stlouisfed.org/fred/series/observations"
+        f"?series_id={series_id}&api_key={api_key}"
+        f"&file_type=json&observation_start={start_date}"
+    )
+    resp = get_session().get(url, timeout=30)
+    resp.raise_for_status()
+    observations = resp.json().get("observations", [])
+    return [
+        (obs["date"], float(obs["value"]))
+        for obs in observations
+        if obs["value"] != "."
+    ]
+
+
+def fetch_credit_spreads():
+    """Fetch ICE BofA credit spread indices from FRED.
+
+    Returns dict with HY/IG OAS time series, current values, and 5Y percentiles.
+    Caches to data/credit_spreads.json.
+    """
+    cache = _cache_path("credit_spreads.json")
+    api_key = os.environ.get("FRED_API_KEY")
+
+    if not api_key:
+        print("  FRED_API_KEY not set, skipping credit spreads")
+        if cache.exists():
+            try:
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+            except Exception:
+                pass
+        return None
+
+    try:
+        series_data = {}
+        for label, series_id in CREDIT_SPREAD_SERIES.items():
+            try:
+                obs = _fetch_fred_series(series_id, api_key, start_date="2019-01-01")
+                if obs:
+                    series_data[label] = obs
+            except Exception as e:
+                print(f"    FRED {series_id} failed: {e}")
+
+        if not series_data:
+            return None
+
+        result = {}
+
+        if "HY OAS" in series_data:
+            hy = series_data["HY OAS"]
+            hy_values = [v for _, v in hy]
+            current_hy = hy_values[-1]
+            hy_pctile = sum(1 for v in hy_values if v <= current_hy) / len(hy_values) * 100
+            result["hy_oas"] = {"dates": [d for d, _ in hy], "values": hy_values}
+            result["current_hy"] = round(current_hy, 0)
+            result["hy_percentile"] = round(hy_pctile, 0)
+
+        if "IG OAS" in series_data:
+            ig = series_data["IG OAS"]
+            ig_values = [v for _, v in ig]
+            current_ig = ig_values[-1]
+            ig_pctile = sum(1 for v in ig_values if v <= current_ig) / len(ig_values) * 100
+            result["ig_oas"] = {"dates": [d for d, _ in ig], "values": ig_values}
+            result["current_ig"] = round(current_ig, 0)
+            result["ig_percentile"] = round(ig_pctile, 0)
+
+        cache.write_text(json.dumps(result))
+        return result
+
+    except Exception as e:
+        print(f"  Credit spreads fetch failed: {e}")
+        if cache.exists():
+            try:
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+            except Exception:
+                pass
+        return None
+
+
+def fetch_fed_liquidity():
+    """Fetch Fed balance sheet, RRP, and TGA from FRED to compute Net Liquidity.
+
+    Net Liquidity = WALCL - RRP - TGA (aligned via forward-fill).
+    Returns dict with component time series and net liquidity.
+    Caches to data/fed_liquidity.json.
+    """
+    cache = _cache_path("fed_liquidity.json")
+    api_key = os.environ.get("FRED_API_KEY")
+
+    if not api_key:
+        print("  FRED_API_KEY not set, skipping Fed liquidity")
+        if cache.exists():
+            try:
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+            except Exception:
+                pass
+        return None
+
+    try:
+        raw = {}
+        for label, series_id in FED_LIQUIDITY_SERIES.items():
+            try:
+                obs = _fetch_fred_series(series_id, api_key, start_date="2024-01-01")
+                if obs:
+                    raw[label] = obs
+            except Exception as e:
+                print(f"    FRED {series_id} failed: {e}")
+
+        if "Fed Balance Sheet" not in raw:
+            return None
+
+        # Align on dates using pandas with forward-fill
+        frames = {}
+        for label, obs in raw.items():
+            s = pd.Series(
+                [v for _, v in obs],
+                index=pd.to_datetime([d for d, _ in obs]),
+                name=label,
+            )
+            frames[label] = s
+
+        df = pd.DataFrame(frames)
+        df = df.sort_index().ffill().dropna()
+
+        if df.empty:
+            return None
+
+        # Compute net liquidity (all in millions)
+        df["net_liquidity"] = df["Fed Balance Sheet"]
+        if "Reverse Repo" in df.columns:
+            df["net_liquidity"] -= df["Reverse Repo"]
+        if "Treasury General Account" in df.columns:
+            df["net_liquidity"] -= df["Treasury General Account"]
+
+        dates = [d.strftime("%Y-%m-%d") for d in df.index]
+        net_current = df["net_liquidity"].iloc[-1]
+
+        # 4-week change
+        net_change_4w = 0.0
+        net_change_4w_pct = 0.0
+        idx_4w = max(0, len(df) - 20)  # ~4 weeks of trading days
+        if idx_4w < len(df) - 1:
+            old_val = df["net_liquidity"].iloc[idx_4w]
+            net_change_4w = net_current - old_val
+            if old_val != 0:
+                net_change_4w_pct = round((net_change_4w / old_val) * 100, 2)
+
+        result = {
+            "dates": dates,
+            "walcl": df["Fed Balance Sheet"].tolist(),
+            "net_liquidity": df["net_liquidity"].tolist(),
+            "net_current": net_current,
+            "net_change_4w": net_change_4w,
+            "net_change_4w_pct": net_change_4w_pct,
+        }
+        if "Reverse Repo" in df.columns:
+            result["rrp"] = df["Reverse Repo"].tolist()
+        if "Treasury General Account" in df.columns:
+            result["tga"] = df["Treasury General Account"].tolist()
+
+        cache.write_text(json.dumps(result, default=str))
+        return result
+
+    except Exception as e:
+        print(f"  Fed liquidity fetch failed: {e}")
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
