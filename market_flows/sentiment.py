@@ -81,7 +81,7 @@ def fetch_yield_curve_history(period="1y"):
             return None
 
         # Align all series on shared dates
-        combined = pd.DataFrame(histories).dropna()
+        combined = pd.DataFrame(histories).ffill().dropna()
         if combined.empty:
             return None
 
@@ -304,6 +304,7 @@ def fetch_orb_conditions(vix_price=None):
       Fridays → +46.6% ROI (best day)
     """
     from datetime import datetime
+    from zoneinfo import ZoneInfo
 
     result = {}
 
@@ -352,8 +353,8 @@ def fetch_orb_conditions(vix_price=None):
     except Exception:
         pass
 
-    # Day of week
-    now = datetime.now()
+    # Day of week (use US/Eastern — market time)
+    now = datetime.now(ZoneInfo("US/Eastern"))
     result["day_of_week"] = now.strftime("%A")
     result["is_friday"] = now.weekday() == 4
 

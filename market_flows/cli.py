@@ -2,7 +2,7 @@
 
 import argparse
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -62,7 +62,7 @@ def main():
     print()
     print("╔══════════════════════════════════════════════════╗")
     print("║           WEEKLY MARKET FLOWS SUMMARY            ║")
-    print(f"║           {datetime.now().strftime('%Y-%m-%d %H:%M'):^40} ║")
+    print(f"║           {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'):^40} ║")
     print("╚══════════════════════════════════════════════════╝")
 
     if show_cot:

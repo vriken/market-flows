@@ -95,6 +95,15 @@
     .pos { color: var(--green); }
     .neg { color: var(--red); }
     .muted { color: var(--text-muted); }
+    .data-unavailable {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-style: italic;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+    }
     footer {
       margin-top: 48px;
       padding-top: 16px;
@@ -324,6 +333,8 @@
       </div>
     </div>
   </div>
+  {% else %}
+  <div class="data-unavailable">VIX data unavailable</div>
   {% endif %}
 
   {# ── Yield Curve ── #}
@@ -363,6 +374,8 @@
     </div>
     {% endif %}
   </div>
+  {% else %}
+  <div class="data-unavailable">Yield curve data unavailable</div>
   {% endif %}
 
   {% if sentiment.leverage %}
@@ -393,6 +406,8 @@
       </tbody>
     </table>
   </div>
+  {% else %}
+  <div class="data-unavailable">Leverage data unavailable</div>
   {% endif %}
 
   {% if sentiment.ratios %}
@@ -433,6 +448,8 @@
     </div>
     {% endif %}
   </div>
+  {% else %}
+  <div class="data-unavailable">Market ratios unavailable</div>
   {% endif %}
   {% endif %}
 
@@ -444,6 +461,9 @@
   {% if margin_data %}
   <div class="section-group">
     <h3 class="group-title">FINRA Margin Debt</h3>
+    {% if margin_data._stale is defined and margin_data._stale %}
+    <p class="muted" style="font-size:0.75rem;font-style:italic">Using cached data — live fetch failed</p>
+    {% endif %}
     <div class="alert-panel">
       <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
         <div>
@@ -470,12 +490,17 @@
     </div>
     {% endif %}
   </div>
+  {% else %}
+  <div class="data-unavailable">Margin debt data unavailable</div>
   {% endif %}
 
   {# AAII Sentiment #}
   {% if aaii_data %}
   <div class="section-group">
     <h3 class="group-title">AAII Investor Sentiment</h3>
+    {% if aaii_data._stale is defined and aaii_data._stale %}
+    <p class="muted" style="font-size:0.75rem;font-style:italic">Using cached data — live fetch failed</p>
+    {% endif %}
     <div class="alert-panel">
       <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
         <div>
@@ -514,6 +539,9 @@
   {% if putcall_data %}
   <div class="section-group">
     <h3 class="group-title">Equity Put/Call Ratio (CBOE)</h3>
+    {% if putcall_data._stale is defined and putcall_data._stale %}
+    <p class="muted" style="font-size:0.75rem;font-style:italic">Using cached data — live fetch failed</p>
+    {% endif %}
     <div class="alert-panel">
       <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
         <div>
@@ -558,6 +586,8 @@
       {{ rotation_chart | safe }}
     </div>
   </div>
+  {% else %}
+  <div class="data-unavailable">Sector rotation data unavailable</div>
   {% endif %}
 
   {# ── ETF Flows by Group ── #}
@@ -596,6 +626,8 @@
     </table>
   </div>
   {% endfor %}
+  {% else %}
+  <div class="data-unavailable">ETF data unavailable</div>
   {% endif %}
 
   {# ── ETF Flow History ── #}

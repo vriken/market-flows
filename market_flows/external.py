@@ -6,9 +6,8 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-import requests
-
 from .config import DATA_DIR, FRED_SERIES
+from .http import get_session
 
 
 def _cache_path(filename):
@@ -26,7 +25,7 @@ def fetch_margin_debt():
     cache = _cache_path("margin_debt.json")
     try:
         url = "https://www.finra.org/sites/default/files/2021-03/margin-statistics.xlsx"
-        resp = requests.get(url, timeout=30)
+        resp = get_session().get(url, timeout=30)
         resp.raise_for_status()
 
         # Write to temp file for pandas to read
@@ -103,7 +102,9 @@ def fetch_margin_debt():
         # Try loading from cache
         if cache.exists():
             try:
-                return json.loads(cache.read_text())
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
             except Exception:
                 pass
         return None
@@ -122,7 +123,9 @@ def fetch_fred_fund_flows():
         print("  FRED_API_KEY not set, skipping fund flows")
         if cache.exists():
             try:
-                return json.loads(cache.read_text())
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
             except Exception:
                 pass
         return None
@@ -136,7 +139,7 @@ def fetch_fred_fund_flows():
                     f"?series_id={series_id}&api_key={api_key}"
                     f"&file_type=json&observation_start=2010-01-01"
                 )
-                resp = requests.get(url, timeout=30)
+                resp = get_session().get(url, timeout=30)
                 resp.raise_for_status()
                 data = resp.json()
 
@@ -172,7 +175,9 @@ def fetch_fred_fund_flows():
         print(f"  FRED fund flows fetch failed: {e}")
         if cache.exists():
             try:
-                return json.loads(cache.read_text())
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
             except Exception:
                 pass
         return None
@@ -191,7 +196,9 @@ def fetch_aaii_sentiment():
         print("  NASDAQ_DATA_LINK_API_KEY not set, skipping AAII sentiment")
         if cache.exists():
             try:
-                return json.loads(cache.read_text())
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
             except Exception:
                 pass
         return None
@@ -201,7 +208,7 @@ def fetch_aaii_sentiment():
             f"https://data.nasdaq.com/api/v3/datasets/AAII/AAII_SENTIMENT.json"
             f"?api_key={api_key}&rows=200"
         )
-        resp = requests.get(url, timeout=30)
+        resp = get_session().get(url, timeout=30)
         resp.raise_for_status()
         data = resp.json()
 
@@ -255,7 +262,9 @@ def fetch_aaii_sentiment():
         print(f"  AAII sentiment fetch failed: {e}")
         if cache.exists():
             try:
-                return json.loads(cache.read_text())
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
             except Exception:
                 pass
         return None
@@ -271,7 +280,7 @@ def fetch_putcall_ratio():
     cache = _cache_path("putcall_history.json")
     try:
         url = "https://cdn.cboe.com/resources/options/volume_and_call_put_ratios/equitypc.csv"
-        resp = requests.get(url, timeout=30)
+        resp = get_session().get(url, timeout=30)
         resp.raise_for_status()
 
         from io import StringIO
@@ -303,7 +312,9 @@ def fetch_putcall_ratio():
         print(f"  Put/call ratio fetch failed: {e}")
         if cache.exists():
             try:
-                return json.loads(cache.read_text())
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
             except Exception:
                 pass
         return None

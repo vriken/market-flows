@@ -1,7 +1,7 @@
 """ETF flow estimation via AUM snapshots."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 import yfinance as yf
 
@@ -44,7 +44,7 @@ def _previous_snapshot(history, ticker):
 def fetch_etfs(filter_tickers=None, update=False):
     """Get current ETF data and estimate flows vs last saved snapshot."""
     hist = _load_history()
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     all_known = {t: n for grp in ETF_GROUPS.values() for t, n in grp.items()}
     if filter_tickers:

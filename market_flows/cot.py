@@ -2,24 +2,24 @@
 
 import io
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
-import requests
 
 from .config import COT_CONTRACTS, DATA_DIR
+from .http import get_session
 
 
 def _fetch_cftc_zip(report_type, year=None):
     """Download a CFTC annual zip and return a DataFrame with headers."""
     if year is None:
-        year = datetime.now().year
+        year = datetime.now(timezone.utc).year
     if report_type == "disagg":
         url = f"https://www.cftc.gov/files/dea/history/fut_disagg_txt_{year}.zip"
     else:
         url = f"https://www.cftc.gov/files/dea/history/fut_fin_txt_{year}.zip"
 
-    r = requests.get(url, timeout=60)
+    r = get_session().get(url, timeout=60)
     r.raise_for_status()
 
     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
@@ -103,7 +103,7 @@ def _extract_contract_rows(df, pattern, report_type):
 
 def backfill_cot_history(start_year=2021):
     """Download CFTC data from start_year through current year and save to parquet."""
-    current_year = datetime.now().year
+    current_year = datetime.now(timezone.utc).year
     years = range(start_year, current_year + 1)
 
     all_records = []
@@ -152,7 +152,7 @@ def update_cot_history():
     else:
         existing = pd.DataFrame()
 
-    current_year = datetime.now().year
+    current_year = datetime.now(timezone.utc).year
     new_records = []
     for report_type in ("disagg", "fin"):
         print(f"  Fetching {report_type} {current_year}...")

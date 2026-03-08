@@ -1,6 +1,6 @@
 """Dashboard generation with Plotly charts and Jinja2 rendering."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -536,7 +536,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     template = env.get_template("dashboard.html")
 
     html = template.render(
-        last_updated=datetime.now().strftime("%Y-%m-%d %H:%M UTC"),
+        last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         regime=regime or {},
         alerts=alerts,
         cot_groups=cot_groups,

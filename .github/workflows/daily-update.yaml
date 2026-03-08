@@ -2,7 +2,7 @@ name: Daily Market Flows Update
 
 on:
   schedule:
-    # 9 PM UTC Mon-Fri (catches Friday COT release at ~20:30 UTC)
+    # 7 AM UTC Mon-Fri
     - cron: '0 07 * * 1-5'
   workflow_dispatch:
 
@@ -41,6 +41,13 @@ jobs:
       - name: Update data and generate dashboard
         working-directory: main
         run: python generate_dashboard.py --data-dir data --output ../gh-pages/index.html
+
+      - name: Verify dashboard was generated
+        run: |
+          if [ ! -f gh-pages/index.html ] || [ $(stat -c%s gh-pages/index.html) -lt 1000 ]; then
+            echo "::error::Dashboard output missing or too small"
+            exit 1
+          fi
 
       - name: Copy updated data to gh-pages
         run: |
