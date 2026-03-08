@@ -119,6 +119,14 @@ def _build_cot_bar_chart_single(rows, title, include_plotlyjs="cdn"):
     return fig.to_html(full_html=False, include_plotlyjs=include_plotlyjs, config={"displayModeBar": False})
 
 
+_FINANCIALS_SUBGROUPS = {
+    "Rates": {"US T-Bonds", "2Y T-Notes", "10Y T-Notes"},
+    "Equity Indices": {"S&P 500", "Nasdaq 100", "Russell 2000"},
+    "Currencies": {"EUR/USD", "JPY", "GBP"},
+    "Volatility & Crypto": {"VIX", "Bitcoin"},
+}
+
+
 def build_cot_groups(cot_rows):
     """Split COT rows into logical groups and build charts + tables for each."""
     commodities = [r for r in cot_rows if r["trader_type"] == "Managed Money"]
@@ -126,14 +134,33 @@ def build_cot_groups(cot_rows):
 
     groups = []
     first = True
-    for label, rows in [("Commodities (Managed Money)", commodities),
-                        ("Financials (Leveraged Money)", financials)]:
-        if not rows:
-            continue
-        # Only the first chart includes plotly.js CDN, rest reuse it
-        chart = _build_cot_bar_chart_single(rows, label, include_plotlyjs="cdn" if first else False)
+
+    # Commodities as one group
+    if commodities:
+        chart = _build_cot_bar_chart_single(commodities, "Commodities (Managed Money)",
+                                            include_plotlyjs="cdn")
         first = False
-        groups.append({"label": label, "chart": chart, "rows": rows})
+        groups.append({"label": "Commodities (Managed Money)", "chart": chart, "rows": commodities})
+
+    # Split financials into sub-groups so different-scale contracts get their own chart
+    for sub_label, contracts in _FINANCIALS_SUBGROUPS.items():
+        sub_rows = [r for r in financials if r["contract"] in contracts]
+        if not sub_rows:
+            continue
+        full_label = f"Financials — {sub_label}"
+        chart = _build_cot_bar_chart_single(sub_rows, full_label,
+                                            include_plotlyjs="cdn" if first else False)
+        first = False
+        groups.append({"label": full_label, "chart": chart, "rows": sub_rows})
+
+    # Catch any financials not in a sub-group
+    categorized = set().union(*_FINANCIALS_SUBGROUPS.values())
+    other = [r for r in financials if r["contract"] not in categorized]
+    if other:
+        chart = _build_cot_bar_chart_single(other, "Financials — Other",
+                                            include_plotlyjs="cdn" if first else False)
+        first = False
+        groups.append({"label": "Financials — Other", "chart": chart, "rows": other})
 
     return groups
 
