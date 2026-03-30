@@ -127,6 +127,39 @@ def fetch_market_breadth():
         else:
             ad_ratio = None
 
+        # 52-week highs and lows (using all available data, ~1 year)
+        high_52w = all_closes.max()
+        low_52w = all_closes.min()
+        latest = all_closes.iloc[-1]
+        # A stock is at a 52w high if latest close equals the year max (within 0.1%)
+        at_high = ((latest >= high_52w * 0.999) & latest.notna()).sum()
+        at_low = ((latest <= low_52w * 1.001) & latest.notna()).sum()
+
+        # Daily highs/lows time series (last 30 trading days for history)
+        hl_dates = []
+        hl_highs = []
+        hl_lows = []
+        lookback = min(30, len(all_closes))
+        for idx in range(-lookback, 0):
+            day_close = all_closes.iloc[idx]
+            # Rolling 52w high/low up to that day
+            window = all_closes.iloc[:len(all_closes) + idx + 1]
+            day_high_52w = window.max()
+            day_low_52w = window.min()
+            day_at_high = int(((day_close >= day_high_52w * 0.999) & day_close.notna()).sum())
+            day_at_low = int(((day_close <= day_low_52w * 1.001) & day_close.notna()).sum())
+            hl_dates.append(all_closes.index[idx].strftime("%Y-%m-%d"))
+            hl_highs.append(day_at_high)
+            hl_lows.append(day_at_low)
+
+        # Consecutive days with lows > highs
+        consecutive_lows_gt_highs = 0
+        for day_h, day_lo in zip(reversed(hl_highs), reversed(hl_lows), strict=True):
+            if day_lo > day_h:
+                consecutive_lows_gt_highs += 1
+            else:
+                break
+
         # Build time series for charting (sample to weekly to keep size small)
         pct_50_weekly = pct_50.resample("W-FRI").last().dropna()
         pct_200_weekly = pct_200.resample("W-FRI").last().dropna()
@@ -145,6 +178,14 @@ def fetch_market_breadth():
             "current_200": round(float(pct_200.iloc[-1]), 1) if len(pct_200) > 0 else None,
             "ad_ratio": ad_ratio,
             "total_tickers": int(total.iloc[-1]) if len(total) > 0 else 0,
+            "new_highs": int(at_high),
+            "new_lows": int(at_low),
+            "consecutive_lows_gt_highs": consecutive_lows_gt_highs,
+            "highs_lows_history": {
+                "dates": hl_dates,
+                "highs": hl_highs,
+                "lows": hl_lows,
+            },
         }
 
         cache.write_text(json.dumps(result))

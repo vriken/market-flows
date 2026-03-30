@@ -37,6 +37,9 @@ ignore = ["E501"]
 testpaths = ["tests"]
 pythonpath = ["."]
 
+[tool.setuptools.packages.find]
+include = ["market_flows*"]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

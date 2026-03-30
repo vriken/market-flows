@@ -744,6 +744,42 @@ def build_breadth_chart(breadth_data):
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
+def build_highs_lows_chart(breadth_data):
+    """Build a bar chart of daily new 52-week highs vs lows."""
+    if not breadth_data or "highs_lows_history" not in breadth_data:
+        return ""
+
+    hl = breadth_data["highs_lows_history"]
+    dates = hl["dates"]
+    highs = hl["highs"]
+    lows = hl["lows"]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=dates, y=highs,
+        name="New 52W Highs",
+        marker_color="#3fb950",
+        hovertemplate="%{x}<br>Highs: %{y}<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        x=dates, y=[-v for v in lows],
+        name="New 52W Lows",
+        marker_color="#f85149",
+        hovertemplate="%{x}<br>Lows: " + "%{customdata}<extra></extra>",
+        customdata=lows,
+    ))
+
+    _plotly_dark_layout(fig, "S&P 500 — New 52-Week Highs vs Lows")
+    fig.update_layout(
+        height=350,
+        barmode="relative",
+        yaxis_title="Count",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
 def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      data_dir=None, output_path=None,
                      ratio_series=None, rotation_data=None, flow_data=None,
@@ -796,6 +832,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     credit_chart = build_credit_spread_chart(credit_data)
     liquidity_chart = build_fed_liquidity_chart(liquidity_data)
     breadth_chart = build_breadth_chart(breadth_data)
+    highs_lows_chart = build_highs_lows_chart(breadth_data)
 
     # Build Fear & Greed chart
     fg_gauge_chart = ""
@@ -837,6 +874,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         liquidity_chart=liquidity_chart,
         breadth_data=breadth_data,
         breadth_chart=breadth_chart,
+        highs_lows_chart=highs_lows_chart,
         fear_greed=fear_greed_data,
         fg_gauge_chart=fg_gauge_chart,
         fg_history_chart=fg_history_chart,

@@ -630,6 +630,42 @@
         {% endif %}
       </div>
     </div>
+
+    {# 52-Week Highs & Lows #}
+    {% if breadth_data.new_highs is defined %}
+    <h3 class="group-title">52-Week Highs &amp; Lows</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">New Highs</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px; color: var(--green);">{{ breadth_data.new_highs }}</span>
+        </div>
+        <div>
+          <span class="muted">New Lows</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px; color: var(--red);">{{ breadth_data.new_lows }}</span>
+        </div>
+        {% if breadth_data.consecutive_lows_gt_highs is defined and breadth_data.consecutive_lows_gt_highs > 0 %}
+        <div>
+          <span class="alert-badge" style="background: rgba(248,81,73,0.2); color: var(--red); font-size: 0.85rem; padding: 4px 10px;">
+            {{ breadth_data.consecutive_lows_gt_highs }} consecutive day{{ 's' if breadth_data.consecutive_lows_gt_highs != 1 else '' }} lows &gt; highs
+          </span>
+        </div>
+        {% elif breadth_data.new_highs is defined and breadth_data.new_highs > breadth_data.new_lows %}
+        <div>
+          <span class="alert-badge" style="background: rgba(63,185,80,0.15); color: var(--green); font-size: 0.85rem; padding: 4px 10px;">
+            Highs leading
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% if highs_lows_chart %}
+    <div class="chart-container">
+      {{ highs_lows_chart | safe }}
+    </div>
+    {% endif %}
+    {% endif %}
+
   </div>
   {% else %}
   <div class="data-unavailable">Market breadth data unavailable</div>
