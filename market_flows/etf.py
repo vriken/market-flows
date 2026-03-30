@@ -130,6 +130,8 @@ def fetch_etfs(filter_tickers=None, update=False):
                 hist[t].append(s)
             else:
                 hist[t][-1] = s
+            # Cap history to 250 trading days to prevent unbounded growth
+            hist[t] = hist[t][-250:]
         _save_history(hist)
         logger.info("Saved AUM snapshot for %d ETFs", len(snapshot))
 

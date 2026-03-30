@@ -749,7 +749,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      ratio_series=None, rotation_data=None, flow_data=None,
                      external_data=None, orb_conditions=None, regime=None,
                      credit_data=None, liquidity_data=None, breadth_data=None,
-                     fear_greed_data=None):
+                     fear_greed_data=None, freshness=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -805,7 +805,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         if fg_result:
             fg_gauge_chart, fg_history_chart = fg_result
 
-    env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=False)
+    env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
     template = env.get_template("dashboard.html")
 
     html = template.render(
@@ -840,6 +840,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         fear_greed=fear_greed_data,
         fg_gauge_chart=fg_gauge_chart,
         fg_history_chart=fg_history_chart,
+        freshness=freshness or {},
     )
 
     output_path = Path(output_path)

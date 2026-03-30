@@ -121,6 +121,21 @@
   <h1>Market Flows Dashboard</h1>
   <p class="subtitle">COT positioning &amp; ETF flow tracker &mdash; updated {{ last_updated }}</p>
 
+  {# ── Data Freshness Bar ── #}
+  {% if freshness and freshness.sources %}
+  <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; font-size: 0.72rem;">
+    {% for source, status in freshness.sources.items() %}
+    <span style="padding: 2px 8px; border-radius: 10px;
+      {% if status == 'ok' %}background: rgba(63,185,80,0.15); color: var(--green);
+      {% elif status == 'stale' %}background: rgba(210,153,34,0.15); color: var(--yellow);
+      {% elif status == 'failed' %}background: rgba(248,81,73,0.15); color: var(--red);
+      {% else %}background: rgba(139,148,158,0.1); color: var(--text-muted);{% endif %}">
+      {{ source }}{% if status == 'stale' %} ⚠{% elif status == 'failed' %} ✗{% endif %}
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {# ── ORB Trade Today Box ── #}
   {% if orb and orb.overall %}
   {% set oc = orb.overall_color|default('') %}

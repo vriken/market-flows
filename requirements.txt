@@ -1,9 +1,0 @@
-pandas
-yfinance
-requests
-pyarrow
-jinja2
-plotly
-openpyxl
-lxml
-fear-and-greed

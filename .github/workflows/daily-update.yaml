@@ -10,7 +10,19 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install ".[dev]"
+      - run: ruff check .
+      - run: pytest
+
   update-dashboard:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main (code)
@@ -31,7 +43,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r main/requirements.txt
+        run: pip install ./main
 
       - name: Copy data from gh-pages to working dir
         run: |

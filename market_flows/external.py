@@ -130,12 +130,16 @@ def fetch_fred_fund_flows():
         series_list = []
         for key, (series_id, name) in FRED_SERIES.items():
             try:
-                url = (
-                    f"https://api.stlouisfed.org/fred/series/observations"
-                    f"?series_id={series_id}&api_key={api_key}"
-                    f"&file_type=json&observation_start=2010-01-01"
+                resp = get_session().get(
+                    "https://api.stlouisfed.org/fred/series/observations",
+                    params={
+                        "series_id": series_id,
+                        "api_key": api_key,
+                        "file_type": "json",
+                        "observation_start": "2010-01-01",
+                    },
+                    timeout=30,
                 )
-                resp = get_session().get(url, timeout=30)
                 resp.raise_for_status()
                 data = resp.json()
 
@@ -200,11 +204,11 @@ def fetch_aaii_sentiment():
         return None
 
     try:
-        url = (
-            f"https://data.nasdaq.com/api/v3/datasets/AAII/AAII_SENTIMENT.json"
-            f"?api_key={api_key}&rows=200"
+        resp = get_session().get(
+            "https://data.nasdaq.com/api/v3/datasets/AAII/AAII_SENTIMENT.json",
+            params={"api_key": api_key, "rows": "200"},
+            timeout=30,
         )
-        resp = get_session().get(url, timeout=30)
         resp.raise_for_status()
         data = resp.json()
 
@@ -314,12 +318,16 @@ def fetch_putcall_ratio():
 
 def _fetch_fred_series(series_id, api_key, start_date="2019-01-01"):
     """Fetch a single FRED series. Returns list of (date_str, float) tuples."""
-    url = (
-        f"https://api.stlouisfed.org/fred/series/observations"
-        f"?series_id={series_id}&api_key={api_key}"
-        f"&file_type=json&observation_start={start_date}"
+    resp = get_session().get(
+        "https://api.stlouisfed.org/fred/series/observations",
+        params={
+            "series_id": series_id,
+            "api_key": api_key,
+            "file_type": "json",
+            "observation_start": start_date,
+        },
+        timeout=30,
     )
-    resp = get_session().get(url, timeout=30)
     resp.raise_for_status()
     observations = resp.json().get("observations", [])
     return [
