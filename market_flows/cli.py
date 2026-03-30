@@ -1,14 +1,23 @@
 """CLI entry point for market-flow tracker."""
 
 import argparse
+import logging
 import warnings
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 
-from .cot import backfill_cot_history, fetch_cot, print_cot, update_cot_history
+from .cot import backfill_cot_history, fetch_cot, print_cot
 from .etf import fetch_etfs, print_etfs
-from .sentiment import print_sentiment
+from .regime import classify_regime
+from .sentiment import (
+    fetch_leverage_ratios,
+    fetch_market_ratios,
+    fetch_vix_term_structure,
+    fetch_yield_curve,
+    fetch_yield_curve_history,
+    print_sentiment,
+)
 
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
@@ -25,6 +34,7 @@ def main():
   %(prog)s --etf AAPL MSFT         Works with any Yahoo Finance ticker
   %(prog)s --cot gold --etf GLD    Mix COT and ETF filters
   %(prog)s --backfill              Download 5 years of COT history
+  %(prog)s --regime-debug          Show regime classification details
 """,
     )
     ap.add_argument("--update", action="store_true",
@@ -39,7 +49,17 @@ def main():
                     help="Show specific ETFs (e.g. SPY QQQ XLK)")
     ap.add_argument("--backfill", action="store_true",
                     help="Download 5 years of CFTC COT history into parquet")
+    ap.add_argument("--regime-debug", action="store_true",
+                    help="Show raw regime classification scores and signals")
+    ap.add_argument("--verbose", "-v", action="store_true",
+                    help="Enable verbose logging")
     args = ap.parse_args()
+
+    # Configure logging
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.WARNING,
+        format="%(name)s: %(message)s",
+    )
 
     # Handle backfill mode
     if args.backfill:
@@ -62,7 +82,7 @@ def main():
     print()
     print("╔══════════════════════════════════════════════════╗")
     print("║           WEEKLY MARKET FLOWS SUMMARY            ║")
-    print(f"║           {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'):^40} ║")
+    print(f"║           {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC'):^40} ║")
     print("╚══════════════════════════════════════════════════╝")
 
     if show_cot:
@@ -98,5 +118,33 @@ def main():
             print_sentiment()
         except Exception as e:
             print(f"  Error fetching sentiment data: {e}")
+
+    # Regime debug mode
+    if args.regime_debug:
+        print("\n━━━ Regime Classification Debug ━━━\n")
+        try:
+            sentiment_data = {}
+            sentiment_data["vix"] = fetch_vix_term_structure()
+            sentiment_data["leverage"] = fetch_leverage_ratios()
+            sentiment_data["ratios"] = fetch_market_ratios()
+            sentiment_data["yield_curve"] = fetch_yield_curve()
+            sentiment_data["yield_history"] = fetch_yield_curve_history()
+
+            regime = classify_regime(sentiment_data)
+
+            print(f"  Composite: {regime['composite_label']}")
+            print(f"  Confidence: {regime['confidence']:.0%}")
+            print()
+            print("  Dimensions:")
+            for dim in regime["dimensions"]:
+                print(f"    {dim['name']:<12} {dim['state']}")
+            print()
+            print("  Signals fired:")
+            for sig in regime["signals"]:
+                print(f"    • {sig}")
+            print()
+            print(f"  Narrative: {regime['narrative']}")
+        except Exception as e:
+            print(f"  Regime debug failed: {e}")
 
     print()

@@ -1,11 +1,15 @@
 """ETF flow estimation via AUM snapshots."""
 
 import json
-from datetime import datetime, timezone
+import logging
+from datetime import UTC, datetime
 
+import pandas as pd
 import yfinance as yf
 
 from .config import DATA_DIR, ETF_GROUPS
+
+logger = logging.getLogger(__name__)
 
 
 def _load_history():
@@ -15,14 +19,15 @@ def _load_history():
     data = json.loads(p.read_text())
     # Support both legacy single-snapshot and new array-of-snapshots format
     if data and isinstance(next(iter(data.values())), dict) and "aum" in next(iter(data.values())):
-        # Legacy format: {ticker: {aum, price, date}} — convert to new format
         return {t: [v] for t, v in data.items()}
     return data
 
 
 def _save_history(h):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    (DATA_DIR / "etf_aum.json").write_text(json.dumps(h, indent=2))
+    tmp = DATA_DIR / "etf_aum.json.tmp"
+    tmp.write_text(json.dumps(h, indent=2))
+    tmp.rename(DATA_DIR / "etf_aum.json")
 
 
 def _latest_snapshot(history, ticker):
@@ -42,9 +47,12 @@ def _previous_snapshot(history, ticker):
 
 
 def fetch_etfs(filter_tickers=None, update=False):
-    """Get current ETF data and estimate flows vs last saved snapshot."""
+    """Get current ETF data and estimate flows vs last saved snapshot.
+
+    Uses batch yf.download() for price history, individual .info calls for AUM.
+    """
     hist = _load_history()
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
 
     all_known = {t: n for grp in ETF_GROUPS.values() for t, n in grp.items()}
     if filter_tickers:
@@ -55,7 +63,28 @@ def fetch_etfs(filter_tickers=None, update=False):
     else:
         tickers = all_known
 
-    print(f"  Fetching data for {len(tickers)} ETFs...")
+    logger.info("Fetching data for %d ETFs", len(tickers))
+
+    # Batch download 5d price history for weekly returns
+    ticker_list = list(tickers.keys())
+    price_data = {}
+    try:
+        batch = yf.download(ticker_list, period="5d", progress=False, threads=True)
+        if not batch.empty:
+            for tick in ticker_list:
+                try:
+                    if isinstance(batch.columns, pd.MultiIndex):
+                        closes = batch["Close"][tick].dropna()
+                    else:
+                        closes = batch["Close"].dropna()
+                    if len(closes) >= 2:
+                        price_data[tick] = {
+                            "wk_ret": float(closes.iloc[-1] / closes.iloc[0] - 1),
+                        }
+                except (KeyError, IndexError):
+                    continue
+    except Exception as e:
+        logger.warning("Batch ETF price download failed: %s", e)
 
     results = []
     snapshot = {}
@@ -67,10 +96,7 @@ def fetch_etfs(filter_tickers=None, update=False):
             aum = info.get("totalAssets")
             price = info.get("previousClose") or info.get("regularMarketPrice")
 
-            prices = tkr.history(period="5d")
-            wk_ret = None
-            if len(prices) >= 2:
-                wk_ret = prices["Close"].iloc[-1] / prices["Close"].iloc[0] - 1
+            wk_ret = price_data.get(tick, {}).get("wk_ret")
 
             # Estimate flow vs previous snapshot
             flow = None
@@ -89,7 +115,8 @@ def fetch_etfs(filter_tickers=None, update=False):
                 "wk_ret": wk_ret,
                 "flow_m": flow / 1e6 if flow else None,
             })
-        except Exception:
+        except (KeyError, ValueError, ConnectionError) as e:
+            logger.warning("ETF fetch failed for %s: %s", tick, e)
             results.append({
                 "ticker": tick, "name": name,
                 "aum_b": None, "wk_ret": None, "flow_m": None,
@@ -99,15 +126,12 @@ def fetch_etfs(filter_tickers=None, update=False):
         for t, s in snapshot.items():
             if t not in hist:
                 hist[t] = []
-            # Don't duplicate same-day snapshots
             if not hist[t] or hist[t][-1].get("date") != today:
                 hist[t].append(s)
             else:
                 hist[t][-1] = s
         _save_history(hist)
-        print(f"  Saved AUM snapshot for {len(snapshot)} ETFs.\n")
-    else:
-        print()
+        logger.info("Saved AUM snapshot for %d ETFs", len(snapshot))
 
     return results
 
@@ -122,7 +146,6 @@ def build_flow_history(min_snapshots=3):
     if not hist:
         return {"has_data": False, "series": [], "message": "No AUM history available yet."}
 
-    # Filter to sector + major index tickers for readability
     relevant_groups = {"S&P 500 Sectors", "Major Indices"}
     relevant_tickers = {t for grp_name, grp in ETF_GROUPS.items()
                         if grp_name in relevant_groups for t in grp}
@@ -145,7 +168,7 @@ def build_flow_history(min_snapshots=3):
                 continue
             price_ret = curr["price"] / prev["price"] - 1
             flow = curr["aum"] - prev["aum"] * (1 + price_ret)
-            cumulative += flow / 1e6  # convert to $M
+            cumulative += flow / 1e6
             dates.append(curr.get("date", ""))
             cumulative_flows.append(round(cumulative, 1))
 
@@ -170,7 +193,7 @@ def print_etfs(results, filter_tickers=None):
     has_flow = any(r["flow_m"] is not None for r in results)
 
     if filter_tickers:
-        print(f"\n  Custom ETFs")
+        print("\n  Custom ETFs")
         hdr = f"  {'Tick':<6} {'Name':<18} {'AUM ($B)':>9} {'Return':>8}"
         div = f"  {'─'*6} {'─'*18} {'─'*9} {'─'*8}"
         if has_flow:

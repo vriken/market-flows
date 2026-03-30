@@ -1,5 +1,7 @@
 """Regime classifier using data already fetched by the dashboard."""
 
+from .config import REGIME_THRESHOLDS
+
 
 def _classify_volatility(sentiment_data):
     """Classify volatility regime from VIX data.
@@ -11,28 +13,29 @@ def _classify_volatility(sentiment_data):
     if not vix:
         return None, []
 
+    t = REGIME_THRESHOLDS["volatility"]
     level = vix["vix"]
     ratio = vix["ratio"]
     signals = []
 
-    if level >= 30:
+    if level >= t["crisis"]:
         state = "Crisis"
         signals.append(f"VIX {level:.0f} (crisis)")
-    elif level >= 20:
+    elif level >= t["elevated"]:
         state = "Elevated"
         signals.append(f"VIX {level:.0f} (elevated)")
-    elif level <= 13:
+    elif level <= t["low_vol"]:
         state = "Low Vol"
         signals.append(f"VIX {level:.0f} (low)")
     else:
         state = "Normal"
         signals.append(f"VIX {level:.0f}")
 
-    if ratio > 1.0:
+    if ratio > t["backwardation"]:
         signals.append("VIX backwardation")
         if state == "Normal":
             state = "Elevated"
-    elif ratio < 0.85:
+    elif ratio < t["steep_contango"]:
         signals.append("Steep contango")
 
     return state, signals
@@ -44,6 +47,7 @@ def _classify_cycle(sentiment_data):
     Returns (state, signals) where state is one of:
     Expansion, Late Cycle, Contraction, Recovery
     """
+    t = REGIME_THRESHOLDS["cycle"]
     signals = []
     scores = {"Expansion": 0, "Late Cycle": 0, "Contraction": 0, "Recovery": 0}
 
@@ -54,13 +58,13 @@ def _classify_cycle(sentiment_data):
         s3m10y = yc["spreads"].get("3m10y")
 
         if s2s10 is not None:
-            if s2s10 < -0.5:
+            if s2s10 < t["deep_inversion"]:
                 scores["Contraction"] += 2
                 signals.append(f"2s10s deeply inverted ({s2s10:+.3f})")
-            elif s2s10 < 0:
+            elif s2s10 < t["inversion"]:
                 scores["Late Cycle"] += 2
                 signals.append(f"2s10s inverted ({s2s10:+.3f})")
-            elif s2s10 > 1.5:
+            elif s2s10 > t["steep_curve"]:
                 scores["Recovery"] += 1
                 scores["Expansion"] += 1
                 signals.append(f"2s10s steep ({s2s10:+.3f})")
@@ -78,19 +82,19 @@ def _classify_cycle(sentiment_data):
     ratios = sentiment_data.get("ratios", [])
     cu_au = next((r for r in ratios if r["label"] == "Copper/Gold"), None)
     if cu_au:
-        if cu_au["mo_change_pct"] > 3:
+        if cu_au["mo_change_pct"] > t["cu_au_growth"]:
             scores["Expansion"] += 1
             signals.append(f"Cu/Au rising ({cu_au['mo_change_pct']:+.1f}% 1M)")
-        elif cu_au["mo_change_pct"] < -3:
+        elif cu_au["mo_change_pct"] < t["cu_au_contraction"]:
             scores["Contraction"] += 1
             signals.append(f"Cu/Au falling ({cu_au['mo_change_pct']:+.1f}% 1M)")
 
     # Consumer Discretionary/Staples trend
     xly_xlp = next((r for r in ratios if r["label"] == "Discretionary/Staples"), None)
     if xly_xlp:
-        if xly_xlp["mo_change_pct"] > 2:
+        if xly_xlp["mo_change_pct"] > t["xly_xlp_growth"]:
             scores["Expansion"] += 1
-        elif xly_xlp["mo_change_pct"] < -2:
+        elif xly_xlp["mo_change_pct"] < t["xly_xlp_contraction"]:
             scores["Contraction"] += 1
             scores["Late Cycle"] += 1
 
@@ -107,6 +111,7 @@ def _classify_risk_appetite(sentiment_data, breadth_data=None):
     Returns (state, signals) where state is one of:
     Risk-On, Mixed, Risk-Off
     """
+    t = REGIME_THRESHOLDS["risk_appetite"]
     signals = []
     risk_on_votes = 0
     risk_off_votes = 0
@@ -116,40 +121,40 @@ def _classify_risk_appetite(sentiment_data, breadth_data=None):
     # HYG/LQD (credit risk appetite)
     hyg_lqd = next((r for r in ratios if r["label"] == "High Yield/Inv Grade"), None)
     if hyg_lqd:
-        if hyg_lqd["mo_change_pct"] > 1:
+        if hyg_lqd["mo_change_pct"] > t["hyg_lqd_risk_on"]:
             risk_on_votes += 1
             signals.append(f"HYG/LQD rising ({hyg_lqd['mo_change_pct']:+.1f}%)")
-        elif hyg_lqd["mo_change_pct"] < -1:
+        elif hyg_lqd["mo_change_pct"] < t["hyg_lqd_risk_off"]:
             risk_off_votes += 1
             signals.append(f"HYG/LQD falling ({hyg_lqd['mo_change_pct']:+.1f}%)")
 
     # IWM/SPY (breadth / risk-on)
     iwm_spy = next((r for r in ratios if r["label"] == "Small Cap/Large Cap"), None)
     if iwm_spy:
-        if iwm_spy["mo_change_pct"] > 2:
+        if iwm_spy["mo_change_pct"] > t["iwm_spy_risk_on"]:
             risk_on_votes += 1
             signals.append(f"IWM/SPY rising ({iwm_spy['mo_change_pct']:+.1f}%)")
-        elif iwm_spy["mo_change_pct"] < -2:
+        elif iwm_spy["mo_change_pct"] < t["iwm_spy_risk_off"]:
             risk_off_votes += 1
             signals.append(f"IWM/SPY falling ({iwm_spy['mo_change_pct']:+.1f}%)")
 
     # Leveraged bull/bear ratios
     leverage = sentiment_data.get("leverage", [])
     for lev in leverage:
-        if lev["ratio"] > 8:
+        if lev["ratio"] > t["leverage_extreme"]:
             risk_on_votes += 1
             signals.append(f"{lev['label']} bull/bear {lev['ratio']:.0f}x (extreme)")
-        elif lev["ratio"] < 2:
+        elif lev["ratio"] < t["leverage_low"]:
             risk_off_votes += 1
             signals.append(f"{lev['label']} bull/bear {lev['ratio']:.1f}x (low)")
 
     # Market breadth (% above 200 DMA)
     if breadth_data and breadth_data.get("current_200") is not None:
         pct200 = breadth_data["current_200"]
-        if pct200 > 70:
+        if pct200 > t["breadth_strong"]:
             risk_on_votes += 1
             signals.append(f"Breadth strong ({pct200:.0f}% > 200 DMA)")
-        elif pct200 < 30:
+        elif pct200 < t["breadth_weak"]:
             risk_off_votes += 1
             signals.append(f"Breadth weak ({pct200:.0f}% > 200 DMA)")
 
@@ -169,6 +174,7 @@ def _classify_monetary(sentiment_data, liquidity_data=None):
     Returns (state, signals) where state is one of:
     Tightening, Pause, Easing
     """
+    t = REGIME_THRESHOLDS["monetary"]
     signals = []
     yc = sentiment_data.get("yield_curve")
     yh = sentiment_data.get("yield_history")
@@ -178,36 +184,30 @@ def _classify_monetary(sentiment_data, liquidity_data=None):
 
     # Rate direction from yield history (compare recent to older)
     rate_signal = None  # True=tightening, False=easing
-    if yc:
-        yields_dict = yc.get("yields", {})
-        y2 = yields_dict.get("2y")
-
-        if yh and "yields" in yh and "2y" in yh["yields"]:
-            y2_series = yh["yields"]["2y"]
-            if len(y2_series) >= 60:
-                recent_avg = sum(y2_series[-20:]) / 20
-                older_avg = sum(y2_series[-60:-40]) / 20
-                if recent_avg > older_avg + 0.15:
-                    rate_signal = True
-                    signals.append(f"2Y yield rising ({older_avg:.2f}→{recent_avg:.2f})")
-                elif recent_avg < older_avg - 0.15:
-                    rate_signal = False
-                    signals.append(f"2Y yield falling ({older_avg:.2f}→{recent_avg:.2f})")
+    if yc and yh and "yields" in yh and "2y" in yh["yields"]:
+        y2_series = yh["yields"]["2y"]
+        if len(y2_series) >= 60:
+            recent_avg = sum(y2_series[-20:]) / 20
+            older_avg = sum(y2_series[-60:-40]) / 20
+            if recent_avg > older_avg + t["rate_change_threshold"]:
+                rate_signal = True
+                signals.append(f"2Y yield rising ({older_avg:.2f}→{recent_avg:.2f})")
+            elif recent_avg < older_avg - t["rate_change_threshold"]:
+                rate_signal = False
+                signals.append(f"2Y yield falling ({older_avg:.2f}→{recent_avg:.2f})")
 
     # Net Liquidity direction (4-week change)
     liq_signal = None  # True=expanding (easing), False=contracting (tightening)
     if liquidity_data and liquidity_data.get("net_change_4w_pct") is not None:
         chg = liquidity_data["net_change_4w_pct"]
-        if chg > 0.5:
+        if chg > t["liquidity_change_threshold"]:
             liq_signal = True
             signals.append(f"Net liquidity expanding ({chg:+.2f}% 4W)")
-        elif chg < -0.5:
+        elif chg < -t["liquidity_change_threshold"]:
             liq_signal = False
             signals.append(f"Net liquidity contracting ({chg:+.2f}% 4W)")
 
     # Combine rate direction and liquidity
-    # rate_signal: True=tightening, False=easing
-    # liq_signal: True=expanding(easing), False=contracting(tightening)
     tight_votes = 0
     ease_votes = 0
     if rate_signal is True:
@@ -226,7 +226,7 @@ def _classify_monetary(sentiment_data, liquidity_data=None):
         if yc:
             spreads = yc.get("spreads", {})
             s2s10 = spreads.get("2s10s")
-            if s2s10 is not None and s2s10 > 0.5:
+            if s2s10 is not None and s2s10 > t["curve_steepening"]:
                 signals.append("Curve steepening")
     else:
         state = "Pause"
@@ -248,14 +248,15 @@ def _classify_credit(credit_data):
     if not credit_data or credit_data.get("hy_percentile") is None:
         return None, []
 
+    t = REGIME_THRESHOLDS["credit"]
     pctile = credit_data["hy_percentile"]
     current = credit_data.get("current_hy", 0)
     signals = []
 
-    if pctile >= 80:
+    if pctile >= t["stress_percentile"]:
         state = "Stress"
         signals.append(f"HY OAS {current:.0f}bps ({pctile:.0f}th %ile — wide)")
-    elif pctile <= 20:
+    elif pctile <= t["complacent_percentile"]:
         state = "Complacent"
         signals.append(f"HY OAS {current:.0f}bps ({pctile:.0f}th %ile — tight)")
     else:
@@ -305,7 +306,7 @@ def _composite_label(vol, cycle, risk, monetary, credit=None):
     dims = [vol, cycle, risk, monetary, credit]
     for pattern, label in labels.items():
         match = True
-        for actual, expected in zip(dims, pattern):
+        for actual, expected in zip(dims, pattern, strict=True):
             if expected is not None and actual != expected:
                 match = False
                 break

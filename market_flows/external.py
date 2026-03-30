@@ -1,13 +1,16 @@
 """External data sources (non-yfinance): FINRA, FRED, AAII, CBOE."""
 
 import json
+import logging
 import os
-from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
-from .config import DATA_DIR, FRED_SERIES, CREDIT_SPREAD_SERIES, FED_LIQUIDITY_SERIES
+import requests
+
+from .config import CREDIT_SPREAD_SERIES, DATA_DIR, FED_LIQUIDITY_SERIES, FRED_SERIES
 from .http import get_session
+
+logger = logging.getLogger(__name__)
 
 
 def _cache_path(filename):
@@ -28,15 +31,12 @@ def fetch_margin_debt():
         resp = get_session().get(url, timeout=30)
         resp.raise_for_status()
 
-        # Write to temp file for pandas to read
         tmp = cache.with_suffix(".xlsx")
         tmp.write_bytes(resp.content)
 
         df = pd.read_excel(tmp, engine="openpyxl")
         tmp.unlink(missing_ok=True)
 
-        # Find the debit balances column (varies by sheet format)
-        # Common column names: "Debit Balances in Customers' Securities Margin Accounts"
         debit_col = None
         date_col = None
         for col in df.columns:
@@ -46,11 +46,9 @@ def fetch_margin_debt():
             if "date" in col_lower or "month" in col_lower or "year" in col_lower:
                 date_col = col
 
-        # If no obvious column names, use positional heuristic
         if date_col is None:
             date_col = df.columns[0]
         if debit_col is None:
-            # Try second column as debit balances
             for col in df.columns[1:]:
                 if df[col].dtype in ("float64", "int64") or pd.api.types.is_numeric_dtype(df[col]):
                     debit_col = col
@@ -64,12 +62,11 @@ def fetch_margin_debt():
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df.dropna().sort_values("date")
 
-        # Convert to millions if values look like they're in thousands
         if df["debit"].median() > 1e6:
-            df["debit"] = df["debit"] / 1e6  # to billions
+            df["debit"] = df["debit"] / 1e6
             unit = "B"
         elif df["debit"].median() > 1e3:
-            df["debit"] = df["debit"] / 1e3  # to millions from thousands
+            df["debit"] = df["debit"] / 1e3
             unit = "M"
         else:
             unit = "M"
@@ -77,7 +74,6 @@ def fetch_margin_debt():
         dates = [d.strftime("%Y-%m-%d") for d in df["date"]]
         values = df["debit"].tolist()
 
-        # YoY change
         yoy_change_pct = None
         if len(df) >= 12:
             current = values[-1]
@@ -97,15 +93,14 @@ def fetch_margin_debt():
         cache.write_text(json.dumps(result, default=str))
         return result
 
-    except Exception as e:
-        print(f"  Margin debt fetch failed: {e}")
-        # Try loading from cache
+    except requests.RequestException as e:
+        logger.warning("Margin debt fetch failed: %s", e)
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -120,13 +115,13 @@ def fetch_fred_fund_flows():
     api_key = os.environ.get("FRED_API_KEY")
 
     if not api_key:
-        print("  FRED_API_KEY not set, skipping fund flows")
+        logger.debug("FRED_API_KEY not set, skipping fund flows")
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -159,8 +154,8 @@ def fetch_fred_fund_flows():
                         "dates": dates,
                         "values": values,
                     })
-            except Exception as e:
-                print(f"    FRED series {series_id} failed: {e}")
+            except requests.RequestException as e:
+                logger.warning("FRED series %s failed: %s", series_id, e)
                 continue
 
         result = {
@@ -171,14 +166,14 @@ def fetch_fred_fund_flows():
         cache.write_text(json.dumps(result))
         return result
 
-    except Exception as e:
-        print(f"  FRED fund flows fetch failed: {e}")
+    except requests.RequestException as e:
+        logger.warning("FRED fund flows fetch failed: %s", e)
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -193,13 +188,13 @@ def fetch_aaii_sentiment():
     api_key = os.environ.get("NASDAQ_DATA_LINK_API_KEY")
 
     if not api_key:
-        print("  NASDAQ_DATA_LINK_API_KEY not set, skipping AAII sentiment")
+        logger.debug("NASDAQ_DATA_LINK_API_KEY not set, skipping AAII sentiment")
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -219,14 +214,12 @@ def fetch_aaii_sentiment():
         if not rows:
             return None
 
-        # Map column indices
         col_map = {c.lower(): i for i, c in enumerate(columns)}
         date_idx = col_map.get("date", 0)
         bull_idx = col_map.get("bullish", 1)
         neutral_idx = col_map.get("neutral", 2)
         bear_idx = col_map.get("bearish", 3)
 
-        # Data comes newest-first; reverse for chronological order
         rows = list(reversed(rows))
 
         dates = [r[date_idx] for r in rows]
@@ -234,7 +227,6 @@ def fetch_aaii_sentiment():
         neutral = [r[neutral_idx] * 100 if r[neutral_idx] is not None else None for r in rows]
         bearish = [r[bear_idx] * 100 if r[bear_idx] is not None else None for r in rows]
 
-        # Current values (last row = most recent after reversal)
         current = {
             "bullish": round(bullish[-1], 1) if bullish[-1] is not None else None,
             "neutral": round(neutral[-1], 1) if neutral[-1] is not None else None,
@@ -258,14 +250,14 @@ def fetch_aaii_sentiment():
         cache.write_text(json.dumps(result))
         return result
 
-    except Exception as e:
-        print(f"  AAII sentiment fetch failed: {e}")
+    except requests.RequestException as e:
+        logger.warning("AAII sentiment fetch failed: %s", e)
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -290,7 +282,6 @@ def fetch_putcall_ratio():
         df["ratio"] = pd.to_numeric(df["P/C Ratio"], errors="coerce")
         df = df[["date", "ratio"]].dropna().sort_values("date")
 
-        # Compute 20-day moving average
         df["ma_20"] = df["ratio"].rolling(window=20, min_periods=1).mean()
 
         dates = [d.strftime("%Y-%m-%d") for d in df["date"]]
@@ -308,14 +299,14 @@ def fetch_putcall_ratio():
         cache.write_text(json.dumps(result))
         return result
 
-    except Exception as e:
-        print(f"  Put/call ratio fetch failed: {e}")
+    except requests.RequestException as e:
+        logger.warning("Put/call ratio fetch failed: %s", e)
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -347,13 +338,13 @@ def fetch_credit_spreads():
     api_key = os.environ.get("FRED_API_KEY")
 
     if not api_key:
-        print("  FRED_API_KEY not set, skipping credit spreads")
+        logger.debug("FRED_API_KEY not set, skipping credit spreads")
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -364,8 +355,8 @@ def fetch_credit_spreads():
                 obs = _fetch_fred_series(series_id, api_key, start_date="2019-01-01")
                 if obs:
                     series_data[label] = obs
-            except Exception as e:
-                print(f"    FRED {series_id} failed: {e}")
+            except requests.RequestException as e:
+                logger.warning("FRED %s failed: %s", series_id, e)
 
         if not series_data:
             return None
@@ -393,14 +384,14 @@ def fetch_credit_spreads():
         cache.write_text(json.dumps(result))
         return result
 
-    except Exception as e:
-        print(f"  Credit spreads fetch failed: {e}")
+    except requests.RequestException as e:
+        logger.warning("Credit spreads fetch failed: %s", e)
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -416,13 +407,13 @@ def fetch_fed_liquidity():
     api_key = os.environ.get("FRED_API_KEY")
 
     if not api_key:
-        print("  FRED_API_KEY not set, skipping Fed liquidity")
+        logger.debug("FRED_API_KEY not set, skipping Fed liquidity")
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -433,13 +424,12 @@ def fetch_fed_liquidity():
                 obs = _fetch_fred_series(series_id, api_key, start_date="2024-01-01")
                 if obs:
                     raw[label] = obs
-            except Exception as e:
-                print(f"    FRED {series_id} failed: {e}")
+            except requests.RequestException as e:
+                logger.warning("FRED %s failed: %s", series_id, e)
 
         if "Fed Balance Sheet" not in raw:
             return None
 
-        # Align on dates using pandas with forward-fill
         frames = {}
         for label, obs in raw.items():
             s = pd.Series(
@@ -455,7 +445,6 @@ def fetch_fed_liquidity():
         if df.empty:
             return None
 
-        # Compute net liquidity (all in millions)
         df["net_liquidity"] = df["Fed Balance Sheet"]
         if "Reverse Repo" in df.columns:
             df["net_liquidity"] -= df["Reverse Repo"]
@@ -465,10 +454,9 @@ def fetch_fed_liquidity():
         dates = [d.strftime("%Y-%m-%d") for d in df.index]
         net_current = df["net_liquidity"].iloc[-1]
 
-        # 4-week change
         net_change_4w = 0.0
         net_change_4w_pct = 0.0
-        idx_4w = max(0, len(df) - 20)  # ~4 weeks of trading days
+        idx_4w = max(0, len(df) - 20)
         if idx_4w < len(df) - 1:
             old_val = df["net_liquidity"].iloc[idx_4w]
             net_change_4w = net_current - old_val
@@ -491,13 +479,13 @@ def fetch_fed_liquidity():
         cache.write_text(json.dumps(result, default=str))
         return result
 
-    except Exception as e:
-        print(f"  Fed liquidity fetch failed: {e}")
+    except requests.RequestException as e:
+        logger.warning("Fed liquidity fetch failed: %s", e)
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None

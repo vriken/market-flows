@@ -1,13 +1,15 @@
 """S&P 500 market breadth: % of constituents above key moving averages."""
 
 import json
-from datetime import datetime, timezone
-from pathlib import Path
+import logging
+from datetime import UTC, datetime
 
 import pandas as pd
 import yfinance as yf
 
 from .config import DATA_DIR
+
+logger = logging.getLogger(__name__)
 
 
 def _cache_path(filename):
@@ -26,11 +28,11 @@ def fetch_sp500_tickers():
         try:
             cached = json.loads(cache.read_text())
             cached_date = datetime.fromisoformat(cached["date"])
-            age_days = (datetime.now(timezone.utc) - cached_date).days
+            age_days = (datetime.now(UTC) - cached_date).days
             if age_days <= 7:
                 return cached["tickers"]
-        except Exception:
-            pass
+        except (json.JSONDecodeError, KeyError, ValueError):
+            logger.debug("S&P 500 ticker cache invalid, refreshing")
 
     try:
         url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -39,17 +41,17 @@ def fetch_sp500_tickers():
         tickers = df["Symbol"].str.replace(".", "-", regex=False).tolist()
 
         cache.write_text(json.dumps({
-            "date": datetime.now(timezone.utc).isoformat(),
+            "date": datetime.now(UTC).isoformat(),
             "tickers": tickers,
         }))
         return tickers
 
     except Exception as e:
-        print(f"  S&P 500 ticker scrape failed: {e}")
+        logger.warning("S&P 500 ticker scrape failed: %s", e)
         if cache.exists():
             try:
                 return json.loads(cache.read_text())["tickers"]
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -67,9 +69,9 @@ def fetch_market_breadth():
     if cache.exists():
         try:
             cached = json.loads(cache.read_text())
-            if cached.get("date") == datetime.now(timezone.utc).strftime("%Y-%m-%d"):
+            if cached.get("date") == datetime.now(UTC).strftime("%Y-%m-%d"):
                 return cached
-        except Exception:
+        except (json.JSONDecodeError, KeyError):
             pass
 
     tickers = fetch_sp500_tickers()
@@ -79,7 +81,7 @@ def fetch_market_breadth():
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None
 
@@ -99,7 +101,7 @@ def fetch_market_breadth():
                     closes = data["Close"] if isinstance(data.columns, pd.MultiIndex) else data
                 all_closes = pd.concat([all_closes, closes], axis=1)
             except Exception as e:
-                print(f"    Breadth chunk {i}-{i+len(chunk)} failed: {e}")
+                logger.warning("Breadth chunk %d-%d failed: %s", i, i + len(chunk), e)
                 continue
 
         if all_closes.empty:
@@ -130,7 +132,7 @@ def fetch_market_breadth():
         pct_200_weekly = pct_200.resample("W-FRI").last().dropna()
 
         result = {
-            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "date": datetime.now(UTC).strftime("%Y-%m-%d"),
             "pct_above_50dma": {
                 "dates": [d.strftime("%Y-%m-%d") for d in pct_50_weekly.index],
                 "values": [round(v, 1) for v in pct_50_weekly.values],
@@ -149,12 +151,12 @@ def fetch_market_breadth():
         return result
 
     except Exception as e:
-        print(f"  Market breadth fetch failed: {e}")
+        logger.warning("Market breadth fetch failed: %s", e)
         if cache.exists():
             try:
                 data = json.loads(cache.read_text())
                 data["_stale"] = True
                 return data
-            except Exception:
+            except (json.JSONDecodeError, KeyError):
                 pass
         return None

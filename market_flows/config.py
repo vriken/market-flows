@@ -125,6 +125,45 @@ YIELD_CURVE_TICKERS = {
     "30y": "^TYX",
 }
 
+# Regime classification thresholds
+REGIME_THRESHOLDS = {
+    "volatility": {
+        "crisis": 30,           # VIX >= this → Crisis
+        "elevated": 20,         # VIX >= this → Elevated
+        "low_vol": 13,          # VIX <= this → Low Vol
+        "backwardation": 1.0,   # VIX/VIX3M ratio > this → backwardation
+        "steep_contango": 0.85, # VIX/VIX3M ratio < this → steep contango
+    },
+    "cycle": {
+        "deep_inversion": -0.5,   # 2s10s < this → Contraction (+2)
+        "inversion": 0,           # 2s10s < this → Late Cycle (+2)
+        "steep_curve": 1.5,       # 2s10s > this → Recovery/Expansion
+        "cu_au_growth": 3,        # Cu/Au 1M change > this → Expansion
+        "cu_au_contraction": -3,  # Cu/Au 1M change < this → Contraction
+        "xly_xlp_growth": 2,      # Disc/Staples 1M change > this → Expansion
+        "xly_xlp_contraction": -2,# Disc/Staples 1M change < this → Contraction
+    },
+    "risk_appetite": {
+        "hyg_lqd_risk_on": 1,     # HYG/LQD 1M change > this → risk-on
+        "hyg_lqd_risk_off": -1,   # HYG/LQD 1M change < this → risk-off
+        "iwm_spy_risk_on": 2,     # IWM/SPY 1M change > this → risk-on
+        "iwm_spy_risk_off": -2,   # IWM/SPY 1M change < this → risk-off
+        "leverage_extreme": 8,    # Bull/bear ratio > this → extreme
+        "leverage_low": 2,        # Bull/bear ratio < this → low
+        "breadth_strong": 70,     # % above 200 DMA > this → strong
+        "breadth_weak": 30,       # % above 200 DMA < this → weak
+    },
+    "monetary": {
+        "rate_change_threshold": 0.15,  # 2Y yield change > this → signal
+        "liquidity_change_threshold": 0.5,  # Net liquidity 4W change > this → signal
+        "curve_steepening": 0.5,  # 2s10s > this during easing → steepening
+    },
+    "credit": {
+        "stress_percentile": 80,      # HY OAS percentile >= this → Stress
+        "complacent_percentile": 20,   # HY OAS percentile <= this → Complacent
+    },
+}
+
 # FRED economic data series (requires FRED_API_KEY)
 FRED_SERIES = {
     "money_market": ("MMMFFAQ027S", "Money Market Fund Assets"),

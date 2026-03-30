@@ -1,106 +1,121 @@
 """Market leverage, sentiment indicators, and ratio calculations."""
 
+import logging
+
 import pandas as pd
 import yfinance as yf
 
+from .cache import disk_cache
 from .config import LEVERAGE_PAIRS, MARKET_RATIOS, VIX_TICKERS, YIELD_CURVE_TICKERS
+
+logger = logging.getLogger(__name__)
 
 SECTOR_TICKERS = ["XLK", "XLF", "XLE", "XLV", "XLB", "XLI", "XLY", "XLP", "XLU", "XLRE", "XLC"]
 
 
+@disk_cache(ttl_hours=1)
 def fetch_yield_curve():
     """Fetch current Treasury yields and compute key spreads.
 
     Returns dict with yields, spreads (2s10s, 3m10y), and inversion signal.
     Handles ^IRX scaling quirk (divide by 10 if > 20).
     """
-    try:
-        maturity_order = ["3m", "2y", "5y", "10y", "30y"]
-        yields = {}
+    maturity_order = ["3m", "2y", "5y", "10y", "30y"]
+    yields = {}
 
-        for label, ticker in YIELD_CURVE_TICKERS.items():
-            try:
-                tkr = yf.Ticker(ticker)
-                price = tkr.info.get("regularMarketPrice") or tkr.info.get("previousClose")
-                if price is not None:
-                    # ^IRX reports in basis-point-like format; normalize
-                    if ticker == "^IRX" and price > 20:
-                        price = price / 10
-                    yields[label] = round(price, 3)
-            except Exception:
-                continue
+    for label, ticker in YIELD_CURVE_TICKERS.items():
+        try:
+            tkr = yf.Ticker(ticker)
+            price = tkr.info.get("regularMarketPrice") or tkr.info.get("previousClose")
+            if price is not None:
+                if ticker == "^IRX" and price > 20:
+                    price = price / 10
+                yields[label] = round(price, 3)
+        except (KeyError, ValueError, ConnectionError) as e:
+            logger.warning("Yield fetch failed for %s: %s", ticker, e)
+            continue
 
-        if "10y" not in yields:
-            return None
-
-        spreads = {}
-        if "2y" in yields:
-            spreads["2s10s"] = round(yields["10y"] - yields["2y"], 3)
-        if "3m" in yields:
-            spreads["3m10y"] = round(yields["10y"] - yields["3m"], 3)
-
-        # Determine signal
-        inverted = any(v < 0 for v in spreads.values())
-        if inverted:
-            signal = "Inverted — recession risk elevated"
-        elif all(v > 0.5 for v in spreads.values()):
-            signal = "Normal — healthy steepness"
-        else:
-            signal = "Flat — late-cycle or transition"
-
-        return {
-            "yields": {k: yields[k] for k in maturity_order if k in yields},
-            "spreads": spreads,
-            "signal": signal,
-        }
-    except Exception:
+    if "10y" not in yields:
+        logger.warning("10Y yield unavailable, cannot compute yield curve")
         return None
 
+    spreads = {}
+    if "2y" in yields:
+        spreads["2s10s"] = round(yields["10y"] - yields["2y"], 3)
+    if "3m" in yields:
+        spreads["3m10y"] = round(yields["10y"] - yields["3m"], 3)
 
+    inverted = any(v < 0 for v in spreads.values())
+    if inverted:
+        signal = "Inverted — recession risk elevated"
+    elif all(v > 0.5 for v in spreads.values()):
+        signal = "Normal — healthy steepness"
+    else:
+        signal = "Flat — late-cycle or transition"
+
+    return {
+        "yields": {k: yields[k] for k in maturity_order if k in yields},
+        "spreads": spreads,
+        "signal": signal,
+    }
+
+
+@disk_cache(ttl_hours=4)
 def fetch_yield_curve_history(period="1y"):
     """Fetch historical yield data and compute daily spread series.
 
+    Uses batch yf.download() for all yield tickers at once.
     Returns dict with dates, spread_2s10s, spread_3m10y, and individual yields.
     """
+    tickers_list = list(YIELD_CURVE_TICKERS.values())
+    labels_list = list(YIELD_CURVE_TICKERS.keys())
+
     try:
-        histories = {}
-        for label, ticker in YIELD_CURVE_TICKERS.items():
-            try:
-                tkr = yf.Ticker(ticker)
-                hist = tkr.history(period=period)
-                if not hist.empty:
-                    series = hist["Close"].copy()
-                    # Normalize ^IRX
-                    if ticker == "^IRX":
-                        series = series.where(series <= 20, series / 10)
-                    histories[label] = series
-            except Exception:
-                continue
-
-        if "10y" not in histories:
-            return None
-
-        # Align all series on shared dates
-        combined = pd.DataFrame(histories).ffill().dropna()
-        if combined.empty:
-            return None
-
-        dates = [d.strftime("%Y-%m-%d") for d in combined.index]
-        result = {
-            "dates": dates,
-            "yields": {col: combined[col].tolist() for col in combined.columns},
-        }
-
-        if "2y" in combined.columns:
-            result["spread_2s10s"] = (combined["10y"] - combined["2y"]).round(3).tolist()
-        if "3m" in combined.columns:
-            result["spread_3m10y"] = (combined["10y"] - combined["3m"]).round(3).tolist()
-
-        return result
-    except Exception:
+        data = yf.download(tickers_list, period=period, progress=False, threads=True)
+    except Exception as e:
+        logger.warning("Yield curve history download failed: %s", e)
         return None
 
+    if data.empty:
+        return None
 
+    histories = {}
+    for label, ticker in zip(labels_list, tickers_list, strict=True):
+        try:
+            if isinstance(data.columns, pd.MultiIndex):
+                series = data["Close"][ticker].dropna()
+            else:
+                series = data["Close"].dropna()
+            if not series.empty:
+                if ticker == "^IRX":
+                    series = series.where(series <= 20, series / 10)
+                histories[label] = series
+        except (KeyError, TypeError) as e:
+            logger.debug("Yield history for %s unavailable: %s", ticker, e)
+            continue
+
+    if "10y" not in histories:
+        return None
+
+    combined = pd.DataFrame(histories).ffill().dropna()
+    if combined.empty:
+        return None
+
+    dates = [d.strftime("%Y-%m-%d") for d in combined.index]
+    result = {
+        "dates": dates,
+        "yields": {col: combined[col].tolist() for col in combined.columns},
+    }
+
+    if "2y" in combined.columns:
+        result["spread_2s10s"] = (combined["10y"] - combined["2y"]).round(3).tolist()
+    if "3m" in combined.columns:
+        result["spread_3m10y"] = (combined["10y"] - combined["3m"]).round(3).tolist()
+
+    return result
+
+
+@disk_cache(ttl_hours=1)
 def fetch_vix_term_structure():
     """Fetch VIX and VIX3M to compute term structure (contango/backwardation)."""
     try:
@@ -109,35 +124,38 @@ def fetch_vix_term_structure():
 
         vix_price = vix.info.get("regularMarketPrice") or vix.info.get("previousClose")
         vix3m_price = vix3m.info.get("regularMarketPrice") or vix3m.info.get("previousClose")
-
-        if not vix_price or not vix3m_price:
-            return None
-
-        spread = vix3m_price - vix_price
-        ratio = vix_price / vix3m_price
-
-        if ratio > 1.0:
-            structure = "Backwardation"
-            signal = "Fear — near-term vol elevated"
-        elif ratio < 0.85:
-            structure = "Steep contango"
-            signal = "Complacency — potential snap-back risk"
-        else:
-            structure = "Contango"
-            signal = "Normal"
-
-        return {
-            "vix": vix_price,
-            "vix3m": vix3m_price,
-            "spread": spread,
-            "ratio": ratio,
-            "structure": structure,
-            "signal": signal,
-        }
-    except Exception:
+    except (KeyError, ValueError, ConnectionError) as e:
+        logger.warning("VIX term structure fetch failed: %s", e)
         return None
 
+    if not vix_price or not vix3m_price:
+        logger.warning("VIX prices unavailable (vix=%s, vix3m=%s)", vix_price, vix3m_price)
+        return None
 
+    spread = vix3m_price - vix_price
+    ratio = vix_price / vix3m_price
+
+    if ratio > 1.0:
+        structure = "Backwardation"
+        signal = "Fear — near-term vol elevated"
+    elif ratio < 0.85:
+        structure = "Steep contango"
+        signal = "Complacency — potential snap-back risk"
+    else:
+        structure = "Contango"
+        signal = "Normal"
+
+    return {
+        "vix": vix_price,
+        "vix3m": vix3m_price,
+        "spread": spread,
+        "ratio": ratio,
+        "structure": structure,
+        "signal": signal,
+    }
+
+
+@disk_cache(ttl_hours=1)
 def fetch_leverage_ratios():
     """Fetch AUM for leveraged bull/bear ETF pairs and compute ratios."""
     results = []
@@ -150,6 +168,7 @@ def fetch_leverage_ratios():
             bear_aum = bear.info.get("totalAssets")
 
             if not bull_aum or not bear_aum:
+                logger.debug("AUM unavailable for %s/%s", bull_tick, bear_tick)
                 continue
 
             ratio = bull_aum / bear_aum
@@ -176,40 +195,54 @@ def fetch_leverage_ratios():
                 "ratio": ratio,
                 "signal": signal,
             })
-        except Exception:
+        except (KeyError, ValueError, ConnectionError) as e:
+            logger.warning("Leverage ratio fetch failed for %s/%s: %s", bull_tick, bear_tick, e)
             continue
 
     return results
 
 
+@disk_cache(ttl_hours=4)
 def fetch_market_ratios(period="1y", include_history=False):
-    """Fetch price ratios for key market pairs.
+    """Fetch price ratios for key market pairs using batch download.
 
     When include_history=True, returns (results, prices) where prices contains
     full history DataFrames for reuse by fetch_ratio_time_series().
     """
-    results = []
-    # Batch-fetch all unique tickers
-    all_tickers = set()
-    for num, den, _, _ in MARKET_RATIOS:
-        all_tickers.add(num)
-        all_tickers.add(den)
+    all_tickers = list({t for num, den, _, _ in MARKET_RATIOS for t in (num, den)})
+
+    try:
+        data = yf.download(all_tickers, period=period, progress=False, threads=True)
+    except Exception as e:
+        logger.warning("Market ratios batch download failed: %s", e)
+        if include_history:
+            return [], None
+        return []
+
+    if data.empty:
+        if include_history:
+            return [], None
+        return []
 
     prices = {}
     for tick in all_tickers:
         try:
-            tkr = yf.Ticker(tick)
-            hist = tkr.history(period=period)
-            if len(hist) >= 2:
+            if isinstance(data.columns, pd.MultiIndex):
+                hist_close = data["Close"][tick].dropna()
+            else:
+                hist_close = data["Close"].dropna()
+            if len(hist_close) >= 2:
                 prices[tick] = {
-                    "current": hist["Close"].iloc[-1],
-                    "prev_week": hist["Close"].iloc[-5] if len(hist) >= 5 else hist["Close"].iloc[0],
-                    "prev_month": hist["Close"].iloc[-22] if len(hist) >= 22 else hist["Close"].iloc[0],
-                    "hist": hist,
+                    "current": hist_close.iloc[-1],
+                    "prev_week": hist_close.iloc[-5] if len(hist_close) >= 5 else hist_close.iloc[0],
+                    "prev_month": hist_close.iloc[-22] if len(hist_close) >= 22 else hist_close.iloc[0],
+                    "hist": pd.DataFrame({"Close": hist_close}),
                 }
-        except Exception:
+        except (KeyError, IndexError) as e:
+            logger.debug("Price data unavailable for %s: %s", tick, e)
             continue
 
+    results = []
     for num, den, label, interpretation in MARKET_RATIOS:
         if num not in prices or den not in prices:
             continue
@@ -251,7 +284,6 @@ def fetch_ratio_time_series(price_data=None):
             continue
         num_hist = price_data[num]["hist"]["Close"]
         den_hist = price_data[den]["hist"]["Close"]
-        # Align on shared dates
         aligned = pd.concat([num_hist, den_hist], axis=1, keys=["num", "den"]).dropna()
         if aligned.empty:
             continue
@@ -266,6 +298,7 @@ def fetch_ratio_time_series(price_data=None):
     return series
 
 
+@disk_cache(ttl_hours=4)
 def fetch_sector_rotation(weeks=12):
     """Fetch sector ETF prices and compute weekly returns for a heatmap.
 
@@ -273,16 +306,20 @@ def fetch_sector_rotation(weeks=12):
     """
     try:
         data = yf.download(SECTOR_TICKERS, period="6mo", progress=False)
-        if data.empty:
-            return None
+    except Exception as e:
+        logger.warning("Sector rotation download failed: %s", e)
+        return None
+
+    if data.empty:
+        return None
+
+    try:
         close = data["Close"] if "Close" in data.columns else data
         last_date = close.index[-1]
-        has_partial_week = last_date.weekday() != 4  # not a Friday
+        has_partial_week = last_date.weekday() != 4
 
-        # Resample to weekly (Friday close)
         weekly = close.resample("W-FRI").last()
 
-        # If partial week exists, the last bucket is incomplete — separate it
         if has_partial_week and len(weekly) >= 2:
             complete_weekly = weekly.iloc[:-1]
             current_close = close.iloc[-1]
@@ -296,13 +333,11 @@ def fetch_sector_rotation(weeks=12):
         if returns.empty and wtd_return is None:
             return None
 
-        # Append WTD row
         if wtd_return is not None:
             wtd_row = pd.DataFrame([wtd_return.values], columns=returns.columns,
                                    index=[last_date])
             returns = pd.concat([returns, wtd_row])
 
-        # Keep only the last N weeks
         returns = returns.tail(weeks)
         week_labels = [
             "WTD" if i == len(returns) - 1 and has_partial_week
@@ -314,7 +349,8 @@ def fetch_sector_rotation(weeks=12):
             "week_labels": week_labels,
             "returns": returns.values.tolist(),
         }
-    except Exception:
+    except (KeyError, IndexError) as e:
+        logger.warning("Sector rotation processing failed: %s", e)
         return None
 
 
@@ -333,13 +369,12 @@ def fetch_orb_conditions(vix_price=None):
 
     result = {}
 
-    # VIX — reuse if already fetched, otherwise fetch
     if vix_price is None:
         try:
             vix = yf.Ticker("^VIX")
             vix_price = vix.info.get("regularMarketPrice") or vix.info.get("previousClose")
-        except Exception:
-            pass
+        except (KeyError, ValueError, ConnectionError) as e:
+            logger.warning("VIX fetch for ORB failed: %s", e)
 
     result["vix"] = vix_price
     if vix_price is not None:
@@ -353,7 +388,6 @@ def fetch_orb_conditions(vix_price=None):
             result["vix_regime"] = "SIT OUT"
             result["vix_color"] = "red"
 
-    # SPY — 30d history for SMA20 and daily return
     try:
         spy = yf.Ticker("SPY")
         spy_hist = spy.history(period="30d")
@@ -375,15 +409,13 @@ def fetch_orb_conditions(vix_price=None):
                     else:
                         result["spy_trend"] = "FLAT"
                 result["spy_above_sma20"] = spy_hist["Close"].iloc[-1] > sma20.iloc[-1]
-    except Exception:
-        pass
+    except (KeyError, ValueError, ConnectionError) as e:
+        logger.warning("SPY fetch for ORB failed: %s", e)
 
-    # Day of week (use US/Eastern — market time)
     now = datetime.now(ZoneInfo("US/Eastern"))
     result["day_of_week"] = now.strftime("%A")
     result["is_friday"] = now.weekday() == 4
 
-    # Overall signal
     vix_ok = vix_price is not None and vix_price < 18
     spy_down_big = result.get("spy_daily_return", 0) is not None and result.get("spy_daily_return", 0) < -0.5
     vix_danger = vix_price is not None and vix_price >= 22

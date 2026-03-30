@@ -1,19 +1,23 @@
 """CFTC Commitment of Traders data fetching, backfill, and percentiles."""
 
 import io
+import logging
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
+import requests
 
 from .config import COT_CONTRACTS, DATA_DIR
 from .http import get_session
+
+logger = logging.getLogger(__name__)
 
 
 def _fetch_cftc_zip(report_type, year=None):
     """Download a CFTC annual zip and return a DataFrame with headers."""
     if year is None:
-        year = datetime.now(timezone.utc).year
+        year = datetime.now(UTC).year
     if report_type == "disagg":
         url = f"https://www.cftc.gov/files/dea/history/fut_disagg_txt_{year}.zip"
     else:
@@ -22,9 +26,8 @@ def _fetch_cftc_zip(report_type, year=None):
     r = get_session().get(url, timeout=60)
     r.raise_for_status()
 
-    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-        with z.open(z.namelist()[0]) as f:
-            df = pd.read_csv(f, low_memory=False)
+    with zipfile.ZipFile(io.BytesIO(r.content)) as z, z.open(z.namelist()[0]) as f:
+        df = pd.read_csv(f, low_memory=False)
 
     df.columns = df.columns.str.strip()
 
@@ -103,17 +106,17 @@ def _extract_contract_rows(df, pattern, report_type):
 
 def backfill_cot_history(start_year=2021):
     """Download CFTC data from start_year through current year and save to parquet."""
-    current_year = datetime.now(timezone.utc).year
+    current_year = datetime.now(UTC).year
     years = range(start_year, current_year + 1)
 
     all_records = []
     for year in years:
         for report_type in ("disagg", "fin"):
-            print(f"  Fetching {report_type} {year}...")
+            logger.info("Fetching %s %d", report_type, year)
             try:
                 df = _fetch_cftc_zip(report_type, year)
-            except Exception as e:
-                print(f"    Skipped: {e}")
+            except requests.RequestException as e:
+                logger.warning("Skipped %s %d: %s", report_type, year, e)
                 continue
 
             for pattern, label, rtype in COT_CONTRACTS:
@@ -127,7 +130,7 @@ def backfill_cot_history(start_year=2021):
                 all_records.append(rows)
 
     if not all_records:
-        print("  No data fetched.")
+        logger.warning("No COT data fetched during backfill")
         return
 
     history = pd.concat(all_records, ignore_index=True)
@@ -141,25 +144,22 @@ def backfill_cot_history(start_year=2021):
     tmp.rename(out)
 
     span = f"{history['date'].min().date()} to {history['date'].max().date()}"
-    print(f"  Saved {len(history)} rows to {out} ({span})")
+    logger.info("Saved %d rows to %s (%s)", len(history), out, span)
 
 
 def update_cot_history():
     """Fetch current year's data and merge into existing parquet history."""
     parquet_path = DATA_DIR / "cot_history.parquet"
-    if parquet_path.exists():
-        existing = pd.read_parquet(parquet_path)
-    else:
-        existing = pd.DataFrame()
+    existing = pd.read_parquet(parquet_path) if parquet_path.exists() else pd.DataFrame()
 
-    current_year = datetime.now(timezone.utc).year
+    current_year = datetime.now(UTC).year
     new_records = []
     for report_type in ("disagg", "fin"):
-        print(f"  Fetching {report_type} {current_year}...")
+        logger.info("Fetching %s %d", report_type, current_year)
         try:
             df = _fetch_cftc_zip(report_type, current_year)
-        except Exception as e:
-            print(f"    Skipped: {e}")
+        except requests.RequestException as e:
+            logger.warning("Skipped %s %d: %s", report_type, current_year, e)
             continue
 
         for pattern, label, rtype in COT_CONTRACTS:
@@ -173,15 +173,12 @@ def update_cot_history():
             new_records.append(rows)
 
     if not new_records:
-        print("  No new data fetched.")
+        logger.warning("No new COT data fetched")
         return
 
     new_data = pd.concat(new_records, ignore_index=True)
 
-    if not existing.empty:
-        combined = pd.concat([existing, new_data], ignore_index=True)
-    else:
-        combined = new_data
+    combined = pd.concat([existing, new_data], ignore_index=True) if not existing.empty else new_data
 
     combined = combined.drop_duplicates(subset=["date", "contract", "report_type"])
     combined = combined.sort_values(["contract", "date"]).reset_index(drop=True)
@@ -193,7 +190,7 @@ def update_cot_history():
     tmp.rename(out)
 
     span = f"{combined['date'].min().date()} to {combined['date'].max().date()}"
-    print(f"  Updated {out}: {len(combined)} rows ({span})")
+    logger.info("Updated %s: %d rows (%s)", out, len(combined), span)
 
 
 def _rank_percentile(series, value):
@@ -216,9 +213,7 @@ def fetch_cot(filter_contracts=None, use_history=True):
             if any(term in c[1].lower() for term in lc)
         ]
         if not contracts:
-            print(f"  No matching COT contracts. Available:")
-            for _, name, _ in COT_CONTRACTS:
-                print(f"    {name}")
+            logger.warning("No matching COT contracts for filter: %s", filter_contracts)
             return []
 
     # Load historical data if available
@@ -231,7 +226,7 @@ def fetch_cot(filter_contracts=None, use_history=True):
     need_fin = any(t == "fin" for _, _, t in contracts)
 
     dfs = {}
-    print("  Fetching COT data from CFTC...")
+    logger.info("Fetching COT data from CFTC")
     if need_disagg:
         dfs["disagg"] = _fetch_cftc_zip("disagg")
     if need_fin:

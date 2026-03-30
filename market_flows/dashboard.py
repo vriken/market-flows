@@ -1,12 +1,12 @@
 """Dashboard generation with Plotly charts and Jinja2 rendering."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from jinja2 import Environment, FileSystemLoader
+from plotly.subplots import make_subplots
 
 from .config import DATA_DIR, ETF_GROUPS
 
@@ -263,7 +263,7 @@ def build_sector_rotation_heatmap(rotation_data):
         return ""
     returns = rotation_data["returns"]
     fig = go.Figure(go.Heatmap(
-        z=list(zip(*returns)),  # transpose: sectors on Y, weeks on X
+        z=list(zip(*returns, strict=True)),  # transpose: sectors on Y, weeks on X
         x=rotation_data["week_labels"],
         y=rotation_data["sectors"],
         colorscale=[
@@ -272,7 +272,7 @@ def build_sector_rotation_heatmap(rotation_data):
             [1.0, "#3fb950"],
         ],
         zmid=0,
-        text=[[f"{v*100:+.1f}%" for v in week] for week in zip(*returns)],
+        text=[[f"{v*100:+.1f}%" for v in week] for week in zip(*returns, strict=True)],
         texttemplate="%{text}",
         textfont=dict(size=10),
         hovertemplate="Sector: %{y}<br>Week: %{x}<br>Return: %{text}<extra></extra>",
@@ -320,9 +320,7 @@ def build_yield_curve_chart(yield_data):
     # Color segments: green if normal (rising), red if inverted (falling)
     colors = []
     for i in range(len(values)):
-        if i == 0:
-            colors.append("#3fb950")
-        elif values[i] >= values[i - 1]:
+        if i == 0 or values[i] >= values[i - 1]:
             colors.append("#3fb950")
         else:
             colors.append("#f85149")
@@ -735,7 +733,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     template = env.get_template("dashboard.html")
 
     html = template.render(
-        last_updated=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        last_updated=datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         regime=regime or {},
         alerts=alerts,
         cot_groups=cot_groups,

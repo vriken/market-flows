@@ -2,15 +2,14 @@
 """CI entry point: fetch latest data and generate the static dashboard."""
 
 import argparse
-import sys
 import warnings
 
 import pandas as pd
 
+from market_flows.breadth import fetch_market_breadth
 from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
 from market_flows.etf import build_flow_history, fetch_etfs
-from market_flows.breadth import fetch_market_breadth
 from market_flows.external import fetch_credit_spreads, fetch_fed_liquidity, fetch_margin_debt
 from market_flows.regime import classify_regime
 from market_flows.sentiment import (
