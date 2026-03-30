@@ -349,7 +349,7 @@
         <div>
           <span class="muted">{{ fear_greed.current_date }}</span>
         </div>
-        {% if fear_greed.values|length > 1 %}
+        {% if fear_greed['values']|length > 1 %}
         <div>
           <span class="muted" style="font-size: 0.8rem;">{{ fear_greed.values|length }} days tracked</span>
         </div>
