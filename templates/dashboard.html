@@ -305,6 +305,55 @@
   {% if sentiment %}
   <h2>Market Leverage &amp; Sentiment</h2>
 
+  {# ── Fear & Greed Index ── #}
+  {% if fear_greed and fear_greed.current_value is defined %}
+  <div class="section-group">
+    <h3 class="group-title">CNN Fear &amp; Greed Index</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span style="font-size: 2.2rem; font-weight: 700;
+            {% if fear_greed.current_value <= 25 %}color: var(--red);
+            {% elif fear_greed.current_value <= 45 %}color: var(--orange);
+            {% elif fear_greed.current_value <= 55 %}color: var(--text-muted);
+            {% elif fear_greed.current_value <= 75 %}color: var(--green);
+            {% else %}color: var(--green);{% endif %}">
+            {{ "{:.0f}".format(fear_greed.current_value) }}
+          </span>
+        </div>
+        <div>
+          <span class="alert-badge" style="font-size: 0.9rem; padding: 4px 12px; text-transform: capitalize;
+            {% if fear_greed.current_value <= 25 %}background: rgba(248,81,73,0.2); color: var(--red);
+            {% elif fear_greed.current_value <= 45 %}background: rgba(240,136,62,0.2); color: var(--orange);
+            {% elif fear_greed.current_value <= 55 %}background: rgba(139,148,158,0.2); color: var(--text-muted);
+            {% elif fear_greed.current_value <= 75 %}background: rgba(63,185,80,0.2); color: var(--green);
+            {% else %}background: rgba(63,185,80,0.3); color: var(--green);{% endif %}">
+            {{ fear_greed.current_description }}
+          </span>
+        </div>
+        <div>
+          <span class="muted">{{ fear_greed.current_date }}</span>
+        </div>
+        {% if fear_greed.values|length > 1 %}
+        <div>
+          <span class="muted" style="font-size: 0.8rem;">{{ fear_greed.values|length }} days tracked</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% if fg_gauge_chart %}
+    <div class="chart-container">
+      {{ fg_gauge_chart | safe }}
+    </div>
+    {% endif %}
+    {% if fg_history_chart %}
+    <div class="chart-container">
+      {{ fg_history_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if sentiment.vix %}
   <div class="section-group">
     <h3 class="group-title">VIX Term Structure</h3>
@@ -767,7 +816,7 @@
   {% endif %}
 
   <footer>
-    <span>Data: CFTC, Yahoo Finance, FINRA, FRED, AAII, CBOE, Wikipedia | Coverage: {{ data_range }}</span>
+    <span>Data: CFTC, Yahoo Finance, FINRA, FRED, AAII, CBOE, CNN, Wikipedia | Coverage: {{ data_range }}</span>
     <span>Last updated: {{ last_updated }}</span>
   </footer>
 </body>

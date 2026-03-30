@@ -13,6 +13,7 @@ dependencies = [
     "openpyxl>=3.1,<4",
     "lxml>=5.0,<6",
     "fredapi>=0.5,<1",
+    "fear-and-greed>=0.4,<1",
 ]
 
 [project.optional-dependencies]

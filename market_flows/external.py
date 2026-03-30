@@ -1,5 +1,6 @@
-"""External data sources (non-yfinance): FINRA, FRED, AAII, CBOE."""
+"""External data sources (non-yfinance): FINRA, FRED, AAII, CBOE, CNN."""
 
+import contextlib
 import json
 import logging
 import os
@@ -488,4 +489,60 @@ def fetch_fed_liquidity():
                 return data
             except (json.JSONDecodeError, KeyError):
                 pass
+        return None
+
+
+def fetch_fear_greed():
+    """Fetch CNN Fear & Greed Index current value.
+
+    Returns dict with current value, description, and accumulated history.
+    History is built up over time from daily snapshots in data/fear_greed.json.
+    """
+    cache = _cache_path("fear_greed.json")
+
+    # Load existing history
+    existing = {"dates": [], "values": [], "descriptions": []}
+    if cache.exists():
+        with contextlib.suppress(json.JSONDecodeError, KeyError):
+            existing = json.loads(cache.read_text())
+
+    try:
+        import fear_and_greed
+
+        fg = fear_and_greed.get()
+        value = round(fg.value, 1)
+        description = fg.description
+        update_date = fg.last_update.strftime("%Y-%m-%d")
+
+        # Append to history if new date
+        if not existing["dates"] or existing["dates"][-1] != update_date:
+            existing["dates"].append(update_date)
+            existing["values"].append(value)
+            existing["descriptions"].append(description)
+        else:
+            # Update today's value
+            existing["dates"][-1] = update_date
+            existing["values"][-1] = value
+            existing["descriptions"][-1] = description
+
+        result = {
+            "dates": existing["dates"],
+            "values": existing["values"],
+            "descriptions": existing["descriptions"],
+            "current_value": value,
+            "current_description": description,
+            "current_date": update_date,
+        }
+
+        cache.write_text(json.dumps(result))
+        return result
+
+    except Exception as e:
+        logger.warning("Fear & Greed fetch failed: %s", e)
+        if existing.get("values"):
+            existing["current_value"] = existing["values"][-1]
+            existing["current_description"] = existing["descriptions"][-1]
+            existing["current_date"] = existing["dates"][-1]
+            existing["_stale"] = True
+            return existing
         return None

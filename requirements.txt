@@ -6,3 +6,4 @@ jinja2
 plotly
 openpyxl
 lxml
+fear-and-greed

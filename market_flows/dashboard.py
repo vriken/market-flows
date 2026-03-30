@@ -511,6 +511,73 @@ def build_putcall_chart(putcall_data):
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
+def build_fear_greed_chart(fg_data):
+    """Build a gauge + history chart for CNN Fear & Greed Index."""
+    if not fg_data:
+        return ""
+
+    value = fg_data.get("current_value", 50)
+
+    # Gauge chart
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=value,
+        title={"text": "CNN Fear & Greed Index", "font": {"color": "#e6edf3", "size": 16}},
+        number={"font": {"color": "#e6edf3", "size": 40}},
+        gauge={
+            "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#30363d", "tickfont": {"color": "#8b949e"}},
+            "bar": {"color": "#58a6ff"},
+            "bgcolor": "#21262d",
+            "borderwidth": 0,
+            "steps": [
+                {"range": [0, 25], "color": "rgba(248,81,73,0.3)"},
+                {"range": [25, 45], "color": "rgba(240,136,62,0.3)"},
+                {"range": [45, 55], "color": "rgba(139,148,158,0.2)"},
+                {"range": [55, 75], "color": "rgba(63,185,80,0.2)"},
+                {"range": [75, 100], "color": "rgba(63,185,80,0.4)"},
+            ],
+            "threshold": {
+                "line": {"color": "#e6edf3", "width": 3},
+                "thickness": 0.8,
+                "value": value,
+            },
+        },
+    ))
+
+    _plotly_dark_layout(fig, "")
+    fig.update_layout(height=280, margin=dict(l=30, r=30, t=50, b=10))
+
+    gauge_html = fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+    # History line chart (if we have accumulated data)
+    history_html = ""
+    dates = fg_data.get("dates", [])
+    values = fg_data.get("values", [])
+    if len(dates) > 1:
+        hist_fig = go.Figure()
+        hist_fig.add_trace(go.Scatter(
+            x=dates, y=values,
+            mode="lines+markers",
+            line=dict(color="#58a6ff", width=2),
+            marker=dict(size=4),
+            fill="tozeroy",
+            fillcolor="rgba(88,166,255,0.08)",
+            hovertemplate="%{x}<br>F&G: %{y:.0f}<extra></extra>",
+        ))
+        # Zone reference lines
+        hist_fig.add_hline(y=25, line_dash="dot", line_color="#f85149", opacity=0.4,
+                           annotation_text="Extreme Fear", annotation_position="bottom right",
+                           annotation_font_color="#f85149", annotation_font_size=10)
+        hist_fig.add_hline(y=75, line_dash="dot", line_color="#3fb950", opacity=0.4,
+                           annotation_text="Extreme Greed", annotation_position="top right",
+                           annotation_font_color="#3fb950", annotation_font_size=10)
+        _plotly_dark_layout(hist_fig, "Fear & Greed History")
+        hist_fig.update_layout(height=300, yaxis=dict(range=[0, 100]))
+        history_html = hist_fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+    return gauge_html, history_html
+
+
 def build_credit_spread_chart(credit_data):
     """Build a dual-line chart of HY OAS and IG OAS credit spreads."""
     if not credit_data:
@@ -681,7 +748,8 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      data_dir=None, output_path=None,
                      ratio_series=None, rotation_data=None, flow_data=None,
                      external_data=None, orb_conditions=None, regime=None,
-                     credit_data=None, liquidity_data=None, breadth_data=None):
+                     credit_data=None, liquidity_data=None, breadth_data=None,
+                     fear_greed_data=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -729,6 +797,14 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     liquidity_chart = build_fed_liquidity_chart(liquidity_data)
     breadth_chart = build_breadth_chart(breadth_data)
 
+    # Build Fear & Greed chart
+    fg_gauge_chart = ""
+    fg_history_chart = ""
+    if fear_greed_data:
+        fg_result = build_fear_greed_chart(fear_greed_data)
+        if fg_result:
+            fg_gauge_chart, fg_history_chart = fg_result
+
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=False)
     template = env.get_template("dashboard.html")
 
@@ -761,6 +837,9 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         liquidity_chart=liquidity_chart,
         breadth_data=breadth_data,
         breadth_chart=breadth_chart,
+        fear_greed=fear_greed_data,
+        fg_gauge_chart=fg_gauge_chart,
+        fg_history_chart=fg_history_chart,
     )
 
     output_path = Path(output_path)

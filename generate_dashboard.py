@@ -10,7 +10,7 @@ from market_flows.breadth import fetch_market_breadth
 from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
 from market_flows.etf import build_flow_history, fetch_etfs
-from market_flows.external import fetch_credit_spreads, fetch_fed_liquidity, fetch_margin_debt
+from market_flows.external import fetch_credit_spreads, fetch_fear_greed, fetch_fed_liquidity, fetch_margin_debt
 from market_flows.regime import classify_regime
 from market_flows.sentiment import (
     fetch_leverage_ratios,
@@ -115,6 +115,17 @@ def main():
     # external_data["aaii"] = fetch_aaii_sentiment()           # needs NASDAQ_DATA_LINK_API_KEY
     # external_data["putcall"] = fetch_putcall_ratio()         # needs FRED_API_KEY (EQUITYPC series)
 
+    print("\n━━━ Fetching Fear & Greed Index ━━━\n")
+    fear_greed_data = None
+    try:
+        fear_greed_data = fetch_fear_greed()
+        if fear_greed_data:
+            print(f"  Fear & Greed: {fear_greed_data['current_value']:.0f} ({fear_greed_data['current_description']})")
+        else:
+            print("  Fear & Greed: no data")
+    except Exception as e:
+        print(f"  Fear & Greed failed: {e}")
+
     print("\n━━━ Fetching macro & liquidity data ━━━\n")
     credit_data = None
     liquidity_data = None
@@ -188,6 +199,7 @@ def main():
         credit_data=credit_data,
         liquidity_data=liquidity_data,
         breadth_data=breadth_data,
+        fear_greed_data=fear_greed_data,
     )
 
 
