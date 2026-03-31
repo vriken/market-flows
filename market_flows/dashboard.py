@@ -475,9 +475,211 @@ def build_aaii_sentiment_chart(aaii_data):
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
+def build_real_yields_chart(ry_data):
+    """Build a multi-line chart of real yields and inflation breakevens."""
+    if not ry_data or "series" not in ry_data:
+        return ""
+
+    colors = {
+        "10Y Real Yield": "#58a6ff",
+        "10Y Breakeven": "#f0883e",
+        "5Y Breakeven": "#d29922",
+        "5Y5Y Fwd Inflation": "#bc8cff",
+    }
+    fig = go.Figure()
+    for label, series in ry_data["series"].items():
+        fig.add_trace(go.Scatter(
+            x=series["dates"], y=series["values"],
+            mode="lines", name=label,
+            line=dict(color=colors.get(label, "#58a6ff"), width=2),
+            hovertemplate="%{x}<br>" + label + ": %{y:.3f}%<extra></extra>",
+        ))
+
+    fig.add_hline(y=0, line_dash="dash", line_color="#8b949e", opacity=0.4)
+
+    _plotly_dark_layout(fig, "Real Yields & Inflation Breakevens")
+    fig.update_layout(
+        height=400,
+        yaxis_title="Yield / Rate (%)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_jobless_claims_chart(claims_data):
+    """Build a line chart of initial jobless claims with 4-week MA."""
+    if not claims_data or "series" not in claims_data:
+        return ""
+
+    ic = claims_data["series"].get("Initial Claims")
+    if not ic:
+        return ""
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=ic["dates"], y=ic["values"],
+        mode="lines", name="Initial Claims",
+        line=dict(color="rgba(88,166,255,0.3)", width=1),
+        hovertemplate="%{x}<br>Claims: %{y:,.0f}<extra></extra>",
+    ))
+
+    if claims_data.get("ma4"):
+        fig.add_trace(go.Scatter(
+            x=ic["dates"], y=claims_data["ma4"],
+            mode="lines", name="4-Week MA",
+            line=dict(color="#58a6ff", width=2),
+            hovertemplate="%{x}<br>4W MA: %{y:,.0f}<extra></extra>",
+        ))
+
+    cc = claims_data["series"].get("Continued Claims")
+    if cc:
+        fig.add_trace(go.Scatter(
+            x=cc["dates"], y=cc["values"],
+            mode="lines", name="Continued Claims",
+            line=dict(color="#f0883e", width=1.5),
+            yaxis="y2",
+            hovertemplate="%{x}<br>Continued: %{y:,.0f}<extra></extra>",
+        ))
+
+    _plotly_dark_layout(fig, "Jobless Claims (Weekly)")
+    fig.update_layout(
+        height=400,
+        yaxis=dict(title="Initial Claims"),
+        yaxis2=dict(
+            title="Continued Claims", titlefont_color="#f0883e",
+            overlaying="y", side="right",
+            gridcolor="rgba(48,54,61,0.3)",
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_nfci_chart(nfci_data):
+    """Build a line chart of the Chicago Fed NFCI."""
+    if not nfci_data:
+        return ""
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=nfci_data["dates"], y=nfci_data["values"],
+        mode="lines", name="NFCI",
+        line=dict(color="#58a6ff", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(88,166,255,0.08)",
+        hovertemplate="%{x}<br>NFCI: %{y:.3f}<extra></extra>",
+    ))
+
+    fig.add_hline(y=0, line_dash="dash", line_color="#8b949e", opacity=0.5,
+                  annotation_text="Zero (avg conditions)", annotation_position="bottom right",
+                  annotation_font_color="#8b949e")
+
+    _plotly_dark_layout(fig, "Chicago Fed National Financial Conditions Index")
+    fig.update_layout(
+        height=350,
+        yaxis_title="NFCI",
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_move_chart(msd_data):
+    """Build a line chart of the MOVE index (bond volatility)."""
+    if not msd_data or "MOVE" not in msd_data:
+        return ""
+
+    move = msd_data["MOVE"]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=move["dates"], y=move["values"],
+        mode="lines", name="MOVE",
+        line=dict(color="#58a6ff", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(88,166,255,0.08)",
+        hovertemplate="%{x}<br>MOVE: %{y:.1f}<extra></extra>",
+    ))
+
+    # Reference levels
+    fig.add_hline(y=120, line_dash="dot", line_color="#f0883e", opacity=0.5,
+                  annotation_text="120 (Elevated)", annotation_position="top right",
+                  annotation_font_color="#f0883e")
+    fig.add_hline(y=140, line_dash="dot", line_color="#f85149", opacity=0.5,
+                  annotation_text="140 (Crisis)", annotation_position="top right",
+                  annotation_font_color="#f85149")
+
+    _plotly_dark_layout(fig, "ICE BofA MOVE Index (Bond Volatility)")
+    fig.update_layout(height=350)
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_skew_chart(msd_data):
+    """Build a line chart of the CBOE SKEW index (tail risk)."""
+    if not msd_data or "SKEW" not in msd_data:
+        return ""
+
+    skew = msd_data["SKEW"]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=skew["dates"], y=skew["values"],
+        mode="lines", name="SKEW",
+        line=dict(color="#bc8cff", width=2),
+        fill="tozeroy",
+        fillcolor="rgba(188,140,255,0.08)",
+        hovertemplate="%{x}<br>SKEW: %{y:.1f}<extra></extra>",
+    ))
+
+    fig.add_hline(y=130, line_dash="dot", line_color="#d29922", opacity=0.5,
+                  annotation_text="130 (Moderate tail risk)", annotation_position="top right",
+                  annotation_font_color="#d29922")
+    fig.add_hline(y=150, line_dash="dot", line_color="#f85149", opacity=0.5,
+                  annotation_text="150 (Elevated tail risk)", annotation_position="top right",
+                  annotation_font_color="#f85149")
+
+    _plotly_dark_layout(fig, "CBOE SKEW Index (Tail Risk)")
+    fig.update_layout(height=350)
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_dxy_chart(msd_data):
+    """Build a line chart of DXY with 50/200 DMA overlay."""
+    if not msd_data or "DXY" not in msd_data:
+        return ""
+
+    dxy = msd_data["DXY"]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=dxy["dates"], y=dxy["values"],
+        mode="lines", name="DXY",
+        line=dict(color="#58a6ff", width=2),
+        hovertemplate="%{x}<br>DXY: %{y:.2f}<extra></extra>",
+    ))
+
+    if "ma50" in dxy:
+        fig.add_trace(go.Scatter(
+            x=dxy["ma50_dates"], y=dxy["ma50"],
+            mode="lines", name="50 DMA",
+            line=dict(color="#d29922", width=1, dash="dash"),
+            hovertemplate="%{x}<br>50 DMA: %{y:.2f}<extra></extra>",
+        ))
+
+    if "ma200" in dxy:
+        fig.add_trace(go.Scatter(
+            x=dxy["ma200_dates"], y=dxy["ma200"],
+            mode="lines", name="200 DMA",
+            line=dict(color="#f0883e", width=1, dash="dot"),
+            hovertemplate="%{x}<br>200 DMA: %{y:.2f}<extra></extra>",
+        ))
+
+    _plotly_dark_layout(fig, "US Dollar Index (DXY)")
+    fig.update_layout(
+        height=400,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
 def build_putcall_chart(putcall_data):
-    """Build a line chart of equity put/call ratio with 20-day MA overlay."""
-    if not putcall_data:
+    """Build a line chart of live equity put/call ratio with 20-day MA."""
+    if not putcall_data or not putcall_data.get("ratios"):
         return ""
 
     fig = go.Figure()
@@ -487,14 +689,15 @@ def build_putcall_chart(putcall_data):
         line=dict(color="rgba(88,166,255,0.3)", width=1),
         hovertemplate="%{x}<br>P/C: %{y:.3f}<extra></extra>",
     ))
-    fig.add_trace(go.Scatter(
-        x=putcall_data["dates"], y=putcall_data["ma_20"],
-        mode="lines", name="20-Day MA",
-        line=dict(color="#58a6ff", width=2),
-        hovertemplate="%{x}<br>MA(20): %{y:.3f}<extra></extra>",
-    ))
 
-    # Reference lines
+    if putcall_data.get("ma20"):
+        fig.add_trace(go.Scatter(
+            x=putcall_data["dates"], y=putcall_data["ma20"],
+            mode="lines", name="20-Day MA",
+            line=dict(color="#58a6ff", width=2),
+            hovertemplate="%{x}<br>MA(20): %{y:.3f}<extra></extra>",
+        ))
+
     fig.add_hline(y=0.7, line_dash="dash", line_color="#3fb950", opacity=0.5,
                   annotation_text="0.70 (Bullish)", annotation_position="bottom right",
                   annotation_font_color="#3fb950")
@@ -502,9 +705,9 @@ def build_putcall_chart(putcall_data):
                   annotation_text="1.00 (Bearish)", annotation_position="top right",
                   annotation_font_color="#f85149")
 
-    _plotly_dark_layout(fig, "Equity Put/Call Ratio (CBOE)")
+    _plotly_dark_layout(fig, "Equity Put/Call Ratio (SPY Options)")
     fig.update_layout(
-        height=400,
+        height=350,
         yaxis_title="Put/Call Ratio",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
     )
@@ -785,7 +988,9 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      ratio_series=None, rotation_data=None, flow_data=None,
                      external_data=None, orb_conditions=None, regime=None,
                      credit_data=None, liquidity_data=None, breadth_data=None,
-                     fear_greed_data=None, freshness=None):
+                     fear_greed_data=None, real_yields_data=None,
+                     jobless_data=None, nfci_data=None, msd_data=None,
+                     putcall_data=None, freshness=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -826,7 +1031,6 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
     margin_chart = build_margin_debt_chart(ext.get("margin_debt"))
     fund_flows_chart = build_fund_flows_chart(ext.get("fred_flows"))
     aaii_chart = build_aaii_sentiment_chart(ext.get("aaii"))
-    putcall_chart = build_putcall_chart(ext.get("putcall"))
 
     # Build macro & liquidity charts
     credit_chart = build_credit_spread_chart(credit_data)
@@ -841,6 +1045,15 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         fg_result = build_fear_greed_chart(fear_greed_data)
         if fg_result:
             fg_gauge_chart, fg_history_chart = fg_result
+
+    # Build Rates & Dollar charts
+    real_yields_chart = build_real_yields_chart(real_yields_data)
+    jobless_chart = build_jobless_claims_chart(jobless_data)
+    nfci_chart = build_nfci_chart(nfci_data)
+    move_chart = build_move_chart(msd_data)
+    skew_chart = build_skew_chart(msd_data)
+    dxy_chart = build_dxy_chart(msd_data)
+    putcall_chart_html = build_putcall_chart(putcall_data)
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
     template = env.get_template("dashboard.html")
@@ -864,8 +1077,6 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         margin_chart=margin_chart,
         aaii_data=ext.get("aaii"),
         aaii_chart=aaii_chart,
-        putcall_data=ext.get("putcall"),
-        putcall_chart=putcall_chart,
         fund_flows_chart=fund_flows_chart,
         orb=orb_conditions or {},
         credit_data=credit_data,
@@ -878,6 +1089,18 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         fear_greed=fear_greed_data,
         fg_gauge_chart=fg_gauge_chart,
         fg_history_chart=fg_history_chart,
+        real_yields_data=real_yields_data,
+        real_yields_chart=real_yields_chart,
+        jobless_data=jobless_data,
+        jobless_chart=jobless_chart,
+        nfci_data=nfci_data,
+        nfci_chart=nfci_chart,
+        msd_data=msd_data or {},
+        move_chart=move_chart,
+        skew_chart=skew_chart,
+        dxy_chart=dxy_chart,
+        putcall_data=putcall_data,
+        putcall_chart=putcall_chart_html,
         freshness=freshness or {},
     )
 

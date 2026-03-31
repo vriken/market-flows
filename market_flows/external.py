@@ -1,4 +1,4 @@
-"""External data sources (non-yfinance): FINRA, FRED, AAII, CBOE, CNN."""
+"""External data sources (non-yfinance): FINRA, FRED, AAII, CNN, Yahoo."""
 
 import contextlib
 import json
@@ -7,8 +7,17 @@ import os
 
 import pandas as pd
 import requests
+import yfinance as yf
 
-from .config import CREDIT_SPREAD_SERIES, DATA_DIR, FED_LIQUIDITY_SERIES, FRED_SERIES
+from .config import (
+    CREDIT_SPREAD_SERIES,
+    DATA_DIR,
+    FED_LIQUIDITY_SERIES,
+    FRED_SERIES,
+    JOBLESS_CLAIMS_SERIES,
+    NFCI_SERIES,
+    REAL_YIELDS_SERIES,
+)
 from .http import get_session
 
 logger = logging.getLogger(__name__)
@@ -267,55 +276,6 @@ def fetch_aaii_sentiment():
         return None
 
 
-def fetch_putcall_ratio():
-    """Fetch CBOE equity put/call ratio historical data.
-
-    Downloads historical CSV (2006-2019) and computes 20-day MA.
-    Returns dict with dates, ratios, moving average. Caches to data/putcall_history.json.
-    Note: historical data only (ends ~2019). Still useful for pattern context.
-    """
-    cache = _cache_path("putcall_history.json")
-    try:
-        url = "https://cdn.cboe.com/resources/options/volume_and_call_put_ratios/equitypc.csv"
-        resp = get_session().get(url, timeout=30)
-        resp.raise_for_status()
-
-        from io import StringIO
-        df = pd.read_csv(StringIO(resp.text), skiprows=2)
-
-        df["date"] = pd.to_datetime(df["DATE"], format="%m/%d/%Y", errors="coerce")
-        df["ratio"] = pd.to_numeric(df["P/C Ratio"], errors="coerce")
-        df = df[["date", "ratio"]].dropna().sort_values("date")
-
-        df["ma_20"] = df["ratio"].rolling(window=20, min_periods=1).mean()
-
-        dates = [d.strftime("%Y-%m-%d") for d in df["date"]]
-        ratios = df["ratio"].round(3).tolist()
-        ma_20 = df["ma_20"].round(3).tolist()
-
-        result = {
-            "dates": dates,
-            "ratios": ratios,
-            "ma_20": ma_20,
-            "current_ratio": ratios[-1] if ratios else None,
-            "current_date": dates[-1] if dates else None,
-        }
-
-        cache.write_text(json.dumps(result))
-        return result
-
-    except requests.RequestException as e:
-        logger.warning("Put/call ratio fetch failed: %s", e)
-        if cache.exists():
-            try:
-                data = json.loads(cache.read_text())
-                data["_stale"] = True
-                return data
-            except (json.JSONDecodeError, KeyError):
-                pass
-        return None
-
-
 def _fetch_fred_series(series_id, api_key, start_date="2019-01-01"):
     """Fetch a single FRED series. Returns list of (date_str, float) tuples."""
     resp = get_session().get(
@@ -553,4 +513,365 @@ def fetch_fear_greed():
             existing["current_date"] = existing["dates"][-1]
             existing["_stale"] = True
             return existing
+        return None
+
+
+def fetch_real_yields():
+    """Fetch real yields and inflation breakevens from FRED.
+
+    Returns dict with time series for 10Y real yield, 10Y/5Y breakevens,
+    and 5Y5Y forward inflation expectations. Caches to data/real_yields.json.
+    """
+    cache = _cache_path("real_yields.json")
+    api_key = os.environ.get("FRED_API_KEY")
+
+    if not api_key:
+        logger.debug("FRED_API_KEY not set, skipping real yields")
+        if cache.exists():
+            with contextlib.suppress(json.JSONDecodeError, KeyError):
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+        return None
+
+    try:
+        series_data = {}
+        for label, series_id in REAL_YIELDS_SERIES.items():
+            try:
+                obs = _fetch_fred_series(series_id, api_key, start_date="2019-01-01")
+                if obs:
+                    series_data[label] = {
+                        "dates": [d for d, _ in obs],
+                        "values": [v for _, v in obs],
+                    }
+            except requests.RequestException as e:
+                logger.warning("FRED %s failed: %s", series_id, e)
+
+        if not series_data:
+            return None
+
+        # Current values
+        result = {"series": series_data}
+        for label, data in series_data.items():
+            if data["values"]:
+                result[f"current_{label}"] = round(data["values"][-1], 3)
+
+        cache.write_text(json.dumps(result))
+        return result
+
+    except requests.RequestException as e:
+        logger.warning("Real yields fetch failed: %s", e)
+        if cache.exists():
+            with contextlib.suppress(json.JSONDecodeError, KeyError):
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+        return None
+
+
+def fetch_jobless_claims():
+    """Fetch initial and continued jobless claims from FRED.
+
+    Returns dict with weekly claims, 4-week moving average, and trend.
+    Caches to data/jobless_claims.json.
+    """
+    cache = _cache_path("jobless_claims.json")
+    api_key = os.environ.get("FRED_API_KEY")
+
+    if not api_key:
+        logger.debug("FRED_API_KEY not set, skipping jobless claims")
+        if cache.exists():
+            with contextlib.suppress(json.JSONDecodeError, KeyError):
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+        return None
+
+    try:
+        series_data = {}
+        for label, series_id in JOBLESS_CLAIMS_SERIES.items():
+            try:
+                obs = _fetch_fred_series(series_id, api_key, start_date="2019-01-01")
+                if obs:
+                    series_data[label] = {
+                        "dates": [d for d, _ in obs],
+                        "values": [v for _, v in obs],
+                    }
+            except requests.RequestException as e:
+                logger.warning("FRED %s failed: %s", series_id, e)
+
+        if "Initial Claims" not in series_data:
+            return None
+
+        ic = series_data["Initial Claims"]
+        ic_vals = ic["values"]
+
+        # 4-week moving average
+        ma4 = []
+        for i in range(len(ic_vals)):
+            window = ic_vals[max(0, i - 3):i + 1]
+            ma4.append(round(sum(window) / len(window)))
+
+        # Trend: compare latest 4W MA to 8 weeks ago
+        trend = "flat"
+        if len(ma4) >= 8:
+            if ma4[-1] > ma4[-8] * 1.05:
+                trend = "rising"
+            elif ma4[-1] < ma4[-8] * 0.95:
+                trend = "falling"
+
+        result = {
+            "series": series_data,
+            "ma4": ma4,
+            "current_claims": ic_vals[-1] if ic_vals else None,
+            "current_ma4": ma4[-1] if ma4 else None,
+            "current_date": ic["dates"][-1] if ic["dates"] else None,
+            "trend": trend,
+        }
+
+        cache.write_text(json.dumps(result))
+        return result
+
+    except requests.RequestException as e:
+        logger.warning("Jobless claims fetch failed: %s", e)
+        if cache.exists():
+            with contextlib.suppress(json.JSONDecodeError, KeyError):
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+        return None
+
+
+def fetch_nfci():
+    """Fetch Chicago Fed National Financial Conditions Index from FRED.
+
+    NFCI > 0 = tighter than average, NFCI < 0 = looser than average.
+    Caches to data/nfci.json.
+    """
+    cache = _cache_path("nfci.json")
+    api_key = os.environ.get("FRED_API_KEY")
+
+    if not api_key:
+        logger.debug("FRED_API_KEY not set, skipping NFCI")
+        if cache.exists():
+            with contextlib.suppress(json.JSONDecodeError, KeyError):
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+        return None
+
+    try:
+        obs = _fetch_fred_series(NFCI_SERIES, api_key, start_date="2019-01-01")
+        if not obs:
+            return None
+
+        dates = [d for d, _ in obs]
+        values = [v for _, v in obs]
+        current = values[-1]
+
+        # Classify conditions
+        if current > 0:
+            condition = "Tightening"
+        elif current < -0.5:
+            condition = "Very Loose"
+        else:
+            condition = "Loose"
+
+        result = {
+            "dates": dates,
+            "values": values,
+            "current": round(current, 3),
+            "current_date": dates[-1],
+            "condition": condition,
+        }
+
+        cache.write_text(json.dumps(result))
+        return result
+
+    except requests.RequestException as e:
+        logger.warning("NFCI fetch failed: %s", e)
+        if cache.exists():
+            with contextlib.suppress(json.JSONDecodeError, KeyError):
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+        return None
+
+
+def fetch_move_skew_dxy():
+    """Fetch MOVE index, SKEW index, and DXY from Yahoo Finance.
+
+    MOVE = ICE BofA bond volatility (^MOVE)
+    SKEW = CBOE tail-risk pricing (^SKEW)
+    DXY = US Dollar Index (DX-Y.NYB)
+
+    Returns dict with current values and 1Y history for each.
+    Caches to data/move_skew_dxy.json.
+    """
+    cache = _cache_path("move_skew_dxy.json")
+
+    tickers = {"MOVE": "^MOVE", "SKEW": "^SKEW", "DXY": "DX-Y.NYB"}
+
+    try:
+        ticker_list = list(tickers.values())
+        data = yf.download(ticker_list, period="1y", progress=False, threads=True)
+
+        if data.empty:
+            raise ValueError("No data returned from yfinance")
+
+        result = {}
+        for label, ticker in tickers.items():
+            try:
+                if isinstance(data.columns, pd.MultiIndex):
+                    series = data["Close"][ticker].dropna()
+                else:
+                    series = data["Close"].dropna()
+
+                if series.empty:
+                    continue
+
+                dates = [d.strftime("%Y-%m-%d") for d in series.index]
+                values = series.round(2).tolist()
+                current = values[-1]
+
+                entry = {
+                    "dates": dates,
+                    "values": values,
+                    "current": current,
+                }
+
+                # DXY: add 50/200 DMA
+                if label == "DXY" and len(series) >= 50:
+                    ma50 = series.rolling(50).mean().dropna()
+                    ma200 = series.rolling(200).mean().dropna() if len(series) >= 200 else pd.Series()
+                    entry["ma50"] = ma50.round(2).tolist()
+                    entry["ma50_dates"] = [d.strftime("%Y-%m-%d") for d in ma50.index]
+                    if not ma200.empty:
+                        entry["ma200"] = ma200.round(2).tolist()
+                        entry["ma200_dates"] = [d.strftime("%Y-%m-%d") for d in ma200.index]
+                    entry["above_ma50"] = current > ma50.iloc[-1]
+                    entry["trend"] = "Strong" if not ma200.empty and current > ma200.iloc[-1] else "Weak"
+
+                # MOVE: classify regime
+                if label == "MOVE":
+                    if current > 140:
+                        entry["regime"] = "Crisis"
+                    elif current > 120:
+                        entry["regime"] = "Elevated"
+                    elif current > 100:
+                        entry["regime"] = "Normal"
+                    else:
+                        entry["regime"] = "Low"
+
+                # SKEW: classify
+                if label == "SKEW":
+                    if current > 150:
+                        entry["signal"] = "Elevated tail risk"
+                    elif current > 130:
+                        entry["signal"] = "Moderate tail risk"
+                    else:
+                        entry["signal"] = "Low tail risk"
+
+                result[label] = entry
+            except (KeyError, IndexError) as e:
+                logger.debug("Failed to process %s: %s", ticker, e)
+
+        if not result:
+            return None
+
+        cache.write_text(json.dumps(result))
+        return result
+
+    except Exception as e:
+        logger.warning("MOVE/SKEW/DXY fetch failed: %s", e)
+        if cache.exists():
+            with contextlib.suppress(json.JSONDecodeError, KeyError):
+                data = json.loads(cache.read_text())
+                data["_stale"] = True
+                return data
+        return None
+
+
+def fetch_equity_putcall():
+    """Compute equity put/call ratio from SPY options volume.
+
+    Sums put and call volume across near-term expirations (next 4 available)
+    to produce a live put/call ratio. Accumulates daily history in
+    data/putcall_live.json for charting.
+    """
+    cache = _cache_path("putcall_live.json")
+
+    existing = {"dates": [], "ratios": []}
+    if cache.exists():
+        with contextlib.suppress(json.JSONDecodeError, KeyError):
+            existing = json.loads(cache.read_text())
+
+    try:
+        spy = yf.Ticker("SPY")
+        expirations = spy.options
+        if not expirations:
+            raise ValueError("No SPY options expirations available")
+
+        total_put_vol = 0
+        total_call_vol = 0
+
+        # Use up to 4 nearest expirations for a robust ratio
+        for exp in expirations[:4]:
+            chain = spy.option_chain(exp)
+            call_vol = chain.calls["volume"].sum()
+            put_vol = chain.puts["volume"].sum()
+            if pd.notna(call_vol):
+                total_call_vol += int(call_vol)
+            if pd.notna(put_vol):
+                total_put_vol += int(put_vol)
+
+        if total_call_vol == 0:
+            raise ValueError("No call volume available")
+
+        ratio = round(total_put_vol / total_call_vol, 3)
+        today = pd.Timestamp.now().strftime("%Y-%m-%d")
+
+        # Append or update today
+        if not existing["dates"] or existing["dates"][-1] != today:
+            existing["dates"].append(today)
+            existing["ratios"].append(ratio)
+        else:
+            existing["dates"][-1] = today
+            existing["ratios"][-1] = ratio
+
+        # Cap history
+        if len(existing["dates"]) > 250:
+            existing["dates"] = existing["dates"][-250:]
+            existing["ratios"] = existing["ratios"][-250:]
+
+        # 20-day MA
+        ratios = existing["ratios"]
+        ma20 = []
+        for i in range(len(ratios)):
+            window = ratios[max(0, i - 19):i + 1]
+            ma20.append(round(sum(window) / len(window), 3))
+
+        result = {
+            "dates": existing["dates"],
+            "ratios": existing["ratios"],
+            "ma20": ma20,
+            "current_ratio": ratio,
+            "current_date": today,
+            "put_volume": total_put_vol,
+            "call_volume": total_call_vol,
+        }
+
+        cache.write_text(json.dumps(result))
+        return result
+
+    except Exception as e:
+        logger.warning("Equity put/call fetch failed: %s", e)
+        if existing.get("ratios"):
+            return {
+                **existing,
+                "ma20": existing["ratios"],
+                "current_ratio": existing["ratios"][-1],
+                "current_date": existing["dates"][-1],
+                "_stale": True,
+            }
         return None

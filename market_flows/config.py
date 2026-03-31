@@ -164,6 +164,23 @@ REGIME_THRESHOLDS = {
     },
 }
 
+# Real yields & breakevens FRED series
+REAL_YIELDS_SERIES = {
+    "10Y Real Yield": "DFII10",     # 10-Year TIPS yield
+    "10Y Breakeven": "T10YIE",      # 10-Year breakeven inflation
+    "5Y Breakeven": "T5YIE",        # 5-Year breakeven inflation
+    "5Y5Y Fwd Inflation": "T5YIFR", # 5-Year, 5-Year forward inflation
+}
+
+# Jobless claims FRED series
+JOBLESS_CLAIMS_SERIES = {
+    "Initial Claims": "ICSA",       # Weekly initial jobless claims
+    "Continued Claims": "CCSA",     # Continued claims (insured unemployment)
+}
+
+# Financial conditions FRED series
+NFCI_SERIES = "NFCI"  # Chicago Fed National Financial Conditions Index
+
 # FRED economic data series (requires FRED_API_KEY)
 FRED_SERIES = {
     "money_market": ("MMMFFAQ027S", "Money Market Fund Assets"),

@@ -673,8 +673,253 @@
 
   {% endif %}
 
+  {# ── Rates & Dollar ── #}
+  {% if real_yields_data or msd_data or jobless_data or nfci_data or putcall_data %}
+  <h2>Rates &amp; Dollar</h2>
+
+  {# Real Yields & Breakevens #}
+  {% if real_yields_data %}
+  <div class="section-group">
+    <h3 class="group-title">Real Yields &amp; Inflation Breakevens</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: center;">
+        {% for label in ['10Y Real Yield', '10Y Breakeven', '5Y Breakeven', '5Y5Y Fwd Inflation'] %}
+        {% set key = 'current_' ~ label %}
+        {% if real_yields_data[key] is defined %}
+        <div>
+          <span class="muted">{{ label }}</span>
+          <span style="font-size: 1.2rem; font-weight: 600; margin-left: 6px;
+            {% if 'Real Yield' in label %}{{ 'color: var(--red);' if real_yields_data[key] > 2 else 'color: var(--green);' if real_yields_data[key] < 1 else '' }}{% endif %}">
+            {{ "{:.3f}%".format(real_yields_data[key]) }}
+          </span>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% if real_yields_chart %}
+    <div class="chart-container">
+      {{ real_yields_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# MOVE Index #}
+  {% if msd_data.MOVE is defined %}
+  <div class="section-group">
+    <h3 class="group-title">Bond Volatility (MOVE Index)</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">MOVE</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;
+            {% if msd_data.MOVE.current > 140 %}color: var(--red);
+            {% elif msd_data.MOVE.current > 120 %}color: var(--orange);
+            {% else %}color: var(--green);{% endif %}">
+            {{ "{:.1f}".format(msd_data.MOVE.current) }}
+          </span>
+        </div>
+        <div>
+          <span class="alert-badge" style="
+            {% if msd_data.MOVE.regime == 'Crisis' %}background: rgba(248,81,73,0.2); color: var(--red);
+            {% elif msd_data.MOVE.regime == 'Elevated' %}background: rgba(240,136,62,0.2); color: var(--orange);
+            {% else %}background: rgba(63,185,80,0.15); color: var(--green);{% endif %}">
+            {{ msd_data.MOVE.regime }}
+          </span>
+        </div>
+      </div>
+    </div>
+    {% if move_chart %}
+    <div class="chart-container">
+      {{ move_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# SKEW Index #}
+  {% if msd_data.SKEW is defined %}
+  <div class="section-group">
+    <h3 class="group-title">Options Tail Risk (SKEW Index)</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">SKEW</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;
+            {% if msd_data.SKEW.current > 150 %}color: var(--red);
+            {% elif msd_data.SKEW.current > 130 %}color: var(--orange);
+            {% else %}color: var(--text);{% endif %}">
+            {{ "{:.1f}".format(msd_data.SKEW.current) }}
+          </span>
+        </div>
+        <div>
+          <span class="muted">{{ msd_data.SKEW.signal }}</span>
+        </div>
+      </div>
+    </div>
+    {% if skew_chart %}
+    <div class="chart-container">
+      {{ skew_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# Equity Put/Call Ratio #}
+  {% if putcall_data and putcall_data.current_ratio is defined %}
+  <div class="section-group">
+    <h3 class="group-title">Equity Put/Call Ratio (SPY Options)</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">P/C Ratio</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;
+            {% if putcall_data.current_ratio > 1.0 %}color: var(--red);
+            {% elif putcall_data.current_ratio < 0.7 %}color: var(--green);
+            {% else %}color: var(--text);{% endif %}">
+            {{ "{:.3f}".format(putcall_data.current_ratio) }}
+          </span>
+        </div>
+        {% if putcall_data.put_volume is defined %}
+        <div>
+          <span class="muted">Put Vol</span>
+          <span style="font-size: 1rem; margin-left: 6px;">{{ "{:,.0f}".format(putcall_data.put_volume) }}</span>
+        </div>
+        <div>
+          <span class="muted">Call Vol</span>
+          <span style="font-size: 1rem; margin-left: 6px;">{{ "{:,.0f}".format(putcall_data.call_volume) }}</span>
+        </div>
+        {% endif %}
+        {% if putcall_data['ratios'] | length > 1 %}
+        <div>
+          <span class="muted" style="font-size: 0.8rem;">{{ putcall_data['ratios'] | length }} days tracked</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% if putcall_chart %}
+    <div class="chart-container">
+      {{ putcall_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# DXY Dollar Index #}
+  {% if msd_data.DXY is defined %}
+  <div class="section-group">
+    <h3 class="group-title">US Dollar Index (DXY)</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">DXY</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:.2f}".format(msd_data.DXY.current) }}</span>
+        </div>
+        {% if msd_data.DXY.above_ma50 is defined %}
+        <div>
+          <span class="alert-badge" style="
+            {% if msd_data.DXY.above_ma50 %}background: rgba(63,185,80,0.15); color: var(--green);
+            {% else %}background: rgba(248,81,73,0.15); color: var(--red);{% endif %}">
+            {{ 'Above' if msd_data.DXY.above_ma50 else 'Below' }} 50 DMA
+          </span>
+        </div>
+        {% endif %}
+        {% if msd_data.DXY.trend is defined %}
+        <div>
+          <span class="muted">Dollar Trend:</span>
+          <span style="font-weight: 600; margin-left: 6px;
+            {% if msd_data.DXY.trend == 'Strong' %}color: var(--green);{% else %}color: var(--red);{% endif %}">
+            {{ msd_data.DXY.trend }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% if dxy_chart %}
+    <div class="chart-container">
+      {{ dxy_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# NFCI Financial Conditions #}
+  {% if nfci_data %}
+  <div class="section-group">
+    <h3 class="group-title">Financial Conditions (NFCI)</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">NFCI</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;
+            {% if nfci_data.current > 0 %}color: var(--red);
+            {% else %}color: var(--green);{% endif %}">
+            {{ "{:.3f}".format(nfci_data.current) }}
+          </span>
+        </div>
+        <div>
+          <span class="alert-badge" style="
+            {% if nfci_data.condition == 'Tightening' %}background: rgba(248,81,73,0.2); color: var(--red);
+            {% elif nfci_data.condition == 'Very Loose' %}background: rgba(63,185,80,0.25); color: var(--green);
+            {% else %}background: rgba(63,185,80,0.15); color: var(--green);{% endif %}">
+            {{ nfci_data.condition }}
+          </span>
+        </div>
+        <div>
+          <span class="muted" style="font-size: 0.8rem;">Above 0 = tighter than average</span>
+        </div>
+      </div>
+    </div>
+    {% if nfci_chart %}
+    <div class="chart-container">
+      {{ nfci_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# Jobless Claims #}
+  {% if jobless_data %}
+  <div class="section-group">
+    <h3 class="group-title">Jobless Claims</h3>
+    <div class="alert-panel">
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+        <div>
+          <span class="muted">Initial Claims</span>
+          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ "{:,.0f}".format(jobless_data.current_claims) }}</span>
+        </div>
+        {% if jobless_data.current_ma4 %}
+        <div>
+          <span class="muted">4W MA</span>
+          <span style="font-size: 1.2rem; font-weight: 600; margin-left: 8px;">{{ "{:,.0f}".format(jobless_data.current_ma4) }}</span>
+        </div>
+        {% endif %}
+        <div>
+          <span class="alert-badge" style="
+            {% if jobless_data.trend == 'rising' %}background: rgba(248,81,73,0.2); color: var(--red);
+            {% elif jobless_data.trend == 'falling' %}background: rgba(63,185,80,0.15); color: var(--green);
+            {% else %}background: rgba(139,148,158,0.15); color: var(--text-muted);{% endif %}">
+            {{ jobless_data.trend | capitalize }}
+          </span>
+        </div>
+        <div>
+          <span class="muted" style="font-size: 0.8rem;">{{ jobless_data.current_date }}</span>
+        </div>
+      </div>
+    </div>
+    {% if jobless_chart %}
+    <div class="chart-container">
+      {{ jobless_chart | safe }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% endif %}
+
   {# ── Additional Market Indicators ── #}
-  {% if margin_data or aaii_data or putcall_data or fund_flows_chart %}
+  {% if margin_data or aaii_data or fund_flows_chart %}
   <h2>Additional Market Indicators</h2>
 
   {# FINRA Margin Debt #}
@@ -750,36 +995,6 @@
     {% if aaii_chart %}
     <div class="chart-container">
       {{ aaii_chart | safe }}
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  {# Put/Call Ratio #}
-  {% if putcall_data %}
-  <div class="section-group">
-    <h3 class="group-title">Equity Put/Call Ratio (CBOE)</h3>
-    {% if putcall_data._stale is defined and putcall_data._stale %}
-    <p class="muted" style="font-size:0.75rem;font-style:italic">Using cached data — live fetch failed</p>
-    {% endif %}
-    <div class="alert-panel">
-      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
-        <div>
-          <span class="muted">Latest Ratio</span>
-          <span style="font-size: 1.4rem; font-weight: 600; margin-left: 8px;">{{ putcall_data.current_ratio }}</span>
-        </div>
-        <div>
-          <span class="muted">As of</span>
-          <span style="margin-left: 8px;">{{ putcall_data.current_date }}</span>
-        </div>
-        <div>
-          <span class="muted" style="font-size: 0.8rem;">Historical data (2006–2019)</span>
-        </div>
-      </div>
-    </div>
-    {% if putcall_chart %}
-    <div class="chart-container">
-      {{ putcall_chart | safe }}
     </div>
     {% endif %}
   </div>
@@ -867,7 +1082,7 @@
   {% endif %}
 
   <footer>
-    <span>Data: CFTC, Yahoo Finance, FINRA, FRED, AAII, CBOE, CNN, Wikipedia | Coverage: {{ data_range }}</span>
+    <span>Data: CFTC, Yahoo Finance, FINRA, FRED, AAII, CNN, Wikipedia | Coverage: {{ data_range }}</span>
     <span>Last updated: {{ last_updated }}</span>
   </footer>
 </body>

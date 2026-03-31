@@ -12,7 +12,17 @@ from market_flows.breadth import fetch_market_breadth
 from market_flows.cot import fetch_cot, update_cot_history
 from market_flows.dashboard import render_dashboard
 from market_flows.etf import build_flow_history, fetch_etfs
-from market_flows.external import fetch_credit_spreads, fetch_fear_greed, fetch_fed_liquidity, fetch_margin_debt
+from market_flows.external import (
+    fetch_credit_spreads,
+    fetch_equity_putcall,
+    fetch_fear_greed,
+    fetch_fed_liquidity,
+    fetch_jobless_claims,
+    fetch_margin_debt,
+    fetch_move_skew_dxy,
+    fetch_nfci,
+    fetch_real_yields,
+)
 from market_flows.regime import classify_regime
 from market_flows.sentiment import (
     fetch_leverage_ratios,
@@ -129,6 +139,14 @@ def main():
     liquidity_data, freshness["liquidity"] = _fetch_source("Fed liquidity", fetch_fed_liquidity)
     breadth_data, freshness["breadth"] = _fetch_source("Market breadth", fetch_market_breadth)
 
+    # --- Rates & Dollar ---
+    print("\n━━━ Rates & Dollar ━━━\n")
+    real_yields_data, freshness["real_yields"] = _fetch_source("Real yields", fetch_real_yields)
+    jobless_data, freshness["jobless"] = _fetch_source("Jobless claims", fetch_jobless_claims)
+    nfci_data, freshness["nfci"] = _fetch_source("NFCI", fetch_nfci)
+    msd_data, freshness["move_skew_dxy"] = _fetch_source("MOVE/SKEW/DXY", fetch_move_skew_dxy)
+    putcall_data, freshness["putcall"] = _fetch_source("Put/call ratio", fetch_equity_putcall)
+
     # --- Historical visualizations ---
     print("\n━━━ Historical visualizations ━━━\n")
     ratio_series, _ = _fetch_source("Ratio time series", fetch_ratio_time_series, price_data=price_data)
@@ -187,6 +205,11 @@ def main():
         liquidity_data=liquidity_data,
         breadth_data=breadth_data,
         fear_greed_data=fear_greed_data,
+        real_yields_data=real_yields_data,
+        jobless_data=jobless_data,
+        nfci_data=nfci_data,
+        msd_data=msd_data,
+        putcall_data=putcall_data,
         freshness=freshness_meta,
     )
 
