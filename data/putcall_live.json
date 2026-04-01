@@ -1,1 +1,1 @@
-{"dates": ["2026-03-31"], "ratios": [1.313], "ma20": [1.313], "current_ratio": 1.313, "current_date": "2026-03-31", "put_volume": 1895088, "call_volume": 1443671}
+{"dates": ["2026-03-31", "2026-04-01"], "ratios": [1.313, 1.554], "ma20": [1.313, 1.433], "current_ratio": 1.554, "current_date": "2026-04-01", "put_volume": 2047405, "call_volume": 1317709}
