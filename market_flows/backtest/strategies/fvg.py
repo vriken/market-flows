@@ -1,0 +1,294 @@
+"""Fair Value Gap (FVG) Fill strategy.
+
+Detects FVGs on the daily chart and enters when price fills back into the gap.
+
+FVG detection (3-candle pattern):
+  - Bullish FVG: bar[0].low > bar[2].high  (gap up — buyers left a void)
+  - Bearish FVG: bar[0].high < bar[2].low  (gap down — sellers left a void)
+
+Entry: next day, if price enters the FVG zone, enter in the direction of the fill.
+  - Long into bullish FVG (buying the dip into the gap-up zone)
+  - Short into bearish FVG (selling the rally into the gap-down zone)
+Stop: opposite side of FVG + buffer (ATR-based).
+Target: full FVG fill (opposite edge of the gap).
+Exit: hit target, hit stop, or 3-day max hold.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+from dataclasses import dataclass
+from typing import Optional
+
+import numpy as np
+import pandas as pd
+
+from .base import BaseStrategy, Exit, Signal
+
+MAX_HOLD_DAYS = 3
+FVG_BUFFER_ATR_MULT = 0.25  # stop buffer = 25% of ATR beyond FVG edge
+
+
+@dataclass
+class FVGZone:
+    """A detected Fair Value Gap zone."""
+
+    date: dt.date  # date of the middle candle (bar[1])
+    direction: str  # "bullish" or "bearish"
+    upper: float  # top of the FVG zone
+    lower: float  # bottom of the FVG zone
+    atr: float  # ATR at detection for buffer sizing
+
+
+class FVGStrategy(BaseStrategy):
+    """Fair Value Gap fill strategy on daily OHLCV data.
+
+    Scans for 3-candle FVG patterns, then enters when the next day's price
+    moves into the gap zone. Targets full gap fill with a 3-day max hold.
+    """
+
+    name = "FVG Fill"
+    requires_intraday = False
+
+    def __init__(self, max_hold_days: int = 3, buffer_atr_mult: float = 0.25):
+        self.max_hold_days = max_hold_days
+        self.buffer_atr_mult = buffer_atr_mult
+        self._fvg_cache: dict[str, list[FVGZone]] = {}
+        self._atr_cache: dict[str, pd.Series] = {}
+
+    # ── Signal generation ──────────────────────────────────────────────────
+
+    def generate_signals(self, data: dict, date: dt.date) -> list[Signal]:
+        daily = data.get("daily")
+        ticker = data.get("ticker", "")
+
+        if daily is None or len(daily) < 5:
+            return []
+
+        # Detect all FVGs up to yesterday (no look-ahead)
+        fvg_zones = self._detect_fvgs(daily, ticker)
+
+        # Find active FVGs (detected before this date, not yet filled)
+        active_fvgs = [
+            fvg for fvg in fvg_zones
+            if fvg.date < date
+        ]
+        if not active_fvgs:
+            return []
+
+        # Get today's bar to check if price enters any FVG
+        idx = daily.index
+        date_vals = [d.date() if hasattr(d, "date") else d for d in idx]
+        today_mask = [d == date for d in date_vals]
+        today_bars = daily[today_mask]
+
+        if today_bars.empty:
+            return []
+
+        today = today_bars.iloc[0]
+        today_open = float(today["Open"])
+        today_high = float(today["High"])
+        today_low = float(today["Low"])
+
+        signals: list[Signal] = []
+
+        # Check most recent FVGs first (priority to freshest gaps)
+        for fvg in reversed(active_fvgs[-5:]):  # limit to last 5 FVGs
+            if fvg.direction == "bullish":
+                # Bullish FVG: gap-up zone. Price entering from above = buying the dip.
+                # Entry: today's low dips into the FVG zone
+                if today_low <= fvg.upper and today_low >= fvg.lower:
+                    entry_price = max(today_open, fvg.upper)  # enter at zone boundary or open
+                    # Actually use midpoint of FVG as reasonable entry
+                    entry_price = (fvg.upper + fvg.lower) / 2
+                    entry_price = min(entry_price, today_high)  # cap at today's high
+                    stop_price = fvg.lower - self.buffer_atr_mult * fvg.atr
+                    target_price = fvg.lower  # full fill = price reaches the bottom
+
+                    # For bullish FVG fill: we're buying as price dips into the zone
+                    # expecting it to hold and bounce back up
+                    signals.append(Signal(
+                        date=date,
+                        time=None,
+                        ticker=ticker,
+                        direction="long",
+                        entry_price=round(entry_price, 4),
+                        stop_price=round(stop_price, 4),
+                        target_price=round(fvg.upper, 4),  # target: back to top of zone
+                        quality_score="",
+                        quality_flags={
+                            "fvg_type": "bullish",
+                            "fvg_upper": fvg.upper,
+                            "fvg_lower": fvg.lower,
+                            "fvg_size_pct": (fvg.upper - fvg.lower) / fvg.lower * 100,
+                        },
+                        metadata={
+                            "fvg_upper": fvg.upper,
+                            "fvg_lower": fvg.lower,
+                            "fvg_date": str(fvg.date),
+                            "max_hold_days": self.max_hold_days,
+                        },
+                    ))
+                    break  # one signal per day
+
+            elif fvg.direction == "bearish":
+                # Bearish FVG: gap-down zone. Price entering from below = selling the rally.
+                # Entry: today's high rises into the FVG zone
+                if today_high >= fvg.lower and today_high <= fvg.upper:
+                    entry_price = (fvg.upper + fvg.lower) / 2
+                    entry_price = max(entry_price, today_low)  # floor at today's low
+                    stop_price = fvg.upper + self.buffer_atr_mult * fvg.atr
+                    target_price = fvg.lower  # full fill = price drops to zone bottom
+
+                    # For bearish FVG fill: we're shorting as price rallies into the zone
+                    # expecting it to reject and drop
+                    signals.append(Signal(
+                        date=date,
+                        time=None,
+                        ticker=ticker,
+                        direction="short",
+                        entry_price=round(entry_price, 4),
+                        stop_price=round(stop_price, 4),
+                        target_price=round(fvg.lower, 4),  # target: back to bottom of zone
+                        quality_score="",
+                        quality_flags={
+                            "fvg_type": "bearish",
+                            "fvg_upper": fvg.upper,
+                            "fvg_lower": fvg.lower,
+                            "fvg_size_pct": (fvg.upper - fvg.lower) / fvg.lower * 100,
+                        },
+                        metadata={
+                            "fvg_upper": fvg.upper,
+                            "fvg_lower": fvg.lower,
+                            "fvg_date": str(fvg.date),
+                            "max_hold_days": self.max_hold_days,
+                        },
+                    ))
+                    break
+
+        return signals
+
+    # ── Exit logic ─────────────────────────────────────────────────────────
+
+    def check_exit(
+        self,
+        signal: Signal,
+        current_bar: dict,
+        bars_since_entry: int,
+        day_index: int,
+    ) -> Optional[Exit]:
+        target = signal.target_price
+        stop = signal.stop_price
+
+        # Target hit (full FVG fill)
+        if target is not None:
+            if signal.direction == "long" and current_bar["High"] >= target:
+                return Exit(
+                    should_exit=True,
+                    exit_price=float(target),
+                    reason="target",
+                    metadata={"trigger": "fvg_fill_complete"},
+                )
+            elif signal.direction == "short" and current_bar["Low"] <= target:
+                return Exit(
+                    should_exit=True,
+                    exit_price=float(target),
+                    reason="target",
+                    metadata={"trigger": "fvg_fill_complete"},
+                )
+
+        # Stop hit
+        if signal.direction == "long" and current_bar["Low"] <= stop:
+            return Exit(
+                should_exit=True,
+                exit_price=float(stop),
+                reason="stop",
+                metadata={"trigger": "fvg_stop"},
+            )
+        elif signal.direction == "short" and current_bar["High"] >= stop:
+            return Exit(
+                should_exit=True,
+                exit_price=float(stop),
+                reason="stop",
+                metadata={"trigger": "fvg_stop"},
+            )
+
+        # Max hold days
+        if day_index >= self.max_hold_days - 1:
+            return Exit(
+                should_exit=True,
+                exit_price=current_bar["Close"],
+                reason="max_hold",
+                metadata={"trigger": f"max_hold_{self.max_hold_days}d"},
+            )
+
+        return None
+
+    # ── FVG detection ──────────────────────────────────────────────────────
+
+    def _detect_fvgs(self, daily: pd.DataFrame, ticker: str) -> list[FVGZone]:
+        """Detect all FVG zones in the daily data."""
+        if ticker in self._fvg_cache:
+            return self._fvg_cache[ticker]
+
+        atr = self._compute_atr(daily, ticker)
+        zones: list[FVGZone] = []
+
+        idx = daily.index
+        high = daily["High"].values
+        low = daily["Low"].values
+
+        for i in range(2, len(daily)):
+            bar0_low = float(low[i])
+            bar0_high = float(high[i])
+            bar2_high = float(high[i - 2])
+            bar2_low = float(low[i - 2])
+
+            date_i = idx[i]
+            d = date_i.date() if hasattr(date_i, "date") else date_i
+            atr_val = float(atr.iloc[i]) if i < len(atr) and pd.notna(atr.iloc[i]) else 1.0
+
+            # Bullish FVG: bar[0].low > bar[2].high (gap up)
+            if bar0_low > bar2_high:
+                zones.append(FVGZone(
+                    date=d,
+                    direction="bullish",
+                    upper=bar0_low,
+                    lower=bar2_high,
+                    atr=atr_val,
+                ))
+
+            # Bearish FVG: bar[0].high < bar[2].low (gap down)
+            elif bar0_high < bar2_low:
+                zones.append(FVGZone(
+                    date=d,
+                    direction="bearish",
+                    upper=bar2_low,
+                    lower=bar0_high,
+                    atr=atr_val,
+                ))
+
+        self._fvg_cache[ticker] = zones
+        return zones
+
+    def _compute_atr(self, daily: pd.DataFrame, ticker: str) -> pd.Series:
+        """Compute 14-period ATR on daily data."""
+        if ticker in self._atr_cache:
+            return self._atr_cache[ticker]
+
+        high = daily["High"].values
+        low = daily["Low"].values
+        close = daily["Close"].values
+
+        tr = np.maximum(
+            high - low,
+            np.maximum(
+                np.abs(high - np.roll(close, 1)),
+                np.abs(low - np.roll(close, 1)),
+            ),
+        )
+        tr[0] = high[0] - low[0]
+        atr = pd.Series(tr, index=daily.index).rolling(14, min_periods=1).mean()
+
+        self._atr_cache[ticker] = atr
+        return atr
