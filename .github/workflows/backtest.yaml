@@ -86,12 +86,48 @@ jobs:
 
           python -m market_flows.backtest.run_backtest $ARGS
 
+      - name: Snapshot backtest summary for week-over-week tracking
+        working-directory: main
+        run: |
+          if [ -f data/backtest/results_trades.csv ]; then
+            python3 -c "
+import csv, json
+from collections import defaultdict
+from datetime import date
+
+stats = defaultdict(lambda: {'trades': 0, 'wins': 0, 'pnl': 0.0})
+with open('data/backtest/results_trades.csv') as f:
+    for r in csv.DictReader(f):
+        s = r['strategy']
+        pnl = float(r['pnl'])
+        stats[s]['trades'] += 1
+        stats[s]['pnl'] += pnl
+        if pnl > 0:
+            stats[s]['wins'] += 1
+
+snapshot = {
+    'date': str(date.today()),
+    'strategies': {
+        name: {
+            'trades': d['trades'],
+            'win_rate': round(100 * d['wins'] / d['trades'], 1) if d['trades'] else 0,
+            'total_pnl': round(d['pnl'], 2),
+            'avg_pnl': round(d['pnl'] / d['trades'], 2) if d['trades'] else 0,
+        }
+        for name, d in sorted(stats.items())
+    },
+}
+print(json.dumps(snapshot))
+" >> data/backtest/history.jsonl
+          fi
+
       - name: Copy backtest results + cached data to gh-pages
         run: |
           mkdir -p gh-pages/data/backtest
           # Copy reports
           cp main/data/backtest/report.html gh-pages/data/backtest/ 2>/dev/null || true
           cp main/data/backtest/results*.csv gh-pages/data/backtest/ 2>/dev/null || true
+          cp main/data/backtest/history.jsonl gh-pages/data/backtest/ 2>/dev/null || true
           # Copy cached price data + regime history for next run
           cp main/data/backtest/regime_history.parquet gh-pages/data/backtest/ 2>/dev/null || true
           # Copy per-ticker cached data (daily + intraday parquets)

@@ -224,6 +224,60 @@
   </div>
   {% endif %}
 
+  {# ── Backtest Tracker ── #}
+  {% if backtest_tracker %}
+  <h2>Backtest Tracker</h2>
+  <div class="alert-panel">
+    {% set latest = backtest_tracker[-1] %}
+    <table style="margin-bottom: 0;">
+      <thead>
+        <tr>
+          <th>Strategy</th>
+          <th style="text-align: right;">Trades</th>
+          <th style="text-align: right;">Win %</th>
+          <th style="text-align: right;">Avg PnL</th>
+          <th style="text-align: right;">Total PnL</th>
+          {% if backtest_tracker | length > 1 %}
+          <th style="text-align: right;">PnL Trend</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for name, s in latest.strategies.items() | sort %}
+        {% set pnl_color = '#3fb950' if s.avg_pnl > 0 else '#f85149' if s.avg_pnl < -5 else '#d29922' %}
+        <tr>
+          <td><strong>{{ name }}</strong></td>
+          <td style="text-align: right;">{{ s.trades }}</td>
+          <td style="text-align: right;">{{ s.win_rate }}%</td>
+          <td style="text-align: right; color: {{ pnl_color }};">{{ '%.2f' | format(s.avg_pnl) }}</td>
+          <td style="text-align: right; color: {{ pnl_color }};">{{ '{:,.0f}'.format(s.total_pnl) }}</td>
+          {% if backtest_tracker | length > 1 %}
+          <td style="text-align: right;">
+            {% set prev = backtest_tracker[-2] %}
+            {% if name in prev.strategies %}
+              {% set delta = s.avg_pnl - prev.strategies[name].avg_pnl %}
+              {% set arrow = '▲' if delta > 0 else '▼' if delta < 0 else '—' %}
+              {% set trend_color = '#3fb950' if delta > 0 else '#f85149' if delta < 0 else '#8b949e' %}
+              <span style="color: {{ trend_color }};">{{ arrow }} {{ '%.2f' | format(delta | abs) }}</span>
+            {% else %}
+              <span class="muted">new</span>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top: 8px;">
+      <span class="muted" style="font-size: 0.75rem;">
+        Latest run: {{ latest.date }} &bull;
+        {{ backtest_tracker | length }} snapshot{{ 's' if backtest_tracker | length != 1 else '' }} &bull;
+        Data grows ~5 trading days/week via cached intraday bars
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
   {# ── Alerts Panel ── #}
   <div class="alert-panel">
     <h3>Positioning Alerts</h3>

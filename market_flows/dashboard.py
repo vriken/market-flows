@@ -991,7 +991,8 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
                      fear_greed_data=None, real_yields_data=None,
                      jobless_data=None, nfci_data=None, msd_data=None,
                      putcall_data=None, freshness=None,
-                     strategy_matrix=None):
+                     strategy_matrix=None,
+                     backtest_tracker=None):
     """Render the full dashboard HTML and write to output_path."""
     if data_dir is None:
         data_dir = DATA_DIR
@@ -1104,6 +1105,7 @@ def render_dashboard(cot_rows, etf_rows=None, sentiment_data=None,
         putcall_chart=putcall_chart_html,
         freshness=freshness or {},
         strategy_matrix=strategy_matrix or [],
+        backtest_tracker=backtest_tracker or [],
     )
 
     output_path = Path(output_path)

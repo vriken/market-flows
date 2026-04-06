@@ -2,9 +2,11 @@
 """CI entry point: fetch latest data and generate the static dashboard."""
 
 import argparse
+import json
 import time
 import warnings
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pandas as pd
 
@@ -55,6 +57,22 @@ def _fetch_source(name, fn, *args, **kwargs):
         elapsed = time.time() - start
         print(f"  {name}: FAILED ({e}) ({elapsed:.1f}s)")
         return None, "failed"
+
+
+def _load_backtest_tracker(data_dir: str) -> list[dict]:
+    """Load backtest history snapshots from JSONL file."""
+    history_path = Path(data_dir) / "backtest" / "history.jsonl"
+    if not history_path.exists():
+        return []
+    snapshots = []
+    for line in history_path.read_text().strip().splitlines():
+        line = line.strip()
+        if line:
+            try:
+                snapshots.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return snapshots
 
 
 def main():
@@ -178,6 +196,17 @@ def main():
     except Exception as e:
         print(f"  Strategy matrix failed: {e}")
 
+    # --- Backtest tracker ---
+    print("\n━━━ Backtest tracker ━━━\n")
+    backtest_tracker = _load_backtest_tracker(args.data_dir)
+    if backtest_tracker:
+        latest = backtest_tracker[-1]
+        print(f"  Latest run: {latest['date']} ({len(latest['strategies'])} strategies)")
+        for name, s in latest["strategies"].items():
+            print(f"    {name}: {s['trades']} trades, {s['win_rate']}% win, avg {s['avg_pnl']}")
+    else:
+        print("  No backtest history found")
+
     # --- Freshness summary ---
     failed = [k for k, v in freshness.items() if v == "failed"]
     stale = [k for k, v in freshness.items() if v == "stale"]
@@ -223,6 +252,7 @@ def main():
         putcall_data=putcall_data,
         freshness=freshness_meta,
         strategy_matrix=strategy_matrix,
+        backtest_tracker=backtest_tracker,
     )
 
 
