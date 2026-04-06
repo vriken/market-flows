@@ -23,7 +23,7 @@ from market_flows.external import (
     fetch_nfci,
     fetch_real_yields,
 )
-from market_flows.regime import classify_regime
+from market_flows.regime import build_strategy_matrix, classify_regime
 from market_flows.sentiment import (
     fetch_leverage_ratios,
     fetch_market_ratios,
@@ -167,6 +167,17 @@ def main():
         print(f"  Regime: FAILED ({e})")
         freshness["regime"] = "failed"
 
+    # --- Strategy matrix ---
+    print("\n━━━ Strategy matrix ━━━\n")
+    strategy_matrix = []
+    try:
+        strategy_matrix = build_strategy_matrix(regime)
+        for s in strategy_matrix:
+            dim_summary = ", ".join(f"{sig['dimension']}={sig['signal']}" for sig in s["signals"])
+            print(f"  {s['name']}: {s['overall']} ({dim_summary})")
+    except Exception as e:
+        print(f"  Strategy matrix failed: {e}")
+
     # --- Freshness summary ---
     failed = [k for k, v in freshness.items() if v == "failed"]
     stale = [k for k, v in freshness.items() if v == "stale"]
@@ -211,6 +222,7 @@ def main():
         msd_data=msd_data,
         putcall_data=putcall_data,
         freshness=freshness_meta,
+        strategy_matrix=strategy_matrix,
     )
 
 

@@ -364,6 +364,93 @@ def _narrative(composite, vol, cycle, risk, monetary, credit=None):
     return sentence[0].upper() + sentence[1:]
 
 
+STRATEGIES = [
+    {
+        "id": "orb_breakout",
+        "name": "ORB Breakout",
+        "description": "Opening range breakout — first 5min candle",
+        "best_when": "Low vol, trending up, risk-on",
+        "rules": {
+            "Volatility": {"Low Vol": "GO", "Normal": "GO", "Elevated": "CAUTION", "Crisis": "SIT OUT"},
+            "Cycle": {"Expansion": "GO", "Recovery": "GO", "Late Cycle": "CAUTION", "Contraction": "SIT OUT"},
+            "Risk": {"Risk-On": "GO", "Mixed": "CAUTION", "Risk-Off": "SIT OUT"},
+            "Monetary": {"Easing": "GO", "Pause": "GO", "Tightening": "CAUTION"},
+            "Credit": {"Normal": "GO", "Complacent": "CAUTION", "Stress": "SIT OUT"},
+        },
+    },
+    {
+        "id": "sma_runner",
+        "name": "SMA Gradient Runner",
+        "description": "Trend-following with composite SMA gradient filter",
+        "best_when": "Strong trend, any vol if trend is clear",
+        "rules": {
+            "Volatility": {"Low Vol": "GO", "Normal": "GO", "Elevated": "GO", "Crisis": "CAUTION"},
+            "Cycle": {"Expansion": "GO", "Recovery": "GO", "Late Cycle": "CAUTION", "Contraction": "CAUTION"},
+            "Risk": {"Risk-On": "GO", "Mixed": "GO", "Risk-Off": "CAUTION"},
+            "Monetary": {"Easing": "GO", "Pause": "GO", "Tightening": "CAUTION"},
+            "Credit": {"Normal": "GO", "Complacent": "GO", "Stress": "CAUTION"},
+        },
+    },
+    {
+        "id": "monday_range",
+        "name": "Monday Range Breakout",
+        "description": "Weekly breakout using Monday's high/low as range",
+        "best_when": "Trending markets, moderate vol, not choppy",
+        "rules": {
+            "Volatility": {"Low Vol": "CAUTION", "Normal": "GO", "Elevated": "CAUTION", "Crisis": "SIT OUT"},
+            "Cycle": {"Expansion": "GO", "Recovery": "GO", "Late Cycle": "CAUTION", "Contraction": "SIT OUT"},
+            "Risk": {"Risk-On": "GO", "Mixed": "CAUTION", "Risk-Off": "SIT OUT"},
+            "Monetary": {"Easing": "GO", "Pause": "GO", "Tightening": "CAUTION"},
+            "Credit": {"Normal": "GO", "Complacent": "CAUTION", "Stress": "SIT OUT"},
+        },
+    },
+]
+
+_SIGNAL_RANK = {"GO": 2, "CAUTION": 1, "SIT OUT": 0}
+_SIGNAL_COLORS = {"GO": "#3fb950", "CAUTION": "#d29922", "SIT OUT": "#f85149"}
+
+
+def build_strategy_matrix(regime):
+    """Build strategy matrix from regime classification.
+
+    Returns list of dicts, one per strategy, with per-dimension signals
+    and an overall recommendation.
+    """
+    if not regime or not regime.get("dimensions"):
+        return []
+
+    dim_states = {d["name"]: d["state"] for d in regime["dimensions"]}
+    matrix = []
+
+    for strat in STRATEGIES:
+        signals = []
+        for dim_name, state in dim_states.items():
+            rule_map = strat["rules"].get(dim_name, {})
+            signal = rule_map.get(state, "CAUTION")
+            signals.append({
+                "dimension": dim_name,
+                "state": state,
+                "signal": signal,
+                "color": _SIGNAL_COLORS[signal],
+            })
+
+        # Overall = worst signal across dimensions
+        worst = min(signals, key=lambda s: _SIGNAL_RANK[s["signal"]])
+        overall = worst["signal"]
+
+        matrix.append({
+            "id": strat["id"],
+            "name": strat["name"],
+            "description": strat["description"],
+            "best_when": strat["best_when"],
+            "signals": signals,
+            "overall": overall,
+            "overall_color": _SIGNAL_COLORS[overall],
+        })
+
+    return matrix
+
+
 def classify_regime(sentiment_data, cot_rows=None,
                     credit_data=None, liquidity_data=None, breadth_data=None):
     """Classify current market regime from sentiment and macro data.

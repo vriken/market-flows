@@ -181,6 +181,49 @@
   </div>
   {% endif %}
 
+  {# ── Strategy Matrix ── #}
+  {% if strategy_matrix %}
+  <h2>Strategy Matrix</h2>
+  <div class="alert-panel">
+    <table style="margin-bottom: 0;">
+      <thead>
+        <tr>
+          <th>Strategy</th>
+          {% for sig in strategy_matrix[0].signals %}
+          <th style="text-align: center;">{{ sig.dimension }}</th>
+          {% endfor %}
+          <th style="text-align: center;">Overall</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for strat in strategy_matrix %}
+        <tr>
+          <td>
+            <strong>{{ strat.name }}</strong>
+            <div class="muted" style="font-size: 0.75rem;">{{ strat.description }}</div>
+          </td>
+          {% for sig in strat.signals %}
+          <td style="text-align: center;">
+            <span class="alert-badge" style="background: {{ sig.color }}22; color: {{ sig.color }}; border: 1px solid {{ sig.color }}44;">
+              {{ sig.signal }}
+            </span>
+          </td>
+          {% endfor %}
+          <td style="text-align: center;">
+            <span class="alert-badge" style="font-size: 0.85rem; padding: 4px 12px; background: {{ strat.overall_color }}22; color: {{ strat.overall_color }}; border: 1px solid {{ strat.overall_color }}44;">
+              {{ strat.overall }}
+            </span>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top: 8px;">
+      <span class="muted" style="font-size: 0.75rem;">Overall = worst signal across dimensions. Based on regime classification above.</span>
+    </div>
+  </div>
+  {% endif %}
+
   {# ── Alerts Panel ── #}
   <div class="alert-panel">
     <h3>Positioning Alerts</h3>
