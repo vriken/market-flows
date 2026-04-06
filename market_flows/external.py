@@ -749,7 +749,7 @@ def fetch_move_skew_dxy():
                     if not ma200.empty:
                         entry["ma200"] = ma200.round(2).tolist()
                         entry["ma200_dates"] = [d.strftime("%Y-%m-%d") for d in ma200.index]
-                    entry["above_ma50"] = current > ma50.iloc[-1]
+                    entry["above_ma50"] = bool(current > ma50.iloc[-1])
                     entry["trend"] = "Strong" if not ma200.empty and current > ma200.iloc[-1] else "Weak"
 
                 # MOVE: classify regime

@@ -36,7 +36,7 @@ def fetch_sp500_tickers():
 
     try:
         url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-        tables = pd.read_html(url)
+        tables = pd.read_html(url, storage_options={"User-Agent": "Mozilla/5.0"})
         df = tables[0]
         tickers = df["Symbol"].str.replace(".", "-", regex=False).tolist()
 
