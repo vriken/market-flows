@@ -52,6 +52,7 @@ jobs:
 
       - name: Update data and generate dashboard
         working-directory: main
+        timeout-minutes: 15
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python generate_dashboard.py --data-dir data --output ../gh-pages/index.html

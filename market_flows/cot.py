@@ -104,7 +104,7 @@ def _extract_contract_rows(df, pattern, report_type):
     return result
 
 
-def backfill_cot_history(start_year=2021):
+def backfill_cot_history(start_year=2006):
     """Download CFTC data from start_year through current year and save to parquet."""
     current_year = datetime.now(UTC).year
     years = range(start_year, current_year + 1)
@@ -148,9 +148,24 @@ def backfill_cot_history(start_year=2021):
 
 
 def update_cot_history():
-    """Fetch current year's data and merge into existing parquet history."""
+    """Fetch current year's data and merge into existing parquet history.
+
+    If no history exists yet, backfills from 2006 for deep percentiles.
+    Returns a summary dict so the dashboard reports "ok" instead of "no data".
+    """
     parquet_path = DATA_DIR / "cot_history.parquet"
-    existing = pd.read_parquet(parquet_path) if parquet_path.exists() else pd.DataFrame()
+
+    # First run: backfill from 2006 for deep history
+    if not parquet_path.exists():
+        logger.info("No COT history found — backfilling from 2006")
+        backfill_cot_history(start_year=2006)
+        if parquet_path.exists():
+            history = pd.read_parquet(parquet_path)
+            span = f"{history['date'].min().date()} to {history['date'].max().date()}"
+            return {"rows": len(history), "span": span, "backfilled": True}
+        return None
+
+    existing = pd.read_parquet(parquet_path)
 
     current_year = datetime.now(UTC).year
     new_records = []
@@ -174,7 +189,9 @@ def update_cot_history():
 
     if not new_records:
         logger.warning("No new COT data fetched")
-        return
+        # Still return existing info so dashboard shows "ok"
+        span = f"{existing['date'].min().date()} to {existing['date'].max().date()}"
+        return {"rows": len(existing), "span": span, "no_new_data": True}
 
     new_data = pd.concat(new_records, ignore_index=True)
 
@@ -191,6 +208,7 @@ def update_cot_history():
 
     span = f"{combined['date'].min().date()} to {combined['date'].max().date()}"
     logger.info("Updated %s: %d rows (%s)", out, len(combined), span)
+    return {"rows": len(combined), "span": span}
 
 
 def _rank_percentile(series, value):
