@@ -546,7 +546,7 @@ def build_jobless_claims_chart(claims_data):
         height=400,
         yaxis=dict(title="Initial Claims"),
         yaxis2=dict(
-            title="Continued Claims", titlefont_color="#f0883e",
+            title="Continued Claims", title_font_color="#f0883e",
             overlaying="y", side="right",
             gridcolor="rgba(48,54,61,0.3)",
         ),
@@ -810,9 +810,9 @@ def build_credit_spread_chart(credit_data):
     _plotly_dark_layout(fig, "Credit Spreads (OAS)")
     fig.update_layout(
         height=400,
-        yaxis=dict(title="HY OAS (bps)", titlefont_color="#f85149"),
+        yaxis=dict(title="HY OAS (bps)", title_font_color="#f85149"),
         yaxis2=dict(
-            title="IG OAS (bps)", titlefont_color="#58a6ff",
+            title="IG OAS (bps)", title_font_color="#58a6ff",
             overlaying="y", side="right",
             gridcolor="rgba(48,54,61,0.3)",
         ),
