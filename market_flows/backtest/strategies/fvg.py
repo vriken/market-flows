@@ -92,8 +92,9 @@ class FVGStrategy(BaseStrategy):
             return []
         today_open = float(today_bars.iloc[0]["Open"])
 
-        # Active FVGs: detected before yesterday (no same-day detection)
-        active_fvgs = [f for f in fvg_zones if f.date < prev_date]
+        # Active FVGs: detected before yesterday, max 20 trading days old
+        max_age = dt.timedelta(days=30)  # ~20 trading days
+        active_fvgs = [f for f in fvg_zones if f.date < prev_date and (prev_date - f.date) <= max_age]
         if not active_fvgs:
             return []
 
@@ -179,14 +180,14 @@ class FVGStrategy(BaseStrategy):
         target = signal.target_price
         stop = signal.stop_price
 
-        # Target hit (1R)
+        # Target hit (1.5R)
         if target is not None:
             if (signal.direction == "long" and current_bar["High"] >= target) or (signal.direction == "short" and current_bar["Low"] <= target):
                 return Exit(
                     should_exit=True,
                     exit_price=float(target),
                     reason="target",
-                    metadata={"trigger": "1r_target"},
+                    metadata={"trigger": "1.5r_target"},
                 )
 
         # Stop hit
@@ -213,8 +214,9 @@ class FVGStrategy(BaseStrategy):
 
     def _detect_fvgs(self, daily: pd.DataFrame, ticker: str) -> list[FVGZone]:
         """Detect all FVG zones in the daily data."""
-        if ticker in self._fvg_cache:
-            return self._fvg_cache[ticker]
+        cache_key = (ticker, len(daily))
+        if cache_key in self._fvg_cache:
+            return self._fvg_cache[cache_key]
 
         atr = self._compute_atr(daily, ticker)
         zones: list[FVGZone] = []
@@ -253,13 +255,14 @@ class FVGStrategy(BaseStrategy):
                     atr=atr_val,
                 ))
 
-        self._fvg_cache[ticker] = zones
+        self._fvg_cache[cache_key] = zones
         return zones
 
     def _compute_atr(self, daily: pd.DataFrame, ticker: str) -> pd.Series:
         """Compute 14-period ATR on daily data."""
-        if ticker in self._atr_cache:
-            return self._atr_cache[ticker]
+        cache_key = (ticker, len(daily))
+        if cache_key in self._atr_cache:
+            return self._atr_cache[cache_key]
 
         high = daily["High"].values
         low = daily["Low"].values
@@ -275,5 +278,5 @@ class FVGStrategy(BaseStrategy):
         tr[0] = high[0] - low[0]
         atr = pd.Series(tr, index=daily.index).rolling(14, min_periods=1).mean()
 
-        self._atr_cache[ticker] = atr
+        self._atr_cache[cache_key] = atr
         return atr

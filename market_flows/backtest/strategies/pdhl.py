@@ -82,8 +82,6 @@ class PDHLStrategy(BaseStrategy):
 
         for ts, row in post_open.iterrows():
             close = float(row["Close"])
-            float(row["High"])
-            float(row["Low"])
             volume = float(row["Volume"])
 
             # Volume confirmation
@@ -206,14 +204,14 @@ class PDHLStrategy(BaseStrategy):
         target = signal.target_price
         stop = signal.stop_price
 
-        # Target hit (1R)
+        # Target hit (1.5R)
         if target is not None:
-            if signal.direction == "long" and current_bar["High"] >= target or signal.direction == "short" and current_bar["Low"] <= target:
+            if (signal.direction == "long" and current_bar["High"] >= target) or (signal.direction == "short" and current_bar["Low"] <= target):
                 return Exit(
                     should_exit=True,
                     exit_price=float(target),
                     reason="target",
-                    metadata={"trigger": "1r_target"},
+                    metadata={"trigger": "1.5r_target"},
                 )
 
         # Stop hit (midpoint of previous day's range)

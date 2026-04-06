@@ -438,11 +438,11 @@ class BacktestEngine:
             days_held=days_held,
             quality_score=signal.quality_score,
             quality_flags=signal.quality_flags,
-            regime_composite=regime_data.get("regime_composite", regime_data.get("composite_label", "")),
-            regime_volatility=regime_data.get("regime_volatility", regime_data.get("volatility", "")),
-            regime_cycle=regime_data.get("regime_cycle", regime_data.get("cycle", "")),
-            regime_risk=regime_data.get("regime_risk", regime_data.get("risk", "")),
-            regime_monetary=regime_data.get("regime_monetary", regime_data.get("monetary", "")),
+            regime_composite=regime_data.get("regime_composite", regime_data.get("composite_label", regime_data.get("composite_state", ""))),
+            regime_volatility=regime_data.get("regime_volatility", regime_data.get("volatility_state", regime_data.get("volatility", ""))),
+            regime_cycle=regime_data.get("regime_cycle", regime_data.get("cycle_state", regime_data.get("cycle", ""))),
+            regime_risk=regime_data.get("regime_risk", regime_data.get("risk_state", regime_data.get("risk", ""))),
+            regime_monetary=regime_data.get("regime_monetary", regime_data.get("monetary_state", regime_data.get("monetary", ""))),
             metadata=signal.metadata,
         )
         return trade
@@ -453,7 +453,7 @@ class BacktestEngine:
         if not regime_data:
             return False
 
-        from ..regime import STRATEGIES
+        from ..regime import STRATEGIES  # noqa: E402 — cached after first import
 
         # Find matching strategy rules
         strat_rules = None
@@ -492,29 +492,30 @@ class BacktestEngine:
 
     def _get_regime(self, date: dt.date) -> dict:
         """Look up regime classification for a given date."""
-        if self._regime_df is not None and not self._regime_df.empty:
-            # Normalize to match index type
-            import pandas as pd
-            lookup = pd.Timestamp(date)
-            if hasattr(self._regime_df.index, 'tz') and self._regime_df.index.tz is not None:
-                lookup = lookup.tz_localize(self._regime_df.index.tz)
-            elif not hasattr(lookup, 'tz') or lookup.tz is not None:
-                lookup = lookup.tz_localize(None) if hasattr(lookup, 'tz_localize') and lookup.tz is not None else lookup
-            # DataFrame-based lookup
-            if lookup in self._regime_df.index:
-                row = self._regime_df.loc[lookup]
-            else:
-                prior = self._regime_df[self._regime_df.index <= lookup]
-                if prior.empty:
-                    return {}
-                row = prior.iloc[-1]
+        if self._regime_df is None or self._regime_df.empty:
+            return {}
 
-            result = {}
-            for col in row.index:
-                result[col] = str(row[col])
-            return result
+        # Normalize index to tz-naive for consistent comparison
+        regime_df = self._regime_df
+        if hasattr(regime_df.index, "tz") and regime_df.index.tz is not None:
+            regime_df = regime_df.copy()
+            regime_df.index = regime_df.index.tz_localize(None)
 
-        return {}
+        if not regime_df.index.is_monotonic_increasing:
+            regime_df = regime_df.sort_index()
+
+        lookup = pd.Timestamp(date)
+
+        # Use asof for O(log n) point-in-time lookup
+        try:
+            idx = regime_df.index.asof(lookup)
+            if pd.isna(idx):
+                return {}
+            row = regime_df.loc[idx]
+        except KeyError:
+            return {}
+
+        return {col: str(row[col]) for col in row.index}
 
     @staticmethod
     def _normalise_regime_history(

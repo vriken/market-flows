@@ -98,6 +98,7 @@ jobs:
           import csv, json
           from collections import defaultdict
           from datetime import date
+          from pathlib import Path
           stats = defaultdict(lambda: {'trades': 0, 'wins': 0, 'pnl': 0.0})
           with open('data/backtest/results_trades.csv') as f:
               for r in csv.DictReader(f):
@@ -106,9 +107,25 @@ jobs:
                   stats[s]['trades'] += 1
                   stats[s]['pnl'] += pnl
                   if pnl > 0: stats[s]['wins'] += 1
-          snapshot = {'date': str(date.today()), 'strategies': {name: {'trades': d['trades'], 'win_rate': round(100 * d['wins'] / d['trades'], 1) if d['trades'] else 0, 'total_pnl': round(d['pnl'], 2), 'avg_pnl': round(d['pnl'] / d['trades'], 2) if d['trades'] else 0} for name, d in sorted(stats.items())}}
-          print(json.dumps(snapshot))
-          " >> data/backtest/history.jsonl
+          today = str(date.today())
+          snapshot = {'date': today, 'strategies': {name: {'trades': d['trades'], 'win_rate': round(100 * d['wins'] / d['trades'], 1) if d['trades'] else 0, 'total_pnl': round(d['pnl'], 2), 'avg_pnl': round(d['pnl'] / d['trades'], 2) if d['trades'] else 0} for name, d in sorted(stats.items())}}
+          # Dedupe: remove existing snapshot for today before appending
+          history = Path('data/backtest/history.jsonl')
+          existing = []
+          if history.exists():
+              for line in history.read_text().strip().splitlines():
+                  line = line.strip()
+                  if not line:
+                      continue
+                  try:
+                      entry = json.loads(line)
+                      if entry.get('date') != today:
+                          existing.append(line)
+                  except json.JSONDecodeError:
+                      existing.append(line)
+          existing.append(json.dumps(snapshot))
+          history.write_text('\n'.join(existing) + '\n')
+          "
           fi
 
       - name: Copy backtest results + cached data to gh-pages

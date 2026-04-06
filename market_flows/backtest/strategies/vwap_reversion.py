@@ -154,7 +154,7 @@ class VWAPReversionStrategy(BaseStrategy):
 
         # Target hit (mean reversion to VWAP)
         if target is not None:
-            if signal.direction == "long" and current_bar["High"] >= target or signal.direction == "short" and current_bar["Low"] <= target:
+            if (signal.direction == "long" and current_bar["High"] >= target) or (signal.direction == "short" and current_bar["Low"] <= target):
                 return Exit(
                     should_exit=True,
                     exit_price=float(target),
