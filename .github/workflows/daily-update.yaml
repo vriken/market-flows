@@ -6,6 +6,10 @@ on:
     - cron: '0 07 * * 1-5'
   workflow_dispatch:
 
+concurrency:
+  group: gh-pages-data
+  cancel-in-progress: false
+
 permissions:
   contents: write
 

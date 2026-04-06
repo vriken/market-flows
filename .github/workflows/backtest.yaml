@@ -16,6 +16,10 @@ on:
         description: 'Tickers (comma-separated, or "default" for full universe)'
         default: 'default'
 
+concurrency:
+  group: gh-pages-data
+  cancel-in-progress: false
+
 permissions:
   contents: write
 

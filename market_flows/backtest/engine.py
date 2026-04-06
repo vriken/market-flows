@@ -380,7 +380,7 @@ class BacktestEngine:
                 }
 
                 # Check KO first (wick touches KO level)
-                if direction == "long" and bar["Low"] <= ko_level or direction == "short" and bar["High"] >= ko_level:
+                if (direction == "long" and bar["Low"] <= ko_level) or (direction == "short" and bar["High"] >= ko_level):
                     outcome = "ko"
                     exit_price = ko_level
                     exit_time = str(bar["time"]) if bar["time"] else ""
@@ -457,8 +457,13 @@ class BacktestEngine:
 
         # Find matching strategy rules
         strat_rules = None
+        # Map strategy class names to regime matrix names
+        name_aliases = {
+            "Momentum": "SMA Gradient Runner",
+        }
+        lookup_name = name_aliases.get(strategy_name, strategy_name)
         for s in STRATEGIES:
-            if s["name"] == strategy_name:
+            if s["name"] == lookup_name:
                 strat_rules = s["rules"]
                 break
         if strat_rules is None:
