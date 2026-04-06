@@ -8,10 +8,9 @@ from __future__ import annotations
 
 import html as html_mod
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
@@ -237,7 +236,7 @@ class BacktestReport:
         print()
         print("=" * 72)
         print("  BACKTEST REPORT")
-        print(f"  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+        print(f"  {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
         print(f"  {len(self.trades)} trades, position size {self.position_size:,.0f}")
         print("=" * 72)
 
@@ -347,7 +346,7 @@ class BacktestReport:
             sections.append(_html_table("Best Strategy per Regime", best))
 
         body = "\n".join(sections)
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
         html_content = _HTML_TEMPLATE.replace("{{TIMESTAMP}}", ts).replace("{{BODY}}", body)
 
         path.write_text(html_content, encoding="utf-8")
@@ -418,10 +417,7 @@ def _print_regime_matrix(matrix: pd.DataFrame) -> None:
         line = f"  {str(regime):<{label_width}s}"
         for col in matrix.columns:
             val = matrix.loc[regime, col]
-            if pd.isna(val):
-                cell = "    ---"
-            else:
-                cell = f"{val:>+7.1f}%"
+            cell = "    ---" if pd.isna(val) else f"{val:>+7.1f}%"
             line += f"{cell:>{col_width}s}"
         print(line)
 

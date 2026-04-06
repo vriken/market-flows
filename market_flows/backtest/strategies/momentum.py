@@ -15,9 +15,7 @@ Exit: stack breaks down (loses full alignment), or 10-day max hold.
 from __future__ import annotations
 
 import datetime as dt
-from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 from .base import BaseStrategy, Exit, Signal
@@ -151,7 +149,7 @@ class MomentumStrategy(BaseStrategy):
         current_bar: dict,
         bars_since_entry: int,
         day_index: int,
-    ) -> Optional[Exit]:
+    ) -> Exit | None:
         stop = signal.stop_price
 
         # Stop: close beyond 50 SMA

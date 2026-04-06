@@ -12,7 +12,6 @@ Exit: EOD or 1R target (risk = distance from entry to stop).
 from __future__ import annotations
 
 import datetime as dt
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -83,8 +82,8 @@ class PDHLStrategy(BaseStrategy):
 
         for ts, row in post_open.iterrows():
             close = float(row["Close"])
-            high = float(row["High"])
-            low = float(row["Low"])
+            float(row["High"])
+            float(row["Low"])
             volume = float(row["Volume"])
 
             # Volume confirmation
@@ -193,20 +192,13 @@ class PDHLStrategy(BaseStrategy):
         current_bar: dict,
         bars_since_entry: int,
         day_index: int,
-    ) -> Optional[Exit]:
+    ) -> Exit | None:
         target = signal.target_price
         stop = signal.stop_price
 
         # Target hit (1R)
         if target is not None:
-            if signal.direction == "long" and current_bar["High"] >= target:
-                return Exit(
-                    should_exit=True,
-                    exit_price=float(target),
-                    reason="target",
-                    metadata={"trigger": "1r_target"},
-                )
-            elif signal.direction == "short" and current_bar["Low"] <= target:
+            if signal.direction == "long" and current_bar["High"] >= target or signal.direction == "short" and current_bar["Low"] <= target:
                 return Exit(
                     should_exit=True,
                     exit_price=float(target),
@@ -250,7 +242,7 @@ class PDHLStrategy(BaseStrategy):
         daily: pd.DataFrame | None,
         ticker: str,
         date: dt.date,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Get previous day high/low for the given date.
 
         Prefers daily data if available; falls back to intraday aggregation.
@@ -303,7 +295,7 @@ class PDHLStrategy(BaseStrategy):
         return self._vol_sma_cache[ticker]
 
     @staticmethod
-    def _compute_session_vwap(day_bars: pd.DataFrame) -> Optional[pd.Series]:
+    def _compute_session_vwap(day_bars: pd.DataFrame) -> pd.Series | None:
         """Compute session VWAP for a single day."""
         if day_bars.empty or "Volume" not in day_bars.columns:
             return None

@@ -11,9 +11,7 @@ Ported from orb_monday_range.py — the core logic for:
 from __future__ import annotations
 
 import datetime as dt
-from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 from .base import BaseStrategy, Exit, Signal
@@ -155,9 +153,7 @@ class ORBStrategy(BaseStrategy):
             # M: Monday range confluence
             mon_confluence = False
             if mon_high is not None and mon_low is not None:
-                if direction == "long" and entry_price > mon_high:
-                    mon_confluence = True
-                elif direction == "short" and entry_price < mon_low:
+                if direction == "long" and entry_price > mon_high or direction == "short" and entry_price < mon_low:
                     mon_confluence = True
             flags["monday_confluence"] = mon_confluence
             if mon_confluence:
@@ -206,7 +202,7 @@ class ORBStrategy(BaseStrategy):
         current_bar: dict,
         bars_since_entry: int,
         day_index: int,
-    ) -> Optional[Exit]:
+    ) -> Exit | None:
         orb_high = signal.metadata.get("orb_high", 0)
         orb_low = signal.metadata.get("orb_low", 0)
 
@@ -242,7 +238,7 @@ class ORBStrategy(BaseStrategy):
 
     def _compute_orb_for_date(
         self, intraday: pd.DataFrame, date: dt.date
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Compute ORB high/low for a given date from intraday data."""
         day_data = intraday[intraday.index.date == date]
         if day_data.empty:

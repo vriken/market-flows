@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import asdict
-from typing import Union
 
-import numpy as np
 import pandas as pd
 
-from .strategies.base import BaseStrategy, Exit, Signal, Trade
+from .strategies.base import BaseStrategy, Signal, Trade
 
 # ── Timezone / market hours helpers (mirror orb_monday_range patterns) ─────
 
@@ -79,7 +77,7 @@ class BacktestEngine:
     def __init__(
         self,
         strategy: BaseStrategy | None = None,
-        regime_history: Union[pd.DataFrame, dict, None] = None,
+        regime_history: pd.DataFrame | dict | None = None,
     ):
         self.strategy = strategy
         self._regime_df = self._normalise_regime_history(regime_history)
@@ -321,10 +319,7 @@ class BacktestEngine:
         direction = signal.direction
 
         # KO level for leveraged product
-        if direction == "long":
-            ko_level = entry * (1 - ko_buffer)
-        else:
-            ko_level = entry * (1 + ko_buffer)
+        ko_level = entry * (1 - ko_buffer) if direction == "long" else entry * (1 + ko_buffer)
 
         # Determine max hold days from strategy metadata or default
         max_hold_days = signal.metadata.get("max_hold_days", 1)
@@ -381,12 +376,7 @@ class BacktestEngine:
                 }
 
                 # Check KO first (wick touches KO level)
-                if direction == "long" and bar["Low"] <= ko_level:
-                    outcome = "ko"
-                    exit_price = ko_level
-                    exit_time = str(bar["time"]) if bar["time"] else ""
-                    break
-                elif direction == "short" and bar["High"] >= ko_level:
+                if direction == "long" and bar["Low"] <= ko_level or direction == "short" and bar["High"] >= ko_level:
                     outcome = "ko"
                     exit_price = ko_level
                     exit_time = str(bar["time"]) if bar["time"] else ""
@@ -416,10 +406,7 @@ class BacktestEngine:
         if outcome == "ko":
             pnl = -position_size
         else:
-            if direction == "long":
-                price_change_pct = (exit_price - entry) / entry
-            else:
-                price_change_pct = (entry - exit_price) / entry
+            price_change_pct = (exit_price - entry) / entry if direction == "long" else (entry - exit_price) / entry
             pnl = position_size * (price_change_pct / ko_buffer)
             pnl = max(pnl, -position_size)  # can't lose more than position
 
@@ -484,7 +471,7 @@ class BacktestEngine:
 
     @staticmethod
     def _normalise_regime_history(
-        regime_history: Union[pd.DataFrame, dict, None],
+        regime_history: pd.DataFrame | dict | None,
     ) -> pd.DataFrame | None:
         """Convert regime_history to a DataFrame regardless of input format.
 

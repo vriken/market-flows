@@ -8,7 +8,6 @@ integrates with the orb-strategy project's intraday data when available.
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import yfinance as yf
@@ -290,7 +289,7 @@ def fetch_multi(
 # ORB-strategy data integration
 # ---------------------------------------------------------------------------
 
-def _load_orb_date(ticker: str, date_str: str) -> Optional[pd.DataFrame]:
+def _load_orb_date(ticker: str, date_str: str) -> pd.DataFrame | None:
     """Load a single date's intraday data from the orb-strategy cache."""
     path = ORB_INTRADAY_DIR / ticker / f"{date_str}.parquet"
     if not path.exists():

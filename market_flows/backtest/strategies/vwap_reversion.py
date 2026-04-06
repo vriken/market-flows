@@ -14,7 +14,6 @@ Exit: hit target, hit stop, or EOD.
 from __future__ import annotations
 
 import datetime as dt
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -149,20 +148,13 @@ class VWAPReversionStrategy(BaseStrategy):
         current_bar: dict,
         bars_since_entry: int,
         day_index: int,
-    ) -> Optional[Exit]:
+    ) -> Exit | None:
         target = signal.target_price
         stop = signal.stop_price
 
         # Target hit (mean reversion to VWAP)
         if target is not None:
-            if signal.direction == "long" and current_bar["High"] >= target:
-                return Exit(
-                    should_exit=True,
-                    exit_price=float(target),
-                    reason="target",
-                    metadata={"trigger": "vwap_target"},
-                )
-            elif signal.direction == "short" and current_bar["Low"] <= target:
+            if signal.direction == "long" and current_bar["High"] >= target or signal.direction == "short" and current_bar["Low"] <= target:
                 return Exit(
                     should_exit=True,
                     exit_price=float(target),
@@ -200,7 +192,7 @@ class VWAPReversionStrategy(BaseStrategy):
 
     # ── VWAP computation ───────────────────────────────────────────────────
 
-    def _compute_vwap_bands(self, day_bars: pd.DataFrame) -> Optional[pd.DataFrame]:
+    def _compute_vwap_bands(self, day_bars: pd.DataFrame) -> pd.DataFrame | None:
         """Compute session VWAP with sigma bands for a single day."""
         df = day_bars.copy()
         tp = (df["High"] + df["Low"] + df["Close"]) / 3

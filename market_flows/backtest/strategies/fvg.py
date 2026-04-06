@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -103,7 +102,6 @@ class FVGStrategy(BaseStrategy):
                     entry_price = (fvg.upper + fvg.lower) / 2
                     entry_price = min(entry_price, today_high)  # cap at today's high
                     stop_price = fvg.lower - self.buffer_atr_mult * fvg.atr
-                    target_price = fvg.lower  # full fill = price reaches the bottom
 
                     # For bullish FVG fill: we're buying as price dips into the zone
                     # expecting it to hold and bounce back up
@@ -138,7 +136,6 @@ class FVGStrategy(BaseStrategy):
                     entry_price = (fvg.upper + fvg.lower) / 2
                     entry_price = max(entry_price, today_low)  # floor at today's low
                     stop_price = fvg.upper + self.buffer_atr_mult * fvg.atr
-                    target_price = fvg.lower  # full fill = price drops to zone bottom
 
                     # For bearish FVG fill: we're shorting as price rallies into the zone
                     # expecting it to reject and drop
@@ -176,20 +173,13 @@ class FVGStrategy(BaseStrategy):
         current_bar: dict,
         bars_since_entry: int,
         day_index: int,
-    ) -> Optional[Exit]:
+    ) -> Exit | None:
         target = signal.target_price
         stop = signal.stop_price
 
         # Target hit (full FVG fill)
         if target is not None:
-            if signal.direction == "long" and current_bar["High"] >= target:
-                return Exit(
-                    should_exit=True,
-                    exit_price=float(target),
-                    reason="target",
-                    metadata={"trigger": "fvg_fill_complete"},
-                )
-            elif signal.direction == "short" and current_bar["Low"] <= target:
+            if signal.direction == "long" and current_bar["High"] >= target or signal.direction == "short" and current_bar["Low"] <= target:
                 return Exit(
                     should_exit=True,
                     exit_price=float(target),
@@ -198,14 +188,7 @@ class FVGStrategy(BaseStrategy):
                 )
 
         # Stop hit
-        if signal.direction == "long" and current_bar["Low"] <= stop:
-            return Exit(
-                should_exit=True,
-                exit_price=float(stop),
-                reason="stop",
-                metadata={"trigger": "fvg_stop"},
-            )
-        elif signal.direction == "short" and current_bar["High"] >= stop:
+        if signal.direction == "long" and current_bar["Low"] <= stop or signal.direction == "short" and current_bar["High"] >= stop:
             return Exit(
                 should_exit=True,
                 exit_price=float(stop),

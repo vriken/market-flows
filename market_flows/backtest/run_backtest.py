@@ -22,7 +22,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -368,7 +368,7 @@ def main(argv: list[str] | None = None) -> None:
     print()
     print("+" + "-" * 58 + "+")
     print("|              MARKET-FLOWS BACKTEST RUNNER                |")
-    print(f"|  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'):^56s}  |")
+    print(f"|  {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC'):^56s}  |")
     print("+" + "-" * 58 + "+")
     print()
     print(f"  Strategies: {', '.join(strategy_names)}")
@@ -437,7 +437,7 @@ def main(argv: list[str] | None = None) -> None:
 
 def _default_output_path(ext: str) -> str:
     """Generate a default output path with timestamp."""
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     out_dir = Path("data/backtests")
     out_dir.mkdir(parents=True, exist_ok=True)
     return str(out_dir / f"backtest_{ts}.{ext}")
@@ -445,7 +445,6 @@ def _default_output_path(ext: str) -> str:
 
 # Import here to avoid circular — report module is simple
 from .report import BacktestReport  # noqa: E402
-
 
 if __name__ == "__main__":
     main()
