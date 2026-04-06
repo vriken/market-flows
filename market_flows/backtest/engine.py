@@ -89,7 +89,7 @@ class BacktestEngine:
         self,
         *args,
         position_size: float = 500.0,
-        ko_buffer: float = 0.02,
+        ko_buffer: float = 0.04,
         **kwargs,
     ) -> list[Trade]:
         """Run the strategy across all tickers for the given date range.
@@ -281,6 +281,10 @@ class BacktestEngine:
         trade_dates = [d for d in all_dates if start_date <= d <= end_date]
 
         for trade_date in trade_dates:
+            # Regime gating: skip if strategy matrix says SIT OUT
+            if self._regime_blocks_trade(strategy.name, trade_date):
+                continue
+
             data = {
                 "intraday": intraday_df,
                 "daily": daily_df,
@@ -442,6 +446,44 @@ class BacktestEngine:
             metadata=signal.metadata,
         )
         return trade
+
+    def _regime_blocks_trade(self, strategy_name: str, trade_date: dt.date) -> bool:
+        """Check if the strategy matrix says SIT OUT for this date's regime."""
+        regime_data = self._get_regime(trade_date)
+        if not regime_data:
+            return False
+
+        from ..regime import STRATEGIES
+
+        # Find matching strategy rules
+        strat_rules = None
+        for s in STRATEGIES:
+            if s["name"] == strategy_name:
+                strat_rules = s["rules"]
+                break
+        if strat_rules is None:
+            return False
+
+        # Map regime_history columns to dimension names
+        dim_col_map = {
+            "Volatility": ("volatility_state", "regime_volatility"),
+            "Cycle": ("cycle_state", "regime_cycle"),
+            "Risk": ("risk_state", "regime_risk"),
+            "Monetary": ("monetary_state", "regime_monetary"),
+            "Credit": ("credit_state", "regime_credit"),
+        }
+
+        for dim_name, rule_map in strat_rules.items():
+            col_names = dim_col_map.get(dim_name, ())
+            state = None
+            for col in col_names:
+                state = regime_data.get(col)
+                if state:
+                    break
+            if state and rule_map.get(state) == "SIT OUT":
+                return True
+
+        return False
 
     def _get_regime(self, date: dt.date) -> dict:
         """Look up regime classification for a given date."""

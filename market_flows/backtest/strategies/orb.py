@@ -174,6 +174,14 @@ class ORBStrategy(BaseStrategy):
 
             quality_score = "".join(score_chars)
 
+            # Require at least one quality flag to enter
+            if not score_chars:
+                continue
+
+            # 1.5R target
+            risk = abs(entry_price - stop_price)
+            target_price = entry_price + 1.5 * risk if direction == "long" else entry_price - 1.5 * risk
+
             signal = Signal(
                 date=date,
                 time=ts.time() if hasattr(ts, "time") else None,
@@ -181,7 +189,7 @@ class ORBStrategy(BaseStrategy):
                 direction=direction,
                 entry_price=entry_price,
                 stop_price=stop_price,
-                target_price=None,  # EOD exit
+                target_price=target_price,
                 quality_score=quality_score,
                 quality_flags=flags,
                 metadata={
@@ -205,6 +213,17 @@ class ORBStrategy(BaseStrategy):
     ) -> Exit | None:
         orb_high = signal.metadata.get("orb_high", 0)
         orb_low = signal.metadata.get("orb_low", 0)
+
+        # Target hit (1.5R)
+        target = signal.target_price
+        if target is not None:
+            if (signal.direction == "long" and current_bar["High"] >= target) or (signal.direction == "short" and current_bar["Low"] <= target):
+                return Exit(
+                    should_exit=True,
+                    exit_price=float(target),
+                    reason="target",
+                    metadata={"trigger": "1.5r_target"},
+                )
 
         # Full-reversal stop: close through entire ORB range
         if signal.direction == "long" and current_bar["Close"] < orb_low:

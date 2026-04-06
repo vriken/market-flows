@@ -108,13 +108,18 @@ class PDHLStrategy(BaseStrategy):
                 risk = close - stop_price
                 if risk <= 0:
                     continue
-                target_price = close + risk  # 1R target
 
                 quality_parts = []
                 if vwap_confirmed:
                     quality_parts.append("W")  # VWAP confirmed
                 if vol_ratio >= 2.0:
                     quality_parts.append("V")  # strong volume spike
+
+                # Require at least one quality flag
+                if not quality_parts:
+                    continue
+
+                target_price = close + 1.5 * risk  # 1.5R target
 
                 return [Signal(
                     date=date,
@@ -149,13 +154,18 @@ class PDHLStrategy(BaseStrategy):
                 risk = stop_price - close
                 if risk <= 0:
                     continue
-                target_price = close - risk  # 1R target
 
                 quality_parts = []
                 if vwap_confirmed:
                     quality_parts.append("W")
                 if vol_ratio >= 2.0:
                     quality_parts.append("V")
+
+                # Require at least one quality flag
+                if not quality_parts:
+                    continue
+
+                target_price = close - 1.5 * risk  # 1.5R target
 
                 return [Signal(
                     date=date,
