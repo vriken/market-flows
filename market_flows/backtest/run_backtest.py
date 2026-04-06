@@ -123,73 +123,26 @@ def _load_strategies(names: list[str]):
 # ======================================================================
 
 
-def _build_regime_history(start: date, end: date) -> dict[date, dict]:
-    """Build a mapping of date -> regime classification.
+def _build_regime_history(start: date, end: date) -> pd.DataFrame:
+    """Build historical regime classifications for each trading day.
 
-    Uses the market_flows.regime module with historical data when
-    available, falling back to a static 'Unknown' regime otherwise.
+    Uses the full historical reconstruction from regime_history module,
+    which fetches VIX, yields, ratios, and credit data per day and runs
+    classify_regime() for each.
 
     Returns:
-        dict mapping dates to regime dicts with keys matching
-        Trade regime fields.
+        DataFrame indexed by date with regime columns.
     """
     try:
-        from ..sentiment import (
-            fetch_leverage_ratios,
-            fetch_market_ratios,
-            fetch_vix_term_structure,
-            fetch_yield_curve,
-            fetch_yield_curve_history,
-        )
-        from ..regime import classify_regime
-
-        # Fetch current regime as a baseline (historical reconstruction
-        # is strategy-engine work; here we provide a snapshot).
-        sentiment_data = {
-            "vix": fetch_vix_term_structure(),
-            "leverage": fetch_leverage_ratios(),
-            "ratios": fetch_market_ratios(),
-            "yield_curve": fetch_yield_curve(),
-            "yield_history": fetch_yield_curve_history(),
-        }
-        regime = classify_regime(sentiment_data)
-
-        # For now, apply the current regime to all dates.  A full
-        # historical reconstruction requires time-series data per day
-        # and will be added in a later sprint.
-        regime_entry = {
-            "regime_composite": regime["composite_label"],
-            "regime_volatility": next(
-                (d["state"] for d in regime["dimensions"] if d["name"] == "Volatility"), "Unknown"
-            ),
-            "regime_cycle": next(
-                (d["state"] for d in regime["dimensions"] if d["name"] == "Cycle"), "Unknown"
-            ),
-            "regime_risk": next(
-                (d["state"] for d in regime["dimensions"] if d["name"] == "Risk"), "Unknown"
-            ),
-            "regime_monetary": next(
-                (d["state"] for d in regime["dimensions"] if d["name"] == "Monetary"), "Unknown"
-            ),
-        }
-        logger.info("Using current regime snapshot: %s", regime_entry["regime_composite"])
-
+        from .regime_history import build_regime_history
+        regime_df = build_regime_history(str(start), str(end))
+        logger.info("Built regime history: %d days, regimes: %s",
+                     len(regime_df),
+                     regime_df["composite_label"].value_counts().to_dict())
+        return regime_df
     except Exception as e:
-        logger.warning("Could not build regime history (%s) — using 'Unknown'", e)
-        regime_entry = {
-            "regime_composite": "Unknown",
-            "regime_volatility": "Unknown",
-            "regime_cycle": "Unknown",
-            "regime_risk": "Unknown",
-            "regime_monetary": "Unknown",
-        }
-
-    # Map the same regime to every trading day in the range.
-    history: dict[date, dict] = {}
-    for d in pd.bdate_range(start, end):
-        history[d.date()] = regime_entry
-
-    return history
+        logger.warning("Could not build regime history (%s) — returning empty", e)
+        return pd.DataFrame()
 
 
 # ======================================================================
@@ -258,65 +211,48 @@ def _run_backtest(
     tickers: list[str],
     start: date,
     end: date,
-    regime_history: dict[date, dict],
-) -> list[dict]:
+    regime_history: pd.DataFrame,
+) -> pd.DataFrame:
     """Run each strategy through the backtest engine and collect trades.
 
-    Returns a list of trade dicts ready for ``pd.DataFrame()``.
+    Returns a combined DataFrame of all trades across strategies.
     """
-    try:
-        from .engine import BacktestEngine
-    except ImportError:
-        logger.error(
-            "BacktestEngine not yet implemented. "
-            "Create market_flows/backtest/engine.py to enable live backtesting."
-        )
-        return []
+    from .engine import BacktestEngine
+    from .data import fetch_daily
 
-    price_data = _fetch_price_data(tickers, start, end)
+    # Fetch price data
+    logger.info("Fetching price data for %d tickers...", len(tickers))
+    price_data: dict[str, pd.DataFrame] = {}
+    for ticker in tickers:
+        try:
+            df = fetch_daily(ticker, str(start), str(end))
+            if not df.empty:
+                price_data[ticker] = df
+        except Exception as e:
+            logger.debug("No data for %s: %s", ticker, e)
+    logger.info("Fetched data for %d / %d tickers", len(price_data), len(tickers))
+
     if not price_data:
         logger.error("No price data available — aborting backtest")
-        return []
+        return pd.DataFrame()
 
-    engine = BacktestEngine(
-        regime_history=regime_history,
-    )
-
-    all_trades: list[dict] = []
+    all_dfs: list[pd.DataFrame] = []
 
     for strategy in strategies:
         logger.info("Running %s on %d tickers...", strategy.name, len(price_data))
         try:
-            trades = engine.run(strategy, price_data, start, end)
-            for t in trades:
-                # Convert Trade dataclass to dict
-                trade_dict = {
-                    "ticker": t.ticker,
-                    "date": t.date,
-                    "strategy": t.strategy,
-                    "direction": t.direction,
-                    "entry_price": t.entry_price,
-                    "exit_price": t.exit_price,
-                    "stop_price": t.stop_price,
-                    "target_price": t.target_price,
-                    "pnl": t.pnl,
-                    "pnl_pct": t.pnl_pct,
-                    "outcome": t.outcome,
-                    "days_held": t.days_held,
-                    "quality_score": t.quality_score,
-                    "regime_composite": t.regime_composite,
-                    "regime_volatility": t.regime_volatility,
-                    "regime_cycle": t.regime_cycle,
-                    "regime_risk": t.regime_risk,
-                    "regime_monetary": t.regime_monetary,
-                }
-                all_trades.append(trade_dict)
+            engine = BacktestEngine(strategy, regime_history=regime_history)
+            trades = engine.run(price_data, str(start), str(end))
             logger.info("  %s: %d trades generated", strategy.name, len(trades))
+            if trades:
+                all_dfs.append(engine.results_df())
         except Exception as e:
-            logger.error("  %s failed: %s", strategy.name, e)
+            logger.error("  %s failed: %s", strategy.name, e, exc_info=True)
             continue
 
-    return all_trades
+    if all_dfs:
+        return pd.concat(all_dfs, ignore_index=True)
+    return pd.DataFrame()
 
 
 # ======================================================================
@@ -459,18 +395,14 @@ def main(argv: list[str] | None = None) -> None:
 
     # Run backtest
     print("  Running backtest...")
-    trade_dicts = _run_backtest(strategies, tickers, start, end, regime_history)
-    print(f"  Completed: {len(trade_dicts)} total trades")
+    trades_df = _run_backtest(strategies, tickers, start, end, regime_history)
+    print(f"  Completed: {len(trades_df)} total trades")
     print()
 
-    if not trade_dicts:
-        print("  No trades generated. The engine may not be implemented yet,")
-        print("  or no signals fired for the given parameters.")
+    if trades_df.empty:
+        print("  No trades generated.")
         print()
         return
-
-    # Build trades DataFrame
-    trades_df = pd.DataFrame(trade_dicts)
 
     # Apply regime filter
     if args.regime_filter:

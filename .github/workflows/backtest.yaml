@@ -1,0 +1,89 @@
+name: Weekly Strategy Backtest
+
+on:
+  schedule:
+    # Saturday 10 AM UTC — after markets close for the week
+    - cron: '0 10 * * 6'
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: 'Strategy to test (orb,vwap,fvg,momentum,pdhl,all)'
+        default: 'all'
+      start_date:
+        description: 'Start date (YYYY-MM-DD)'
+        default: '2025-01-01'
+      tickers:
+        description: 'Tickers (comma-separated, or "default" for full universe)'
+        default: 'default'
+
+permissions:
+  contents: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout main (code)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Checkout gh-pages (cached data)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install ./main
+
+      - name: Restore cached backtest data
+        run: |
+          mkdir -p main/data/backtest
+          cp -r gh-pages/data/backtest/* main/data/backtest/ 2>/dev/null || true
+
+      - name: Run backtest
+        working-directory: main
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          STRATEGY="${{ github.event.inputs.strategy || 'all' }}"
+          START="${{ github.event.inputs.start_date || '2025-01-01' }}"
+          TICKERS="${{ github.event.inputs.tickers || 'default' }}"
+
+          ARGS="--strategy $STRATEGY --start $START --output html --output-path data/backtest/report.html --verbose"
+
+          if [ "$TICKERS" != "default" ]; then
+            ARGS="$ARGS --tickers $(echo $TICKERS | tr ',' ' ')"
+          fi
+
+          python -m market_flows.backtest.run_backtest $ARGS
+
+          # Also export CSV for analysis
+          python -m market_flows.backtest.run_backtest --strategy $STRATEGY --start $START --output csv --output-path data/backtest/results
+
+      - name: Copy backtest results to gh-pages
+        run: |
+          mkdir -p gh-pages/data/backtest
+          cp -r main/data/backtest/* gh-pages/data/backtest/
+
+      - name: Commit and push results
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Backtest results $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
