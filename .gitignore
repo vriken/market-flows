@@ -3,3 +3,4 @@ data/
 docs/
 __pycache__/
 agents/
+backtests/
