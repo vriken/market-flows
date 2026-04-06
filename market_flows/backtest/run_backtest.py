@@ -13,7 +13,7 @@ Options
     --output {console,csv,html}                    Report format (default: console)
     --output-path PATH                             File path for csv/html output
     --regime-filter LABEL                          Only include trades in this regime
-    --position-size N                              Nominal position size (default: 10000)
+    --position-size N                              Nominal position size (default: 500)
     --verbose / -v                                 Enable debug logging
 """
 
@@ -27,12 +27,15 @@ from pathlib import Path
 
 import pandas as pd
 
-from .report import BacktestReport, DEFAULT_POSITION_SIZE
-
 logger = logging.getLogger(__name__)
 
 # ======================================================================
-# ORB universe (~60 instruments)
+# Default position sizing (matches ORB backtest: 500 SEK, 2% KO = 50x)
+# ======================================================================
+DEFAULT_POSITION_SIZE = 500
+
+# ======================================================================
+# ORB universe (~71 instruments)
 # ======================================================================
 
 _SECTOR_ETFS = [
@@ -68,7 +71,7 @@ _COMMODITIES = ["GLD", "SLV", "CPER", "PPLT"]
 
 DEFAULT_TICKERS: list[str] = _SECTOR_ETFS + _STOCKS + _COMMODITIES
 
-# Strategy name -> import path mapping
+# Strategy name -> class name mapping
 STRATEGY_MAP = {
     "orb": "ORBStrategy",
     "vwap": "VWAPReversionStrategy",
@@ -84,11 +87,8 @@ STRATEGY_MAP = {
 
 
 def _load_strategies(names: list[str]):
-    """Lazily import and instantiate requested strategy classes.
-
-    Returns list of strategy instances.
-    """
-    from .strategies import (  # noqa: F401 — conditional import
+    """Lazily import and instantiate requested strategy classes."""
+    from .strategies import (
         FVGStrategy,
         MomentumStrategy,
         ORBStrategy,
@@ -124,15 +124,7 @@ def _load_strategies(names: list[str]):
 
 
 def _build_regime_history(start: date, end: date) -> pd.DataFrame:
-    """Build historical regime classifications for each trading day.
-
-    Uses the full historical reconstruction from regime_history module,
-    which fetches VIX, yields, ratios, and credit data per day and runs
-    classify_regime() for each.
-
-    Returns:
-        DataFrame indexed by date with regime columns.
-    """
+    """Build historical regime classifications for each trading day."""
     try:
         from .regime_history import build_regime_history
         regime_df = build_regime_history(str(start), str(end))
@@ -146,7 +138,7 @@ def _build_regime_history(start: date, end: date) -> pd.DataFrame:
 
 
 # ======================================================================
-# Price data fetcher
+# Price data fetcher — uses data.py with caching
 # ======================================================================
 
 
@@ -154,50 +146,40 @@ def _fetch_price_data(
     tickers: list[str],
     start: date,
     end: date,
-) -> dict[str, pd.DataFrame]:
-    """Download daily OHLCV data for each ticker via yfinance.
+    need_intraday: bool = False,
+) -> dict[str, dict]:
+    """Fetch price data for all tickers, with optional intraday.
 
-    Returns dict of ticker -> DataFrame (with columns Open, High, Low,
-    Close, Volume and a DatetimeIndex).
+    Returns dict of ticker -> {"daily": DataFrame, "intraday": DataFrame or None}
     """
-    import yfinance as yf
+    from .data import fetch_daily, fetch_intraday
 
-    logger.info("Fetching price data for %d tickers (%s to %s)...", len(tickers), start, end)
+    result: dict[str, dict] = {}
+    total = len(tickers)
 
-    # Use yfinance bulk download for efficiency.
-    try:
-        raw = yf.download(
-            tickers,
-            start=str(start),
-            end=str(end),
-            group_by="ticker",
-            auto_adjust=True,
-            progress=False,
-            threads=True,
-        )
-    except Exception as e:
-        logger.error("yfinance download failed: %s", e)
-        return {}
-
-    result: dict[str, pd.DataFrame] = {}
-
-    if len(tickers) == 1:
-        # yfinance returns flat columns for a single ticker.
-        ticker = tickers[0]
-        df = raw.copy()
-        if not df.empty:
-            result[ticker] = df
-    else:
-        for ticker in tickers:
-            try:
-                df = raw[ticker].dropna(how="all")
-                if not df.empty:
-                    result[ticker] = df
-            except (KeyError, TypeError):
-                logger.debug("No data for %s", ticker)
+    for i, ticker in enumerate(tickers, 1):
+        try:
+            daily = fetch_daily(ticker, str(start), str(end))
+            if daily.empty:
                 continue
 
-    logger.info("Fetched data for %d / %d tickers", len(result), len(tickers))
+            intraday = None
+            if need_intraday:
+                try:
+                    intraday = fetch_intraday(ticker, str(start), str(end))
+                    if intraday is not None and intraday.empty:
+                        intraday = None
+                except Exception as e:
+                    logger.debug("No intraday for %s: %s", ticker, e)
+
+            result[ticker] = {"daily": daily, "intraday": intraday}
+
+            if i % 10 == 0 or i == total:
+                logger.info("  Fetched %d/%d tickers", i, total)
+
+        except Exception as e:
+            logger.debug("No data for %s: %s", ticker, e)
+
     return result
 
 
@@ -212,25 +194,25 @@ def _run_backtest(
     start: date,
     end: date,
     regime_history: pd.DataFrame,
+    position_size: float = DEFAULT_POSITION_SIZE,
 ) -> pd.DataFrame:
-    """Run each strategy through the backtest engine and collect trades.
-
-    Returns a combined DataFrame of all trades across strategies.
-    """
+    """Run each strategy through the backtest engine and collect trades."""
     from .engine import BacktestEngine
-    from .data import fetch_daily
+
+    # Check if any strategy needs intraday data
+    need_intraday = any(s.requires_intraday for s in strategies)
+    daily_only = [s for s in strategies if not s.requires_intraday]
+    intraday_strats = [s for s in strategies if s.requires_intraday]
+
+    if daily_only and intraday_strats:
+        logger.info("Strategies: %d daily, %d intraday",
+                     len(daily_only), len(intraday_strats))
 
     # Fetch price data
-    logger.info("Fetching price data for %d tickers...", len(tickers))
-    price_data: dict[str, pd.DataFrame] = {}
-    for ticker in tickers:
-        try:
-            df = fetch_daily(ticker, str(start), str(end))
-            if not df.empty:
-                price_data[ticker] = df
-        except Exception as e:
-            logger.debug("No data for %s: %s", ticker, e)
-    logger.info("Fetched data for %d / %d tickers", len(price_data), len(tickers))
+    print(f"  Fetching price data for {len(tickers)} tickers"
+          f"{' (+ intraday)' if need_intraday else ''}...")
+    price_data = _fetch_price_data(tickers, start, end, need_intraday=need_intraday)
+    print(f"  Got data for {len(price_data)} / {len(tickers)} tickers")
 
     if not price_data:
         logger.error("No price data available — aborting backtest")
@@ -239,15 +221,33 @@ def _run_backtest(
     all_dfs: list[pd.DataFrame] = []
 
     for strategy in strategies:
-        logger.info("Running %s on %d tickers...", strategy.name, len(price_data))
+        print(f"  Running {strategy.name}...")
+
+        # Build the right data dict for this strategy
+        if strategy.requires_intraday:
+            # Intraday strategies get {"daily": DF, "intraday": DF} bundles
+            # Skip tickers that don't have intraday data
+            strat_data = {}
+            for t, bundle in price_data.items():
+                if bundle.get("intraday") is not None:
+                    strat_data[t] = bundle
+                else:
+                    # Fall back to daily-only (strategy may handle it)
+                    strat_data[t] = bundle
+        else:
+            # Daily strategies just get the daily DataFrame directly
+            strat_data = {t: bundle["daily"] for t, bundle in price_data.items()}
+
         try:
             engine = BacktestEngine(strategy, regime_history=regime_history)
-            trades = engine.run(price_data, str(start), str(end))
-            logger.info("  %s: %d trades generated", strategy.name, len(trades))
+            trades = engine.run(strat_data, str(start), str(end),
+                              position_size=position_size)
+            print(f"    {len(trades)} trades")
             if trades:
                 all_dfs.append(engine.results_df())
         except Exception as e:
             logger.error("  %s failed: %s", strategy.name, e, exc_info=True)
+            print(f"    FAILED: {e}")
             continue
 
     if all_dfs:
@@ -277,16 +277,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     ap.add_argument(
         "--strategy",
-        choices=list(STRATEGY_MAP.keys()) + ["all"],
+        choices=list(STRATEGY_MAP.keys()) + ["all", "daily", "intraday"],
         default="all",
-        help="Strategy to backtest (default: all)",
+        help="Strategy to backtest. 'daily' = fvg+momentum, 'intraday' = orb+vwap+pdhl (default: all)",
     )
     ap.add_argument(
         "--tickers",
         nargs="+",
         metavar="TICKER",
         default=None,
-        help="Ticker symbols to test (default: ORB universe ~60 instruments)",
+        help="Ticker symbols to test (default: ORB universe ~71 instruments)",
     )
     ap.add_argument(
         "--start",
@@ -323,7 +323,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--position-size",
         type=float,
         default=DEFAULT_POSITION_SIZE,
-        help=f"Nominal position size for ROI calculation (default: {DEFAULT_POSITION_SIZE:,.0f})",
+        help=f"Nominal position size (default: {DEFAULT_POSITION_SIZE})",
     )
     ap.add_argument(
         "--verbose", "-v",
@@ -338,9 +338,9 @@ def main(argv: list[str] | None = None) -> None:
     """Entry point for the backtest CLI runner."""
     args = _parse_args(argv)
 
-    # Configure logging
+    # Configure logging — INFO by default so progress is visible in CI
     logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.WARNING,
+        level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(name)s: %(message)s",
     )
 
@@ -357,6 +357,10 @@ def main(argv: list[str] | None = None) -> None:
     # Resolve strategies
     if args.strategy == "all":
         strategy_names = list(STRATEGY_MAP.keys())
+    elif args.strategy == "daily":
+        strategy_names = ["fvg", "momentum"]
+    elif args.strategy == "intraday":
+        strategy_names = ["orb", "vwap", "pdhl"]
     else:
         strategy_names = [args.strategy]
 
@@ -370,7 +374,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  Strategies: {', '.join(strategy_names)}")
     print(f"  Tickers:    {len(tickers)} instruments")
     print(f"  Period:     {start} to {end}")
-    print(f"  Position:   {args.position_size:,.0f}")
+    print(f"  Position:   {args.position_size:,.0f} SEK (2% KO = 50x leverage)")
     if args.regime_filter:
         print(f"  Regime:     {args.regime_filter}")
     print()
@@ -380,7 +384,6 @@ def main(argv: list[str] | None = None) -> None:
         strategies = _load_strategies(strategy_names)
     except ImportError as e:
         print(f"Error loading strategies: {e}")
-        print("Some strategy modules may not be implemented yet.")
         sys.exit(1)
 
     if not strategies:
@@ -394,9 +397,10 @@ def main(argv: list[str] | None = None) -> None:
     print()
 
     # Run backtest
-    print("  Running backtest...")
-    trades_df = _run_backtest(strategies, tickers, start, end, regime_history)
-    print(f"  Completed: {len(trades_df)} total trades")
+    trades_df = _run_backtest(strategies, tickers, start, end, regime_history,
+                              position_size=args.position_size)
+    print()
+    print(f"  Total trades: {len(trades_df)}")
     print()
 
     if trades_df.empty:
@@ -412,7 +416,6 @@ def main(argv: list[str] | None = None) -> None:
         print()
         if trades_df.empty:
             print("  No trades match the regime filter.")
-            print()
             return
 
     # Generate report
@@ -425,23 +428,23 @@ def main(argv: list[str] | None = None) -> None:
         out_path = args.output_path or _default_output_path("csv")
         report.to_csv(out_path)
         print(f"  CSV files written to {Path(out_path).parent}/")
-        print()
 
     elif args.output == "html":
         out_path = args.output_path or _default_output_path("html")
         report.to_html(out_path)
         print(f"  HTML report written to {out_path}")
-        print()
 
 
 def _default_output_path(ext: str) -> str:
     """Generate a default output path with timestamp."""
-    from ..config import DATA_DIR
-
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    out_dir = DATA_DIR / "backtests"
+    out_dir = Path("data/backtests")
     out_dir.mkdir(parents=True, exist_ok=True)
     return str(out_dir / f"backtest_{ts}.{ext}")
+
+
+# Import here to avoid circular — report module is simple
+from .report import BacktestReport  # noqa: E402
 
 
 if __name__ == "__main__":

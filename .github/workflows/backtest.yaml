@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       strategy:
-        description: 'Strategy to test (orb,vwap,fvg,momentum,pdhl,all)'
+        description: 'Strategy to test (orb,vwap,fvg,momentum,pdhl,daily,intraday,all)'
         default: 'all'
       start_date:
         description: 'Start date (YYYY-MM-DD)'
@@ -22,7 +22,7 @@ permissions:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     steps:
       - name: Checkout main (code)
@@ -49,8 +49,10 @@ jobs:
         run: |
           mkdir -p main/data/backtest
           cp -r gh-pages/data/backtest/* main/data/backtest/ 2>/dev/null || true
+          echo "Cached data restored:"
+          du -sh main/data/backtest/ 2>/dev/null || echo "  (empty)"
 
-      - name: Run backtest
+      - name: Run backtest (HTML report)
         working-directory: main
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -59,7 +61,7 @@ jobs:
           START="${{ github.event.inputs.start_date || '2025-01-01' }}"
           TICKERS="${{ github.event.inputs.tickers || 'default' }}"
 
-          ARGS="--strategy $STRATEGY --start $START --output html --output-path data/backtest/report.html --verbose"
+          ARGS="--strategy $STRATEGY --start $START --output html --output-path data/backtest/report.html"
 
           if [ "$TICKERS" != "default" ]; then
             ARGS="$ARGS --tickers $(echo $TICKERS | tr ',' ' ')"
@@ -67,13 +69,41 @@ jobs:
 
           python -m market_flows.backtest.run_backtest $ARGS
 
-          # Also export CSV for analysis
-          python -m market_flows.backtest.run_backtest --strategy $STRATEGY --start $START --output csv --output-path data/backtest/results
+      - name: Run backtest (CSV export)
+        working-directory: main
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          STRATEGY="${{ github.event.inputs.strategy || 'all' }}"
+          START="${{ github.event.inputs.start_date || '2025-01-01' }}"
+          TICKERS="${{ github.event.inputs.tickers || 'default' }}"
 
-      - name: Copy backtest results to gh-pages
+          ARGS="--strategy $STRATEGY --start $START --output csv --output-path data/backtest/results"
+
+          if [ "$TICKERS" != "default" ]; then
+            ARGS="$ARGS --tickers $(echo $TICKERS | tr ',' ' ')"
+          fi
+
+          python -m market_flows.backtest.run_backtest $ARGS
+
+      - name: Copy backtest results + cached data to gh-pages
         run: |
           mkdir -p gh-pages/data/backtest
-          cp -r main/data/backtest/* gh-pages/data/backtest/
+          # Copy reports
+          cp main/data/backtest/report.html gh-pages/data/backtest/ 2>/dev/null || true
+          cp main/data/backtest/results*.csv gh-pages/data/backtest/ 2>/dev/null || true
+          # Copy cached price data + regime history for next run
+          cp main/data/backtest/regime_history.parquet gh-pages/data/backtest/ 2>/dev/null || true
+          # Copy per-ticker cached data (daily + intraday parquets)
+          for dir in main/data/backtest/*/; do
+            ticker=$(basename "$dir")
+            if [ "$ticker" != "." ]; then
+              mkdir -p "gh-pages/data/backtest/$ticker"
+              cp -r "$dir"* "gh-pages/data/backtest/$ticker/" 2>/dev/null || true
+            fi
+          done
+          echo "Data to commit:"
+          du -sh gh-pages/data/backtest/
 
       - name: Commit and push results
         working-directory: gh-pages

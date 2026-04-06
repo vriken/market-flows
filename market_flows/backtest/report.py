@@ -17,8 +17,8 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Default position size used for ROI calculations when not provided.
-DEFAULT_POSITION_SIZE = 10_000.0
+# Default position size: 500 SEK with 2% KO buffer (50x leverage), matching ORB backtests.
+DEFAULT_POSITION_SIZE = 500.0
 
 
 class BacktestReport:
