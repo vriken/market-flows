@@ -22,7 +22,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -166,7 +166,13 @@ def _fetch_price_data(
             intraday = None
             if need_intraday:
                 try:
-                    intraday = fetch_intraday(ticker, str(start), str(end))
+                    # yfinance only serves ~60 days of intraday data; clamp
+                    # the start so we at least get recent bars.  Older dates
+                    # will be served from the per-date parquet cache if a
+                    # previous run already downloaded them.
+                    from .data import _YF_INTRADAY_MAX_DAYS
+                    intraday_start = max(start, date.today() - timedelta(days=_YF_INTRADAY_MAX_DAYS))
+                    intraday = fetch_intraday(ticker, str(intraday_start), str(end))
                     if intraday is not None and intraday.empty:
                         intraday = None
                 except Exception as e:

@@ -19,7 +19,10 @@ logger = logging.getLogger(__name__)
 BACKTEST_DATA_DIR = DATA_DIR / "backtest"
 
 # Path to the orb-strategy intraday cache (separate project)
-ORB_INTRADAY_DIR = Path("C:/Users/vrike/orb-strategy/data/intraday")
+# Falls back gracefully if the directory doesn't exist.
+ORB_INTRADAY_DIR = Path(
+    __file__
+).resolve().parents[2] / "data" / "orb_intraday"
 
 # yfinance caps intraday downloads at ~60 calendar days per request
 _YF_INTRADAY_MAX_DAYS = 59
