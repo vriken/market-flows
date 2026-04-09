@@ -272,7 +272,7 @@ def build_sector_rotation_heatmap(rotation_data):
             [1.0, "#3fb950"],
         ],
         zmid=0,
-        text=[[f"{v*100:+.1f}%" for v in week] for week in zip(*returns, strict=True)],
+        text=[[f"{v*100:+.1f}%" if v == v else "—" for v in week] for week in zip(*returns, strict=True)],
         texttemplate="%{text}",
         textfont=dict(size=10),
         hovertemplate="Sector: %{y}<br>Week: %{x}<br>Return: %{text}<extra></extra>",

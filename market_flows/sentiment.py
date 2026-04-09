@@ -334,6 +334,7 @@ def fetch_sector_rotation(weeks=12):
             return None
 
         if wtd_return is not None:
+            wtd_return = wtd_return.fillna(0.0)
             wtd_row = pd.DataFrame([wtd_return.values], columns=returns.columns,
                                    index=[last_date])
             returns = pd.concat([returns, wtd_row])
@@ -391,6 +392,7 @@ def fetch_orb_conditions(vix_price=None):
     try:
         spy = yf.Ticker("SPY")
         spy_hist = spy.history(period="30d")
+        spy_hist = spy_hist.dropna(subset=["Close"])
         if not spy_hist.empty and len(spy_hist) >= 2:
             result["spy_close"] = round(spy_hist["Close"].iloc[-1], 2)
             daily_ret = (spy_hist["Close"].iloc[-1] / spy_hist["Close"].iloc[-2] - 1) * 100
