@@ -67,6 +67,11 @@ jobs:
 
           ARGS="--strategy $STRATEGY --start $START --output html --output-path data/backtest/report.html"
 
+          # Use incremental mode for scheduled runs
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ARGS="$ARGS --incremental"
+          fi
+
           if [ "$TICKERS" != "default" ]; then
             ARGS="$ARGS --tickers $(echo $TICKERS | tr ',' ' ')"
           fi
@@ -83,6 +88,11 @@ jobs:
           TICKERS="${{ github.event.inputs.tickers || 'default' }}"
 
           ARGS="--strategy $STRATEGY --start $START --output csv --output-path data/backtest/results"
+
+          # Use incremental mode for scheduled runs
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ARGS="$ARGS --incremental"
+          fi
 
           if [ "$TICKERS" != "default" ]; then
             ARGS="$ARGS --tickers $(echo $TICKERS | tr ',' ' ')"

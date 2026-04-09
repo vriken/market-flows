@@ -332,6 +332,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=f"Nominal position size (default: {DEFAULT_POSITION_SIZE})",
     )
     ap.add_argument(
+        "--incremental",
+        action="store_true",
+        help="Only backtest new dates since last run (reads existing results_trades.csv)",
+    )
+    ap.add_argument(
+        "--confluence",
+        action="store_true",
+        help="Run confluence analysis: compare performance when multiple strategies agree",
+    )
+    ap.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
@@ -353,12 +363,32 @@ def main(argv: list[str] | None = None) -> None:
     # Parse dates
     start = date.fromisoformat(args.start)
     end = date.fromisoformat(args.end) if args.end else date.today()
-    if start >= end:
-        print(f"Error: start date ({start}) must be before end date ({end})")
-        sys.exit(1)
 
     # Resolve tickers
     tickers = args.tickers if args.tickers else DEFAULT_TICKERS
+
+    # Incremental mode: find last trade date from existing results
+    existing_trades_df = pd.DataFrame()
+    if args.incremental:
+        trades_csv = Path(
+            args.output_path or "data/backtest/results"
+        ).parent / (Path(args.output_path or "data/backtest/results").stem + "_trades.csv")
+        if trades_csv.exists():
+            existing_trades_df = pd.read_csv(trades_csv)
+            last_date = existing_trades_df["date"].max()
+            # Start from the day after the last trade
+            incremental_start = date.fromisoformat(last_date) + timedelta(days=1)
+            if incremental_start >= end:
+                print(f"  Already up to date (last trade: {last_date})")
+                sys.exit(0)
+            print(f"  Incremental: last trade {last_date}, running from {incremental_start}")
+            start = incremental_start
+        else:
+            print("  No existing trades found — running full backtest")
+
+    if start >= end:
+        print(f"Error: start date ({start}) must be before end date ({end})")
+        sys.exit(1)
 
     # Resolve strategies
     if args.strategy == "all":
@@ -409,6 +439,19 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  Total trades: {len(trades_df)}")
     print()
 
+    # Merge with existing trades in incremental mode
+    if args.incremental and not existing_trades_df.empty:
+        if not trades_df.empty:
+            trades_df = pd.concat([existing_trades_df, trades_df], ignore_index=True)
+            trades_df = trades_df.drop_duplicates(
+                subset=["ticker", "date", "strategy", "entry_time"], keep="last"
+            )
+            trades_df = trades_df.sort_values("date").reset_index(drop=True)
+            print(f"  Merged: {len(existing_trades_df)} existing + {len(trades_df) - len(existing_trades_df)} new = {len(trades_df)} total")
+        else:
+            trades_df = existing_trades_df
+            print("  No new trades — keeping existing results")
+
     if trades_df.empty:
         print("  No trades generated.")
         print()
@@ -423,6 +466,12 @@ def main(argv: list[str] | None = None) -> None:
         if trades_df.empty:
             print("  No trades match the regime filter.")
             return
+
+    # Confluence analysis (runs on all-strategy results before individual report)
+    if args.confluence:
+        from .confluence import analyse_confluence, print_confluence_report
+        confluence_results = analyse_confluence(trades_df)
+        print_confluence_report(confluence_results)
 
     # Generate report
     report = BacktestReport(trades_df, position_size=args.position_size)
