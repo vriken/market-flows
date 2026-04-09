@@ -1,9 +1,9 @@
-name: Weekly Strategy Backtest
+name: Daily Strategy Backtest
 
 on:
   schedule:
-    # Saturday 10 AM UTC — after markets close for the week
-    - cron: '0 10 * * 6'
+    # 8 AM UTC Mon-Fri — after US market close (previous day)
+    - cron: '0 08 * * 1-5'
   workflow_dispatch:
     inputs:
       strategy:
