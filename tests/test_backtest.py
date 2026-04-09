@@ -12,14 +12,11 @@ from __future__ import annotations
 
 import datetime as dt
 
-import numpy as np
 import pandas as pd
-import pytest
 
 from market_flows.backtest.engine import BacktestEngine
 from market_flows.backtest.strategies.base import Signal
 from market_flows.backtest.strategies.fvg import FVGStrategy
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -41,12 +38,12 @@ def _make_daily_series(
     dates = pd.bdate_range(start, periods=n_days)
     rows = []
     price = base_price
-    for d in dates:
+    for _d in dates:
         o = price
         h = price * 1.01
-        l = price * 0.99
+        lo = price * 0.99
         c = price * (1 + daily_return)
-        rows.append({"Open": o, "High": h, "Low": l, "Close": c, "Volume": 1_000_000})
+        rows.append({"Open": o, "High": h, "Low": lo, "Close": c, "Volume": 1_000_000})
         price = c
     return pd.DataFrame(rows, index=dates)
 
@@ -119,7 +116,7 @@ class TestFVGStaleness:
         dates = pd.bdate_range("2025-01-02", periods=50)
         rows = []
         price = 100.0
-        for i, d in enumerate(dates):
+        for i, _d in enumerate(dates):
             if i == 2:
                 # Create bullish FVG: bar[2].low > bar[0].high
                 rows.append({"Open": 110, "High": 115, "Low": 110, "Close": 114, "Volume": 1e6})
@@ -154,8 +151,8 @@ class TestFVGCacheInvalidation:
         strategy._detect_fvgs(short_data, "TEST")
 
         long_data = _make_daily_series("2025-01-02", 40)
-        zones_short = strategy._detect_fvgs(short_data, "TEST")
-        zones_long = strategy._detect_fvgs(long_data, "TEST")
+        strategy._detect_fvgs(short_data, "TEST")
+        strategy._detect_fvgs(long_data, "TEST")
 
         # Different data lengths should produce independent cache entries
         # (they may have different zone counts)
