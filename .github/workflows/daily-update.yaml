@@ -5,6 +5,9 @@ on:
     # 7 AM UTC Mon-Fri
     - cron: '0 07 * * 1-5'
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Daily Strategy Backtest"]
+    types: [completed]
 
 concurrency:
   group: gh-pages-data
@@ -15,6 +18,7 @@ permissions:
 
 jobs:
   test:
+    if: ${{ github.event.workflow_run.conclusion != 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
