@@ -174,8 +174,8 @@ class ORBStrategy(BaseStrategy):
 
             quality_score = "".join(score_chars)
 
-            # Require at least one quality flag to enter
-            if not score_chars:
+            # Require all quality flags to enter
+            if len(score_chars) < 4:
                 continue
 
             # 1.5R target

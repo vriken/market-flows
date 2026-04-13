@@ -87,6 +87,10 @@ class MomentumStrategy(BaseStrategy):
             # Compute gradient for quality assessment
             gradient = self._compute_gradient(sma_df, today_idx)
 
+            # Require all quality flags to enter
+            if self._quality_label(gradient, "long") != "GS":
+                return signals
+
             signals.append(Signal(
                 date=date,
                 time=None,
@@ -114,6 +118,10 @@ class MomentumStrategy(BaseStrategy):
         elif bearish_stack and close < sma20 and prev_close >= prev_sma20:
             # Price just broke below 20 SMA with full bearish alignment
             gradient = self._compute_gradient(sma_df, today_idx)
+
+            # Require all quality flags to enter
+            if self._quality_label(gradient, "short") != "GS":
+                return signals
 
             signals.append(Signal(
                 date=date,

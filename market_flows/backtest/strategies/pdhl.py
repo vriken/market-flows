@@ -113,8 +113,8 @@ class PDHLStrategy(BaseStrategy):
                 if vol_ratio >= 2.0:
                     quality_parts.append("V")  # strong volume spike
 
-                # Require at least one quality flag
-                if not quality_parts:
+                # Require all quality flags to enter
+                if len(quality_parts) < 2:
                     continue
 
                 target_price = close + 1.5 * risk  # 1.5R target
@@ -159,8 +159,8 @@ class PDHLStrategy(BaseStrategy):
                 if vol_ratio >= 2.0:
                     quality_parts.append("V")
 
-                # Require at least one quality flag
-                if not quality_parts:
+                # Require all quality flags to enter
+                if len(quality_parts) < 2:
                     continue
 
                 target_price = close - 1.5 * risk  # 1.5R target
