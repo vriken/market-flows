@@ -30,7 +30,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # ======================================================================
-# Default position sizing (500 SEK, 2% KO = 50x)
+# Default position sizing (500 SEK, turbos/mini longs 10x-50x leverage)
 # ======================================================================
 DEFAULT_POSITION_SIZE = 500
 
@@ -396,7 +396,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Enable debug logging",
     )
-    ap.add_argument("--ko-buffer", type=float, default=0.02, help="KO buffer pct (default: 0.02 = 2%%)")
+    ap.add_argument("--ko-buffer", type=float, default=0.05, help="KO buffer pct (default: 0.05 = 5%% / 20x leverage)")
     ap.add_argument("--slippage-bps", type=int, default=10, help="Slippage in basis points (default: 10)")
     ap.add_argument("--risk-normalize", action="store_true", help="Normalize position sizing by stop distance")
     ap.add_argument("--base-risk", type=float, default=0.01, help="Base risk pct for risk normalization (default: 0.01)")
@@ -480,7 +480,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  Period:     {start} to {end}")
     ko_pct = args.ko_buffer * 100
     leverage = int(1 / args.ko_buffer)
-    print(f"  Position:   {args.position_size:,.0f} SEK ({ko_pct:.0f}% KO = {leverage}x leverage)")
+    print(f"  Position:   {args.position_size:,.0f} SEK ({ko_pct:.0f}% KO ≈ {leverage}x leverage, turbos 10x-50x)")
     if args.slippage_bps:
         print(f"  Slippage:   {args.slippage_bps} bps per side")
     if args.regime_filter:

@@ -65,7 +65,7 @@ jobs:
           START="${{ github.event.inputs.start_date || '2026-02-09' }}"
           TICKERS="${{ github.event.inputs.tickers || 'default' }}"
 
-          ARGS="--strategy $STRATEGY --start $START --output html --output-path data/backtest/report.html --slippage-bps 10 --risk-normalize --ko-buffer 0.02"
+          ARGS="--strategy $STRATEGY --start $START --output html --output-path data/backtest/report.html --slippage-bps 10 --risk-normalize --ko-buffer 0.05"
 
           # Use incremental mode for scheduled runs
           if [ "${{ github.event_name }}" = "schedule" ]; then
@@ -87,7 +87,7 @@ jobs:
           START="${{ github.event.inputs.start_date || '2026-02-09' }}"
           TICKERS="${{ github.event.inputs.tickers || 'default' }}"
 
-          ARGS="--strategy $STRATEGY --start $START --output csv --output-path data/backtest/results --slippage-bps 10 --risk-normalize --ko-buffer 0.02"
+          ARGS="--strategy $STRATEGY --start $START --output csv --output-path data/backtest/results --slippage-bps 10 --risk-normalize --ko-buffer 0.05"
 
           # Use incremental mode for scheduled runs
           if [ "${{ github.event_name }}" = "schedule" ]; then

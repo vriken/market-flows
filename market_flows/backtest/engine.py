@@ -89,7 +89,7 @@ class BacktestEngine:
         self,
         *args,
         position_size: float = 500.0,
-        ko_buffer: float = 0.02,
+        ko_buffer: float = 0.05,
         slippage_pct: float = 0.0,
         risk_normalize: bool = False,
         base_risk_pct: float = 0.01,
