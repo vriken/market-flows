@@ -194,6 +194,7 @@ class TestEngineKO:
             trade_date=daily.index[5].date(),
             position_size=500.0,
             ko_buffer=0.04,
+            skip_wide_stops=False,
         )
 
         assert trade is not None

@@ -6,7 +6,7 @@ Usage
 
 Options
 -------
-    --strategy {orb,vwap,fvg,momentum,pdhl,all}  Strategy to test (default: all)
+    --strategy {orb,momentum,pdhl,vwap,fvg,all}   Strategy to test (default: all)
     --tickers TICKER [TICKER ...]                  Ticker symbols (default: ORB universe)
     --start YYYY-MM-DD                             Start date (default: 2025-01-01)
     --end YYYY-MM-DD                               End date (default: today)
@@ -30,7 +30,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # ======================================================================
-# Default position sizing (matches ORB backtest: 500 SEK, 2% KO = 50x)
+# Default position sizing (500 SEK, 2% KO = 50x)
 # ======================================================================
 DEFAULT_POSITION_SIZE = 500
 
@@ -74,10 +74,16 @@ DEFAULT_TICKERS: list[str] = _SECTOR_ETFS + _STOCKS + _COMMODITIES
 # Strategy name -> class name mapping
 STRATEGY_MAP = {
     "orb": "ORBStrategy",
-    "vwap": "VWAPReversionStrategy",
-    "fvg": "FVGStrategy",
     "momentum": "MomentumStrategy",
     "pdhl": "PDHLStrategy",
+}
+
+RETIRED_STRATEGIES = {
+    "fvg": "Retired: 8138 unfiltered trades with no quality gating, enters at open on daily signal",
+}
+
+PAUSED_STRATEGIES = {
+    "vwap": "Paused: no trend/regime context, fades moves blindly — needs filters before re-enabling",
 }
 
 
@@ -86,10 +92,14 @@ STRATEGY_MAP = {
 # ======================================================================
 
 
-def _load_strategies(names: list[str]):
-    """Lazily import and instantiate requested strategy classes."""
+def _load_strategies(names: list[str], *, include_paused: bool = False):
+    """Lazily import and instantiate requested strategy classes.
+
+    Retired strategies are always skipped with a message.
+    Paused strategies are skipped unless *include_paused* is True or
+    the user explicitly requested the strategy by name.
+    """
     from .strategies import (
-        FVGStrategy,
         MomentumStrategy,
         ORBStrategy,
         PDHLStrategy,
@@ -99,14 +109,29 @@ def _load_strategies(names: list[str]):
     class_map = {
         "ORBStrategy": ORBStrategy,
         "VWAPReversionStrategy": VWAPReversionStrategy,
-        "FVGStrategy": FVGStrategy,
         "MomentumStrategy": MomentumStrategy,
         "PDHLStrategy": PDHLStrategy,
     }
 
+    # When include_paused, merge paused strategies into the active map
+    active_map = dict(STRATEGY_MAP)
+    if include_paused:
+        for key in PAUSED_STRATEGIES:
+            if key == "vwap":
+                active_map["vwap"] = "VWAPReversionStrategy"
+
     strategies = []
     for name in names:
-        cls_name = STRATEGY_MAP.get(name)
+        # Check retired
+        if name in RETIRED_STRATEGIES:
+            print(f"  Skipping {name}: {RETIRED_STRATEGIES[name]}")
+            continue
+        # Check paused (only skip if not explicitly requested)
+        if name in PAUSED_STRATEGIES and not include_paused:
+            print(f"  ⚠ {name}: {PAUSED_STRATEGIES[name]}")
+            continue
+
+        cls_name = active_map.get(name)
         if cls_name is None:
             logger.warning("Unknown strategy %r — skipping", name)
             continue
@@ -201,6 +226,11 @@ def _run_backtest(
     end: date,
     regime_history: pd.DataFrame,
     position_size: float = DEFAULT_POSITION_SIZE,
+    ko_buffer: float = 0.02,
+    slippage_pct: float = 0.0,
+    risk_normalize: bool = False,
+    base_risk_pct: float = 0.01,
+    skip_wide_stops: bool = True,
 ) -> pd.DataFrame:
     """Run each strategy through the backtest engine and collect trades."""
     from .engine import BacktestEngine
@@ -214,10 +244,15 @@ def _run_backtest(
         logger.info("Strategies: %d daily, %d intraday",
                      len(daily_only), len(intraday_strats))
 
+    # Compute warmup: fetch extra history so SMA-based strategies have
+    # enough data from the first trading day of the user's range.
+    max_warmup = max((s.warmup_days for s in strategies), default=0)
+    fetch_start = start - timedelta(days=max_warmup) if max_warmup > 0 else start
+
     # Fetch price data
     print(f"  Fetching price data for {len(tickers)} tickers"
           f"{' (+ intraday)' if need_intraday else ''}...")
-    price_data = _fetch_price_data(tickers, start, end, need_intraday=need_intraday)
+    price_data = _fetch_price_data(tickers, fetch_start, end, need_intraday=need_intraday)
     print(f"  Got data for {len(price_data)} / {len(tickers)} tickers")
 
     if not price_data:
@@ -247,7 +282,12 @@ def _run_backtest(
         try:
             engine = BacktestEngine(strategy, regime_history=regime_history)
             trades = engine.run(strat_data, str(start), str(end),
-                              position_size=position_size)
+                              position_size=position_size,
+                              ko_buffer=ko_buffer,
+                              slippage_pct=slippage_pct,
+                              risk_normalize=risk_normalize,
+                              base_risk_pct=base_risk_pct,
+                              skip_wide_stops=skip_wide_stops)
             print(f"    {len(trades)} trades")
             if trades:
                 all_dfs.append(engine.results_df())
@@ -275,17 +315,27 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         epilog="""examples:
   %(prog)s                                 Run all strategies on ORB universe
   %(prog)s --strategy orb --tickers AAPL MSFT
-  %(prog)s --strategy vwap --start 2025-06-01 --output html
+  %(prog)s --strategy orb --start 2025-06-01 --output html
   %(prog)s --regime-filter "Healthy Expansion" --output csv
   %(prog)s --output html --output-path reports/backtest.html
 """,
     )
 
+    all_strategy_names = (
+        list(STRATEGY_MAP.keys())
+        + list(PAUSED_STRATEGIES.keys())
+        + list(RETIRED_STRATEGIES.keys())
+    )
     ap.add_argument(
         "--strategy",
-        choices=list(STRATEGY_MAP.keys()) + ["all", "daily", "intraday"],
+        choices=all_strategy_names + ["all", "daily", "intraday"],
         default="all",
-        help="Strategy to backtest. 'daily' = fvg+momentum, 'intraday' = orb+vwap+pdhl (default: all)",
+        help="Strategy to backtest. 'daily' = momentum, 'intraday' = orb+pdhl (default: all)",
+    )
+    ap.add_argument(
+        "--include-paused",
+        action="store_true",
+        help="Include paused strategies when running --strategy all/intraday",
     )
     ap.add_argument(
         "--tickers",
@@ -346,6 +396,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Enable debug logging",
     )
+    ap.add_argument("--ko-buffer", type=float, default=0.02, help="KO buffer pct (default: 0.02 = 2%%)")
+    ap.add_argument("--slippage-bps", type=int, default=10, help="Slippage in basis points (default: 10)")
+    ap.add_argument("--risk-normalize", action="store_true", help="Normalize position sizing by stop distance")
+    ap.add_argument("--base-risk", type=float, default=0.01, help="Base risk pct for risk normalization (default: 0.01)")
+    ap.add_argument("--skip-wide-stops", action="store_true", default=True, help="Skip trades where stop > KO distance (default: True)")
+    ap.add_argument("--no-skip-wide-stops", dest="skip_wide_stops", action="store_false")
+    ap.add_argument("--analyze", action="store_true", help="Run trade analysis after backtest")
 
     return ap.parse_args(argv)
 
@@ -392,12 +449,22 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     # Resolve strategies
+    include_paused = args.include_paused
     if args.strategy == "all":
         strategy_names = list(STRATEGY_MAP.keys())
+        if include_paused:
+            strategy_names += list(PAUSED_STRATEGIES.keys())
     elif args.strategy == "daily":
-        strategy_names = ["fvg", "momentum"]
+        strategy_names = ["momentum"]
     elif args.strategy == "intraday":
-        strategy_names = ["orb", "vwap", "pdhl"]
+        strategy_names = ["orb", "pdhl"]
+        if include_paused:
+            strategy_names += [k for k in PAUSED_STRATEGIES if k == "vwap"]
+    elif args.strategy in PAUSED_STRATEGIES:
+        # Explicitly requested paused strategy — allow it with a warning
+        print(f"  ⚠ Warning: {args.strategy} is paused — {PAUSED_STRATEGIES[args.strategy]}")
+        strategy_names = [args.strategy]
+        include_paused = True  # force load
     else:
         strategy_names = [args.strategy]
 
@@ -411,20 +478,29 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  Strategies: {', '.join(strategy_names)}")
     print(f"  Tickers:    {len(tickers)} instruments")
     print(f"  Period:     {start} to {end}")
-    print(f"  Position:   {args.position_size:,.0f} SEK (2% KO = 50x leverage)")
+    ko_pct = args.ko_buffer * 100
+    leverage = int(1 / args.ko_buffer)
+    print(f"  Position:   {args.position_size:,.0f} SEK ({ko_pct:.0f}% KO = {leverage}x leverage)")
+    if args.slippage_bps:
+        print(f"  Slippage:   {args.slippage_bps} bps per side")
     if args.regime_filter:
         print(f"  Regime:     {args.regime_filter}")
     print()
 
     # Load strategies
     try:
-        strategies = _load_strategies(strategy_names)
+        strategies = _load_strategies(strategy_names, include_paused=include_paused)
     except ImportError as e:
         print(f"Error loading strategies: {e}")
         sys.exit(1)
 
     if not strategies:
-        print("No valid strategies to run. Available: " + ", ".join(STRATEGY_MAP.keys()))
+        print("No valid strategies to run.")
+        print("  Active:  " + ", ".join(STRATEGY_MAP.keys()))
+        if PAUSED_STRATEGIES:
+            print("  Paused:  " + ", ".join(PAUSED_STRATEGIES.keys()) + "  (use --include-paused)")
+        if RETIRED_STRATEGIES:
+            print("  Retired: " + ", ".join(RETIRED_STRATEGIES.keys()))
         sys.exit(1)
 
     # Build regime history
@@ -435,7 +511,12 @@ def main(argv: list[str] | None = None) -> None:
 
     # Run backtest
     trades_df = _run_backtest(strategies, tickers, start, end, regime_history,
-                              position_size=args.position_size)
+                              position_size=args.position_size,
+                              ko_buffer=args.ko_buffer,
+                              slippage_pct=args.slippage_bps / 10000,
+                              risk_normalize=args.risk_normalize,
+                              base_risk_pct=args.base_risk,
+                              skip_wide_stops=args.skip_wide_stops)
     print()
     print(f"  Total trades: {len(trades_df)}")
     print()
@@ -489,6 +570,11 @@ def main(argv: list[str] | None = None) -> None:
         out_path = args.output_path or _default_output_path("html")
         report.to_html(out_path)
         print(f"  HTML report written to {out_path}")
+
+    # Optional trade analysis
+    if args.analyze and not trades_df.empty:
+        from .analysis import print_analysis
+        print_analysis(trades_df, ko_buffer=args.ko_buffer)
 
 
 def _default_output_path(ext: str) -> str:

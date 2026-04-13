@@ -275,10 +275,10 @@ class ORBStrategy(BaseStrategy):
         }
 
     def _get_vol_sma(self, intraday: pd.DataFrame, ticker: str) -> pd.Series:
-        """20-period rolling volume SMA for spike detection."""
+        """20-period rolling volume SMA for spike detection (session-aware)."""
         cache_key = ticker
         if cache_key not in self._vol_sma_cache:
-            self._vol_sma_cache[cache_key] = intraday["Volume"].rolling(20, min_periods=1).mean()
+            self._vol_sma_cache[cache_key] = self.session_volume_sma(intraday, window=20)
         return self._vol_sma_cache[cache_key]
 
     def _get_trend(self, daily: pd.DataFrame, ticker: str) -> dict:

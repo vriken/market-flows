@@ -18,6 +18,9 @@ import pandas as pd
 
 from .base import BaseStrategy, Exit, Signal
 
+ATR_PERIOD = 14
+ATR_STOP_MULT = 1.5  # stop = entry ± ATR * multiplier
+
 MARKET_OPEN = pd.Timestamp("09:30").time()
 MARKET_CLOSE = pd.Timestamp("16:00").time()
 
@@ -39,11 +42,20 @@ class PDHLStrategy(BaseStrategy):
     name = "PDHL Breakout"
     requires_intraday = True
 
-    def __init__(self, volume_threshold: float = 1.5, use_vwap_filter: bool = True):
+    def __init__(
+        self,
+        volume_threshold: float = 1.5,
+        use_vwap_filter: bool = True,
+        stop_mode: str = "atr",  # "atr", "midpoint", "level"
+        atr_mult: float = ATR_STOP_MULT,
+    ):
         self.volume_threshold = volume_threshold
         self.use_vwap_filter = use_vwap_filter
+        self.stop_mode = stop_mode
+        self.atr_mult = atr_mult
         self._pdhl_cache: dict[str, dict] = {}  # ticker -> {date: {pdh, pdl}}
         self._vol_sma_cache: dict[str, pd.Series] = {}
+        self._atr_cache: dict[tuple, pd.Series] = {}
 
     # ── Signal generation ──────────────────────────────────────────────────
 
@@ -62,7 +74,10 @@ class PDHLStrategy(BaseStrategy):
 
         pdh = pdhl["pdh"]
         pdl = pdhl["pdl"]
-        pd_mid = (pdh + pdl) / 2  # midpoint for stop
+        pd_mid = (pdh + pdl) / 2  # midpoint for stop (legacy)
+
+        # Compute ATR from daily data for stop sizing
+        atr_val = self._get_atr(daily, ticker, date)
 
         # Get today's intraday bars
         day_bars = intraday[intraday.index.date == date]
@@ -102,7 +117,7 @@ class PDHLStrategy(BaseStrategy):
                 # VWAP quality: above VWAP confirms long
                 vwap_confirmed = vwap_val is not None and close > vwap_val
 
-                stop_price = pd_mid
+                stop_price = self._compute_stop(close, "long", pd_mid, pdl, atr_val)
                 risk = close - stop_price
                 if risk <= 0:
                     continue
@@ -148,7 +163,7 @@ class PDHLStrategy(BaseStrategy):
             elif close < pdl:
                 vwap_confirmed = vwap_val is not None and close < vwap_val
 
-                stop_price = pd_mid
+                stop_price = self._compute_stop(close, "short", pd_mid, pdh, atr_val)
                 risk = stop_price - close
                 if risk <= 0:
                     continue
@@ -297,10 +312,67 @@ class PDHLStrategy(BaseStrategy):
         return result
 
     def _get_vol_sma(self, intraday: pd.DataFrame, ticker: str) -> pd.Series:
-        """20-period rolling volume SMA."""
+        """20-period rolling volume SMA (session-aware)."""
         if ticker not in self._vol_sma_cache:
-            self._vol_sma_cache[ticker] = intraday["Volume"].rolling(20, min_periods=1).mean()
+            self._vol_sma_cache[ticker] = self.session_volume_sma(intraday, window=20)
         return self._vol_sma_cache[ticker]
+
+    def _compute_stop(
+        self,
+        entry: float,
+        direction: str,
+        pd_mid: float,
+        level: float,
+        atr_val: float | None,
+    ) -> float:
+        """Compute stop price based on stop_mode."""
+        if self.stop_mode == "atr" and atr_val is not None and atr_val > 0:
+            if direction == "long":
+                return entry - self.atr_mult * atr_val
+            else:
+                return entry + self.atr_mult * atr_val
+        elif self.stop_mode == "level":
+            return level  # PDL for longs, PDH for shorts
+        else:
+            return pd_mid  # legacy midpoint
+
+    def _get_atr(
+        self,
+        daily: pd.DataFrame | None,
+        ticker: str,
+        date: dt.date,
+    ) -> float | None:
+        """Get ATR value for the previous trading day."""
+        if daily is None or daily.empty:
+            return None
+
+        cache_key = (ticker, len(daily))
+        if cache_key not in self._atr_cache:
+            high = daily["High"].values
+            low = daily["Low"].values
+            close = daily["Close"].values
+
+            tr = np.maximum(
+                high - low,
+                np.maximum(
+                    np.abs(high - np.roll(close, 1)),
+                    np.abs(low - np.roll(close, 1)),
+                ),
+            )
+            tr[0] = high[0] - low[0]
+            self._atr_cache[cache_key] = pd.Series(
+                tr, index=daily.index
+            ).rolling(ATR_PERIOD, min_periods=1).mean()
+
+        atr_series = self._atr_cache[cache_key]
+        # Use the ATR from the day before `date`
+        date_vals = [d.date() if hasattr(d, "date") else d for d in atr_series.index]
+        prev_dates = [d for d in date_vals if d < date]
+        if not prev_dates:
+            return None
+        prev_date = prev_dates[-1]
+        idx = date_vals.index(prev_date)
+        return float(atr_series.iloc[idx])
 
     @staticmethod
     def _compute_session_vwap(day_bars: pd.DataFrame) -> pd.Series | None:

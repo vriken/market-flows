@@ -6,6 +6,8 @@ import datetime as dt
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+import pandas as pd
+
 
 @dataclass
 class Signal:
@@ -56,6 +58,7 @@ class Trade:
     pnl_pct: float = 0.0  # underlying price change %
     outcome: str = ""  # "ko", "stop", "target", "close", "max_hold", "stack_break"
     days_held: int = 1
+    position_size_actual: float = 0.0
 
     # Quality
     quality_score: str = ""
@@ -86,6 +89,14 @@ class BaseStrategy(ABC):
 
     name: str = "BaseStrategy"
     requires_intraday: bool = False
+    warmup_days: int = 0
+
+    @staticmethod
+    def session_volume_sma(intraday: pd.DataFrame, window: int = 20) -> pd.Series:
+        """Compute rolling volume SMA that resets at session boundaries."""
+        return intraday.groupby(intraday.index.date)["Volume"].transform(
+            lambda x: x.rolling(window, min_periods=1).mean()
+        )
 
     @abstractmethod
     def generate_signals(self, data: dict, date: dt.date) -> list[Signal]:

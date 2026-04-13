@@ -89,7 +89,11 @@ class BacktestEngine:
         self,
         *args,
         position_size: float = 500.0,
-        ko_buffer: float = 0.04,
+        ko_buffer: float = 0.02,
+        slippage_pct: float = 0.0,
+        risk_normalize: bool = False,
+        base_risk_pct: float = 0.01,
+        skip_wide_stops: bool = True,
         **kwargs,
     ) -> list[Trade]:
         """Run the strategy across all tickers for the given date range.
@@ -126,6 +130,10 @@ class BacktestEngine:
                 end_date,
                 position_size,
                 ko_buffer,
+                slippage_pct,
+                risk_normalize,
+                base_risk_pct,
+                skip_wide_stops,
             )
 
         return self._trades
@@ -249,6 +257,10 @@ class BacktestEngine:
         end_date: dt.date,
         position_size: float,
         ko_buffer: float,
+        slippage_pct: float = 0.0,
+        risk_normalize: bool = False,
+        base_risk_pct: float = 0.01,
+        skip_wide_stops: bool = True,
     ):
         """Run the strategy for a single ticker."""
         intraday_df = data_bundle.get("intraday")
@@ -303,6 +315,10 @@ class BacktestEngine:
                     trade_date,
                     position_size,
                     ko_buffer,
+                    slippage_pct,
+                    risk_normalize,
+                    base_risk_pct,
+                    skip_wide_stops,
                 )
                 if trade is not None:
                     self._trades.append(trade)
@@ -317,13 +333,36 @@ class BacktestEngine:
         trade_date: dt.date,
         position_size: float,
         ko_buffer: float,
+        slippage_pct: float = 0.0,
+        risk_normalize: bool = False,
+        base_risk_pct: float = 0.01,
+        skip_wide_stops: bool = True,
     ) -> Trade | None:
         """Simulate a single trade from signal to exit."""
         entry = signal.entry_price
         direction = signal.direction
 
+        # Apply adverse slippage to entry
+        if slippage_pct > 0:
+            entry = entry * (1 + slippage_pct) if direction == "long" else entry * (1 - slippage_pct)
+
+        # Skip trades where stop distance exceeds KO buffer
+        stop_pct = abs(entry - signal.stop_price) / entry
+        if skip_wide_stops and stop_pct > ko_buffer:
+            return None
+
         # KO level for leveraged product
         ko_level = entry * (1 - ko_buffer) if direction == "long" else entry * (1 + ko_buffer)
+
+        # Risk-normalized position sizing
+        if risk_normalize:
+            if stop_pct > 0:
+                actual_size = position_size * (base_risk_pct / (stop_pct / ko_buffer))
+                actual_size = min(actual_size, position_size * 2)  # cap at 2x
+            else:
+                actual_size = position_size
+        else:
+            actual_size = position_size
 
         # Determine max hold days from strategy metadata or default
         max_hold_days = signal.metadata.get("max_hold_days", 1)
@@ -405,14 +444,18 @@ class BacktestEngine:
             # If we broke out of the bar loop (KO or exit), stop day iteration
             break
 
+        # Apply adverse slippage to exit for non-KO exits
+        if outcome != "ko" and slippage_pct > 0:
+            exit_price = exit_price * (1 - slippage_pct) if direction == "long" else exit_price * (1 + slippage_pct)
+
         # Calculate P&L: leveraged product formula
-        # pnl = position_size * (price_change_pct / ko_buffer), capped at -position_size
+        # pnl = actual_size * (price_change_pct / ko_buffer), capped at -actual_size
         if outcome == "ko":
-            pnl = -position_size
+            pnl = -actual_size
         else:
             price_change_pct = (exit_price - entry) / entry if direction == "long" else (entry - exit_price) / entry
-            pnl = position_size * (price_change_pct / ko_buffer)
-            pnl = max(pnl, -position_size)  # can't lose more than position
+            pnl = actual_size * (price_change_pct / ko_buffer)
+            pnl = max(pnl, -actual_size)  # can't lose more than position
 
         pnl_pct = ((exit_price - entry) / entry * 100) if direction == "long" else (
             (entry - exit_price) / entry * 100
@@ -432,6 +475,7 @@ class BacktestEngine:
             target_price=signal.target_price,
             entry_time=signal.time,
             exit_time=exit_time,
+            position_size_actual=round(actual_size, 2),
             pnl=round(pnl, 2),
             pnl_pct=round(pnl_pct, 4),
             outcome=outcome,

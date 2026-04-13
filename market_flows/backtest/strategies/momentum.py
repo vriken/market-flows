@@ -34,9 +34,11 @@ class MomentumStrategy(BaseStrategy):
 
     name = "Momentum"
     requires_intraday = False
+    warmup_days = 300  # ~200 trading days for SMA200
 
-    def __init__(self, max_hold_days: int = 10):
+    def __init__(self, max_hold_days: int = 10, min_quality: str = "G"):
         self.max_hold_days = max_hold_days
+        self.min_quality = min_quality
         self._sma_cache: dict[str, pd.DataFrame] = {}
 
     # ── Signal generation ──────────────────────────────────────────────────
@@ -87,8 +89,9 @@ class MomentumStrategy(BaseStrategy):
             # Compute gradient for quality assessment
             gradient = self._compute_gradient(sma_df, today_idx)
 
-            # Require all quality flags to enter
-            if self._quality_label(gradient, "long") != "GS":
+            # Require minimum quality to enter
+            label = self._quality_label(gradient, "long")
+            if not label.startswith(self.min_quality):
                 return signals
 
             signals.append(Signal(
@@ -119,8 +122,9 @@ class MomentumStrategy(BaseStrategy):
             # Price just broke below 20 SMA with full bearish alignment
             gradient = self._compute_gradient(sma_df, today_idx)
 
-            # Require all quality flags to enter
-            if self._quality_label(gradient, "short") != "GS":
+            # Require minimum quality to enter
+            label = self._quality_label(gradient, "short")
+            if not label.startswith(self.min_quality):
                 return signals
 
             signals.append(Signal(
@@ -158,9 +162,29 @@ class MomentumStrategy(BaseStrategy):
         bars_since_entry: int,
         day_index: int,
     ) -> Exit | None:
-        stop = signal.stop_price
+        # Look up live SMA values from cache (fall back to entry-time values)
+        ticker = signal.ticker
+        bar_date = current_bar.get("date")
+        sma20 = signal.metadata.get("sma20", 0)
+        sma50 = signal.metadata.get("sma50", 0)
 
-        # Stop: close beyond 50 SMA
+        if ticker in self._sma_cache and bar_date is not None:
+            sma_df = self._sma_cache[ticker]
+            if bar_date in sma_df.index:
+                sma20 = float(sma_df.loc[bar_date, "sma20"])
+                sma50 = float(sma_df.loc[bar_date, "sma50"])
+            elif hasattr(bar_date, "__str__"):
+                # Try matching by date (index may be Timestamp)
+                if hasattr(sma_df.index, "date"):
+                    matches = sma_df[sma_df.index.date == bar_date]
+                else:
+                    matches = pd.DataFrame()
+                if not matches.empty:
+                    sma20 = float(matches.iloc[-1]["sma20"])
+                    sma50 = float(matches.iloc[-1]["sma50"])
+
+        # Stop: close beyond current 50 SMA
+        stop = sma50 if sma50 else signal.stop_price
         if signal.direction == "long" and current_bar["Close"] < stop:
             return Exit(
                 should_exit=True,
@@ -176,11 +200,7 @@ class MomentumStrategy(BaseStrategy):
                 metadata={"trigger": "close_above_sma50"},
             )
 
-        # Stack break: check if alignment is lost
-        # We store SMA values in metadata at entry; for ongoing bars we compare
-        # current close to the SMAs. Since daily bars = one bar per day, we use
-        # a simplified check: if price reverses to the other side of sma20
-        sma20 = signal.metadata.get("sma20", 0)
+        # Stack break: check if alignment is lost using live sma20
         if sma20:
             if signal.direction == "long" and current_bar["Close"] < sma20 * 0.99:
                 return Exit(
