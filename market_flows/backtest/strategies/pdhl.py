@@ -117,7 +117,7 @@ class PDHLStrategy(BaseStrategy):
                 if len(quality_parts) < 2:
                     continue
 
-                target_price = close + 1.5 * risk  # 1.5R target
+                target_price = close + risk  # 1R target
 
                 return [Signal(
                     date=date,
@@ -163,7 +163,7 @@ class PDHLStrategy(BaseStrategy):
                 if len(quality_parts) < 2:
                     continue
 
-                target_price = close - 1.5 * risk  # 1.5R target
+                target_price = close - risk  # 1R target
 
                 return [Signal(
                     date=date,

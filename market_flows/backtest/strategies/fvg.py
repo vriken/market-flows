@@ -108,7 +108,7 @@ class FVGStrategy(BaseStrategy):
                     risk = entry_price - stop_price
                     if risk <= 0:
                         continue
-                    target_price = entry_price + 1.5 * risk  # 1.5R target
+                    target_price = entry_price + risk  # 1R target
 
                     return [Signal(
                         date=date,
@@ -141,7 +141,7 @@ class FVGStrategy(BaseStrategy):
                     risk = stop_price - entry_price
                     if risk <= 0:
                         continue
-                    target_price = entry_price - 1.5 * risk  # 1.5R target
+                    target_price = entry_price - risk  # 1R target
 
                     return [Signal(
                         date=date,

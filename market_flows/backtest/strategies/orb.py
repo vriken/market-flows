@@ -180,7 +180,7 @@ class ORBStrategy(BaseStrategy):
 
             # 1.5R target
             risk = abs(entry_price - stop_price)
-            target_price = entry_price + 1.5 * risk if direction == "long" else entry_price - 1.5 * risk
+            target_price = entry_price + risk if direction == "long" else entry_price - risk
 
             signal = Signal(
                 date=date,
