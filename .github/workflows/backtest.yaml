@@ -11,7 +11,7 @@ on:
         default: 'all'
       start_date:
         description: 'Start date (YYYY-MM-DD)'
-        default: '2025-01-01'
+        default: '2026-02-09'
       tickers:
         description: 'Tickers (comma-separated, or "default" for full universe)'
         default: 'default'
