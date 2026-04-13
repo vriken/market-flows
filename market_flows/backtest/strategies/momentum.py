@@ -175,10 +175,7 @@ class MomentumStrategy(BaseStrategy):
                 sma50 = float(sma_df.loc[bar_date, "sma50"])
             elif hasattr(bar_date, "__str__"):
                 # Try matching by date (index may be Timestamp)
-                if hasattr(sma_df.index, "date"):
-                    matches = sma_df[sma_df.index.date == bar_date]
-                else:
-                    matches = pd.DataFrame()
+                matches = sma_df[sma_df.index.date == bar_date] if hasattr(sma_df.index, "date") else pd.DataFrame()
                 if not matches.empty:
                     sma20 = float(matches.iloc[-1]["sma20"])
                     sma50 = float(matches.iloc[-1]["sma50"])

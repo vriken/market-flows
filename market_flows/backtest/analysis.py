@@ -6,8 +6,8 @@ across strategies, regimes, time periods, and trade characteristics.
 
 from __future__ import annotations
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def exit_reason_decomposition(trades_df: pd.DataFrame) -> pd.DataFrame:
