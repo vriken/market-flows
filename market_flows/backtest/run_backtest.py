@@ -374,8 +374,9 @@ def main(argv: list[str] | None = None) -> None:
             args.output_path or "data/backtest/results"
         ).parent / (Path(args.output_path or "data/backtest/results").stem + "_trades.csv")
         if trades_csv.exists():
-            existing_trades_df = pd.read_csv(trades_csv)
-            last_date = existing_trades_df["date"].max()
+            existing_trades_df = pd.read_csv(trades_csv, parse_dates=["date"])
+            existing_trades_df["date"] = existing_trades_df["date"].dt.date
+            last_date = str(existing_trades_df["date"].max())
             # Start from the day after the last trade
             incremental_start = date.fromisoformat(last_date) + timedelta(days=1)
             if incremental_start >= end:
