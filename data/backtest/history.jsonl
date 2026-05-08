@@ -21,3 +21,4 @@
 {"date": "2026-05-05", "strategies": {"ORB Breakout": {"trades": 6, "win_rate": 0.0, "total_pnl": -6.86, "avg_pnl": -1.14}, "PDHL Breakout": {"trades": 595, "win_rate": 31.1, "total_pnl": -165.94, "avg_pnl": -0.28}}}
 {"date": "2026-05-06", "strategies": {"ORB Breakout": {"trades": 6, "win_rate": 0.0, "total_pnl": -6.86, "avg_pnl": -1.14}, "PDHL Breakout": {"trades": 642, "win_rate": 30.4, "total_pnl": -178.62, "avg_pnl": -0.28}}}
 {"date": "2026-05-07", "strategies": {"ORB Breakout": {"trades": 6, "win_rate": 0.0, "total_pnl": -6.86, "avg_pnl": -1.14}, "PDHL Breakout": {"trades": 689, "win_rate": 29.9, "total_pnl": -192.29, "avg_pnl": -0.28}}}
+{"date": "2026-05-08", "strategies": {"ORB Breakout": {"trades": 6, "win_rate": 0.0, "total_pnl": -6.86, "avg_pnl": -1.14}, "PDHL Breakout": {"trades": 720, "win_rate": 29.9, "total_pnl": -209.03, "avg_pnl": -0.29}}}
