@@ -1,0 +1,434 @@
+36 symbols, daily 2000-01-01 → 2026-09-29, out-of-sample from 2015-01-01, RSI(14)
+
+== 1. Baseline: own every stock, any day ==
+ setup   dir filter  hold  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+always  long   none     3    32143.0         0.04         0.50              0.36            0.34       26537         -0.01          0.18               0.46             0.09
+always  long   none     5    21425.0        -0.02        -0.35              0.40            0.86       17676          0.03          0.47               1.28             0.29
+always  long   none    10    11689.0        -0.05        -0.46              1.24            2.31        9636          0.00         -0.20               2.63             1.25
+always  long   none    21     5861.0        -0.04        -0.39              3.03            6.42        4789         -0.00         -0.68               6.25             3.13
+always short   none     3    32143.0        -0.04        -0.50             -1.59            0.56       26537          0.01         -0.18              -1.71             0.20
+always short   none     5    21425.0         0.02         0.35             -1.88            1.03       17676         -0.03         -0.47              -2.67             0.48
+always short   none    10    11689.0         0.05         0.46             -3.22            2.55        9636         -0.00          0.20              -4.54             1.63
+always short   none    21     5861.0         0.04         0.39             -6.06            5.95        4789          0.00          0.68              -8.46             4.91
+
+== 2. RSI and gradient signals, no filter ==
+              setup   dir filter  hold  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+      gradient<-0.2 short   none     3     7231.0        -0.12        -2.43             -1.99            1.48        4437         -0.10         -1.33              -1.99             0.34
+      gradient<-0.2 short   none     5     5102.0        -0.10        -1.81             -2.34            2.80        3145         -0.14          0.23              -2.88             0.67
+      gradient<-0.2 short   none    10     3096.0        -0.07        -1.36             -2.93            4.81        1929         -0.39         -0.88              -6.10             2.44
+      gradient<-0.2 short   none    21     1786.0        -0.13        -0.93             -6.14           10.41        1126         -0.77         -0.59             -10.82             8.70
+       gradient>0.2  long   none     3    16193.0        -0.05        -3.33             -0.04            0.09       15047         -0.04         -2.70               0.34             0.05
+       gradient>0.2  long   none     5    11249.0        -0.06        -3.22              0.31            0.28       10413         -0.11         -2.38               0.67             0.15
+       gradient>0.2  long   none    10     6598.0        -0.16        -1.91              0.92            0.88        6071         -0.17         -1.77               2.01             0.66
+       gradient>0.2  long   none    21     3636.0        -0.15        -1.67              3.00            3.25        3290         -0.40         -1.95               4.69             2.86
+     new 20-day low short   none     3     3972.0        -0.41        -6.87             -3.57            1.21        3026          0.05         -3.54              -1.41             0.26
+     new 20-day low short   none     5     3457.0        -0.47        -5.07             -4.11            1.85        2656         -0.06         -2.35              -2.80             0.68
+     new 20-day low short   none    10     2802.0        -0.33        -3.22             -5.00            4.28        2201         -0.32         -2.13              -5.97             2.14
+     new 20-day low short   none    21     2179.0        -0.17        -1.54             -7.48            7.85        1754         -0.34         -1.48              -9.51             5.99
+             rsi<25  long   none     3      418.0         0.38         1.27              2.05            1.91         348          0.50          1.53               3.02             0.29
+             rsi<25  long   none     5      389.0         0.75         1.27              3.33            2.57         329          0.62          1.57               4.06             2.13
+             rsi<25  long   none    10      349.0        -0.14         0.73             -0.46            6.59         299          0.74          1.47               6.44             5.02
+             rsi<25  long   none    21      320.0         0.39        -0.36              1.00           12.81         275          1.43          1.30              10.54             9.09
+             rsi<25 short   none     3      418.0        -0.38        -1.27             -3.74            2.63         348         -0.50         -1.53              -4.08             1.15
+             rsi<25 short   none     5      389.0        -0.75        -1.27             -6.05            4.88         329         -0.62         -1.57              -4.89             2.13
+             rsi<25 short   none    10      349.0         0.14        -0.73             -4.12            7.45         299         -0.74         -1.47              -7.57             4.35
+             rsi<25 short   none    21      320.0        -0.39         0.36            -10.43           12.50         275         -1.43         -1.30             -13.73             9.82
+rsi<25 above sma200  long   none     3       26.0         0.69         1.09              3.66            0.00          27          1.26          2.46               6.62             0.00
+rsi<25 above sma200  long   none     5       26.0        -0.28        -0.54             -0.69            0.00          27          1.20          2.19               6.84             0.00
+rsi<25 above sma200  long   none    10       25.0         0.57         0.72              4.39            0.00          27          0.13          1.39               5.34             7.41
+rsi<25 above sma200  long   none    21       25.0         1.00         0.52              8.77            0.00          27         -0.88          0.45               2.03            11.11
+             rsi<30  long   none     3     1172.0         0.62         3.47              3.09            1.79         941          0.27          2.44               1.47             0.43
+             rsi<30  long   none     5     1067.0         0.50         1.90              2.68            3.19         857          0.44          2.74               2.83             1.05
+             rsi<30  long   none    10      918.0         0.64         2.03              3.59            5.45         750          0.19          2.08               3.13             3.47
+             rsi<30  long   none    21      779.0         0.42         0.36              4.69           11.30         658          0.17          0.72               5.14             6.84
+             rsi<30 short   none     3     1172.0        -0.62        -3.47             -4.14            2.05         941         -0.27         -2.44              -3.03             0.96
+             rsi<30 short   none     5     1067.0        -0.50        -1.90             -4.23            3.19         857         -0.44         -2.74              -4.53             1.05
+             rsi<30 short   none    10      918.0        -0.64        -2.03             -6.18            7.41         750         -0.19         -2.08              -5.58             2.00
+             rsi<30 short   none    21      779.0        -0.42        -0.36             -8.75           12.07         658         -0.17         -0.72              -9.52             5.17
+rsi<30 above sma200  long   none     3      160.0         0.81         3.86              4.22            0.00         176          0.45          1.01               1.74             1.14
+rsi<30 above sma200  long   none     5      155.0         0.72         2.49              4.23            0.00         169          0.79          2.58               4.00             1.18
+rsi<30 above sma200  long   none    10      139.0         1.25         3.02              7.89            0.00         156         -0.00          2.73               2.26             5.77
+rsi<30 above sma200  long   none    21      138.0         1.63         2.73             11.89            0.72         153         -0.42          1.55               0.96            11.76
+             rsi<35  long   none     3     2501.0         0.39         5.12              1.88            0.88        1969         -0.04          2.13               0.17             0.25
+             rsi<35  long   none     5     2257.0         0.39         3.19              2.09            1.86        1800          0.09          1.86               1.38             0.67
+             rsi<35  long   none    10     1870.0         0.19         1.64              1.92            4.87        1491          0.18          2.27               3.18             2.28
+             rsi<35  long   none    21     1488.0         0.27         0.84              3.65            9.34        1200          0.35          1.74               6.88             5.67
+             rsi<35 short   none     3     2501.0        -0.39        -5.12             -3.52            1.28        1969          0.04         -2.13              -1.48             0.25
+             rsi<35 short   none     5     2257.0        -0.39        -3.19             -3.94            2.17        1800         -0.09         -1.86              -2.93             0.61
+             rsi<35 short   none    10     1870.0        -0.19        -1.64             -4.53            4.71        1491         -0.18         -2.27              -5.32             1.95
+             rsi<35 short   none    21     1488.0        -0.27        -0.84             -8.53            9.61        1200         -0.35         -1.74              -9.91             6.00
+rsi<35 above sma200  long   none     3      673.0         0.80         5.05              4.18            0.15         616          0.03          1.01               0.48             0.49
+rsi<35 above sma200  long   none     5      628.0         0.86         3.85              4.88            0.48         577          0.19          1.05               1.79             0.52
+rsi<35 above sma200  long   none    10      554.0         0.56         1.47              4.45            1.44         500         -0.02          1.08               2.31             2.40
+rsi<35 above sma200  long   none    21      503.0         1.03         1.21              9.12            3.78         458         -0.31          0.56               3.67             6.33
+             rsi<50 short   none     3     6191.0         0.00        -1.88             -1.35            0.37        5061          0.05         -2.28              -1.46             0.24
+             rsi<50 short   none     5     5554.0        -0.09        -2.99             -2.34            0.92        4482          0.02         -2.39              -2.32             0.45
+             rsi<50 short   none    10     4445.0        -0.15        -2.49             -3.88            2.45        3625          0.09         -0.90              -3.84             1.32
+             rsi<50 short   none    21     3204.0        -0.01        -1.06             -6.45            5.99        2590          0.09         -0.72              -8.26             4.32
+             rsi>70  long   none     3     2155.0        -0.11        -1.49             -0.28            0.05        2105         -0.06         -2.21               0.28             0.05
+             rsi>70  long   none     5     1936.0        -0.14        -2.20              0.03            0.36        1904         -0.16         -1.60               0.49             0.11
+             rsi>70  long   none    10     1622.0        -0.10        -1.42              1.32            0.62        1589         -0.24         -1.59               1.73             0.69
+             rsi>70  long   none    21     1294.0        -0.02         0.18              4.38            3.01        1234         -0.19         -2.07               5.82             2.59
+             rsi>70 short   none     3     2155.0         0.11         1.49             -0.93            0.32        2105          0.06          2.21              -1.50             0.43
+             rsi>70 short   none     5     1936.0         0.14         2.20             -1.44            0.83        1904          0.16          1.60              -1.96             0.68
+             rsi>70 short   none    10     1622.0         0.10         1.42             -2.89            1.60        1589          0.24          1.59              -3.50             1.76
+             rsi>70 short   none    21     1294.0         0.02        -0.18             -6.27            4.87        1234          0.19          2.07              -7.93             4.94
+
+== 3. Top 25 by in-sample t (≥40 IS trades), with out-of-sample ==
+              setup   dir              filter  hold  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+             rsi<35  long                none     3     2501.0         0.39         5.12              1.88            0.88        1969         -0.04          2.13               0.17             0.25
+rsi<35 above sma200  long                none     3      673.0         0.80         5.05              4.18            0.15         616          0.03          1.01               0.48             0.49
+             rsi<35  long             vix>=22     3     1251.0         0.77         4.76              3.49            1.60         700          0.40          2.71               2.59             0.14
+rsi<35 above sma200  long       risk=Risk-Off     3      284.0         1.20         4.63              6.20            0.00         243         -0.48          0.00              -2.23             1.23
+             rsi<35  long     cycle=Expansion     3     2321.0         0.32         4.45              1.68            0.82        1358          0.05          1.36               0.50             0.22
+             rsi<35  long       risk=Risk-Off     3     1008.0         0.93         4.35              4.30            0.99         744         -0.19          0.75              -0.73             0.54
+             rsi<30 short        risk=Risk-On    21      194.0         4.92         4.34             14.43            8.76         203         -1.38         -1.40             -15.83             5.91
+rsi<35 above sma200  long     cycle=Expansion     3      611.0         0.74         4.24              3.88            0.16         434          0.21          1.31               1.16             0.46
+rsi<35 above sma200  long            spy>200d     3      568.0         0.67         4.14              3.53            0.00         544          0.06          1.24               0.65             0.18
+rsi<35 above sma200  long             vix>=22     3      181.0         2.10         4.01             10.63            0.55         158         -0.45          0.17              -1.30             0.63
+rsi<35 above sma200  long            spy>200d     5      529.0         0.87         3.97              4.99            0.19         511          0.23          1.23               2.12             0.20
+             rsi<35  long  spy<200d & vix>=22     3     1009.0         0.71         3.93              3.08            2.08         452          0.65          2.20               3.89             0.22
+             rsi<35  long            spy>200d     3     1327.0         0.30         3.92              1.67            0.00        1385         -0.06          0.74               0.09             0.14
+rsi<30 above sma200  long                none     3      160.0         0.81         3.86              4.22            0.00         176          0.45          1.01               1.74             1.14
+rsi<35 above sma200  long                none     5      628.0         0.86         3.85              4.88            0.48         577          0.19          1.05               1.79             0.52
+             rsi<35  long volatility=Elevated     3      605.0         0.35         3.73              1.93            0.00         747         -0.31          0.86              -1.30             0.27
+             rsi<30  long    cycle=Late Cycle     3       68.0         2.59         3.71             12.88            0.00         139          0.38         -0.08               2.20             0.00
+             rsi>70 short       credit=Normal     3      753.0         0.34         3.57              0.05            0.13         732         -0.02         -0.16              -1.92             0.14
+rsi<30 above sma200  long            spy>200d     3      143.0         0.77         3.53              4.02            0.00         150          0.43          1.50               2.59             0.00
+             rsi<35  long            spy<200d     3     1205.0         0.51         3.53              2.22            1.91         594         -0.05          1.65               0.10             0.51
+             rsi<30  long                none     3     1172.0         0.62         3.47              3.09            1.79         941          0.27          2.44               1.47             0.43
+             rsi>70 short            spy<200d     5      240.0         1.60         3.44              5.46            1.25         120         -0.19         -1.06              -3.45             0.00
+rsi<35 above sma200  long       risk=Risk-Off     5      273.0         1.10         3.42              6.10            0.37         228         -0.26         -0.15              -0.97             1.32
+rsi<30 above sma200  long     cycle=Expansion     3      143.0         0.72         3.31              3.80            0.00         116          0.52          0.66               1.57             1.72
+             rsi<35  long       risk=Risk-Off    10      800.0         1.12         3.31              5.96            4.75         599         -0.24          1.21               0.91             4.01
+
+== 4. Regime coverage (market-flows classifier) ==
+  volatility_state  from 2006-07-17  Normal 2408, Elevated 1383, Low Vol 845, Crisis 449
+  cycle_state       from 2000-01-03  Expansion 5727, Late Cycle 558, Contraction 442
+  risk_state        from 2000-01-03  Mixed 2623, Risk-On 2293, Risk-Off 1811
+  monetary_state    from 2021-11-05  Tightening 606, Pause 316, Easing 308
+  credit_state      from 2007-05-08  Normal 2049, Complacent 1871, Stress 962
+  composite_label   from 2021-11-05  Expansion 360, Healthy Expansion 239, Late Cycle 198, Stress Rising 106, Contraction 98, Fragile Risk-On 72, Easing into Weakness 53, Vol Spike 46, Defensive Pivot 26, Crisis Mode 19, Late Cycle Stress 13
+
+== 5. always long, 5-day hold, split by entry filter ==
+                        filter  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+         composite=Contraction        NaN          NaN          NaN               NaN             NaN         802         -0.30         -1.03              -0.60             0.12
+         composite=Crisis Mode        NaN          NaN          NaN               NaN             NaN         278          2.27          4.28              12.44             0.36
+     composite=Defensive Pivot        NaN          NaN          NaN               NaN             NaN         324         -0.44         -0.65              -1.27             0.00
+composite=Easing into Weakness        NaN          NaN          NaN               NaN             NaN         504          0.71          1.01               4.46             0.00
+           composite=Expansion        NaN          NaN          NaN               NaN             NaN        2932         -0.58         -2.01              -1.77             0.17
+     composite=Fragile Risk-On        NaN          NaN          NaN               NaN             NaN         864         -0.04          0.11               0.82             0.23
+   composite=Healthy Expansion        NaN          NaN          NaN               NaN             NaN        2284         -0.59         -1.41              -1.87             0.53
+          composite=Late Cycle        NaN          NaN          NaN               NaN             NaN        1656         -0.02         -0.06               0.49             0.60
+   composite=Late Cycle Stress        NaN          NaN          NaN               NaN             NaN         144         -0.63         -0.47              -2.31             0.69
+       composite=Stress Rising        NaN          NaN          NaN               NaN             NaN        1178          0.18          0.32               2.02             0.08
+           composite=Vol Spike        NaN          NaN          NaN               NaN             NaN         442          1.56          1.95               8.78             0.45
+             credit=Complacent     3312.0         0.09         0.44              1.30            0.18        9170         -0.24         -1.72              -0.10             0.29
+                 credit=Normal     7276.0        -0.08        -0.68              0.31            0.40        6840          0.19          1.78               2.14             0.07
+                 credit=Stress     2663.0        -0.12         0.37             -0.58            1.92        3992         -0.04         -0.05               1.05             1.00
+             cycle=Contraction      287.0         0.25         0.25              2.19            0.35        3446          0.18          0.76               1.89             0.61
+               cycle=Expansion    20303.0         0.09        -0.27              1.06            0.79       13846         -0.10         -0.82               0.67             0.25
+              cycle=Late Cycle     1455.0         0.07         0.22              0.30            1.03        2422         -0.13         -0.56               0.16             0.83
+               monetary=Easing        NaN          NaN          NaN               NaN             NaN        1934          0.31          0.94               2.55             0.10
+                monetary=Pause        NaN          NaN          NaN               NaN             NaN        2088          0.11          0.49               1.49             0.34
+           monetary=Tightening        NaN          NaN          NaN               NaN             NaN        3724         -0.28         -1.00              -0.27             0.08
+                          none    21425.0        -0.02        -0.35              0.40            0.86       17676          0.03          0.47               1.28             0.29
+                    risk=Mixed    12541.0         0.01        -0.25              0.53            0.85       10106          0.05          0.19               1.34             0.19
+                 risk=Risk-Off     7202.0         0.11         0.41              1.13            0.93        7586          0.20          0.94               2.14             0.51
+                  risk=Risk-On     9590.0        -0.10        -1.54              0.11            0.77        8316          0.01          0.33               1.21             0.23
+                      spy<200d     7507.0        -0.03        -0.09              0.22            1.96        3400          0.21          0.56               2.13             0.71
+            spy<200d & vix>=22     6125.0         0.22         0.60              1.60            2.04        2556          0.06          0.22               1.44             0.94
+                      spy>200d    15313.0         0.03         0.54              0.79            0.25       15058         -0.06         -0.74               0.83             0.17
+                        vix<18    10749.0         0.06         0.73              0.99            0.13       11896         -0.11         -1.19               0.59             0.13
+                       vix>=22     8485.0         0.19         0.37              1.38            1.60        4876          0.35          1.57               2.95             0.66
+             volatility=Crisis     2036.0        -0.10        -0.09              0.20            3.05        1394          1.15          1.88               6.74             1.22
+           volatility=Elevated     5032.0         0.17        -0.19              1.55            0.26        6336          0.24          1.20               2.27             0.46
+            volatility=Low Vol     2336.0         0.02         0.41              0.77            0.13        4248         -0.08          0.07               0.80             0.12
+             volatility=Normal     6257.0        -0.00        -0.23              0.78            0.18       11130         -0.17         -1.33               0.24             0.23
+
+== 5. rsi<25 long, 5-day hold, split by entry filter ==
+                        filter  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+         composite=Contraction        NaN          NaN          NaN               NaN             NaN          10          0.60          0.68               3.51             0.00
+         composite=Crisis Mode        NaN          NaN          NaN               NaN             NaN          14          3.21          1.40              16.85             0.00
+     composite=Defensive Pivot        NaN          NaN          NaN               NaN             NaN           2         -3.62           NaN             -18.26             0.00
+composite=Easing into Weakness        NaN          NaN          NaN               NaN             NaN           5          2.96          1.77              15.16             0.00
+           composite=Expansion        NaN          NaN          NaN               NaN             NaN          17         -1.12         -1.11              -4.67             0.00
+     composite=Fragile Risk-On        NaN          NaN          NaN               NaN             NaN           7         -1.84         -0.80              -8.42             0.00
+   composite=Healthy Expansion        NaN          NaN          NaN               NaN             NaN          22          0.60         -0.27               3.98             0.00
+          composite=Late Cycle        NaN          NaN          NaN               NaN             NaN          28          1.11          1.77               6.08             0.00
+       composite=Stress Rising        NaN          NaN          NaN               NaN             NaN          13         -0.86         -0.89              -3.51             7.69
+           composite=Vol Spike        NaN          NaN          NaN               NaN             NaN          25          1.57          1.83               9.12             0.00
+             credit=Complacent       25.0        -0.48        -1.40             -1.44            0.00         147          0.79          0.87               4.84             0.68
+                 credit=Normal      119.0         0.33         0.26              1.54            0.84          81          1.17          0.59               6.65             0.00
+                 credit=Stress       74.0         2.86         1.58             12.27            5.41         103          0.01          1.40               1.16             5.83
+             cycle=Contraction        7.0         2.73         1.26             15.49            0.00          90         -0.46          1.14              -1.27             6.67
+               cycle=Expansion      365.0         0.72         1.31              3.12            2.74         205          1.19          0.27               6.89             0.49
+              cycle=Late Cycle       18.0         0.73        -0.26              3.62            0.00          53          0.41          0.99               2.23             1.89
+               monetary=Easing        NaN          NaN          NaN               NaN             NaN          36          1.83          1.92               9.86             0.00
+                monetary=Pause        NaN          NaN          NaN               NaN             NaN          27          1.58          0.28               8.71             3.70
+           monetary=Tightening        NaN          NaN          NaN               NaN             NaN          74          0.21         -0.47               1.92             0.00
+                          none      389.0         0.75         1.27              3.33            2.57         329          0.62          1.57               4.06             2.13
+                    risk=Mixed      148.0        -0.09        -0.41             -2.15            4.05          88          0.57          0.13               3.62             0.00
+                 risk=Risk-Off      185.0         1.83         2.51              9.16            1.08         170          0.36          0.77               2.83             4.12
+                  risk=Risk-On       68.0        -0.56        -0.70             -0.54            4.41          78          1.20          2.37               7.00             0.00
+                      spy<200d      235.0         1.38         1.72              5.69            4.26         152          0.96          0.92               5.75             3.95
+            spy<200d & vix>=22      198.0         1.70         1.85              6.95            5.05         126          1.31          1.57               7.48             4.76
+                      spy>200d      162.0         0.05         0.12              0.94            0.00         181          0.32          1.12               2.48             0.55
+                        vix<18       98.0        -0.06        -0.15              0.43            0.00         107          0.38          0.89               2.64             0.00
+                       vix>=22      223.0         1.40         1.71              5.70            4.48         170          1.08          1.85               6.40             4.12
+             volatility=Crisis       58.0         2.63         0.38              8.59            8.62          81          0.45          1.80               2.80             7.41
+           volatility=Elevated      107.0         0.88         1.93              5.11            0.00         136          1.10          0.83               6.44             0.74
+            volatility=Low Vol        6.0        -1.35        -2.57             -6.78            0.00          31          0.70          0.48               4.00             0.00
+             volatility=Normal       58.0         0.14         0.25              1.56            0.00          95          0.11          0.32               1.43             0.00
+
+== 5. rsi<25 above sma200 long, 5-day hold, split by entry filter ==
+                     filter  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+      composite=Contraction        NaN          NaN          NaN               NaN             NaN           2         -1.48           NaN              -7.23              0.0
+composite=Healthy Expansion        NaN          NaN          NaN               NaN             NaN           3          1.78          1.32               9.65              0.0
+       composite=Late Cycle        NaN          NaN          NaN               NaN             NaN           1          3.82           NaN              19.56              0.0
+    composite=Stress Rising        NaN          NaN          NaN               NaN             NaN           1          0.33           NaN               2.65              0.0
+        composite=Vol Spike        NaN          NaN          NaN               NaN             NaN           1         11.17           NaN              57.10              0.0
+          credit=Complacent        7.0        -0.73        -0.80             -1.95             0.0          12          1.84          1.35               9.96              0.0
+              credit=Normal        8.0        -0.92        -0.72             -4.04             0.0           8          1.60          1.66               8.81              0.0
+              credit=Stress        2.0        -0.65          NaN             -3.12             0.0           7         -0.34          0.62              -0.74              0.0
+          cycle=Contraction        1.0        -2.65          NaN             -8.94             0.0           7         -1.98         -2.07              -9.09              0.0
+            cycle=Expansion       23.0        -0.25        -0.44             -0.60             0.0          20          2.03          2.50              10.97              0.0
+           cycle=Late Cycle        2.0         0.55          NaN              2.31             0.0           1          3.82           NaN              19.56              0.0
+            monetary=Easing        NaN          NaN          NaN               NaN             NaN           1          3.82           NaN              19.56              0.0
+             monetary=Pause        NaN          NaN          NaN               NaN             NaN           4          3.79          1.42              19.91              0.0
+        monetary=Tightening        NaN          NaN          NaN               NaN             NaN           2          0.31           NaN               1.97              0.0
+                       none       26.0        -0.28        -0.54             -0.69             0.0          27          1.20          2.19               6.84              0.0
+                 risk=Mixed        6.0         0.45         0.31              2.96             0.0           9          0.47          0.47               3.28              0.0
+              risk=Risk-Off       14.0        -0.40        -0.63             -1.10             0.0          10          0.21          0.57               1.87              0.0
+               risk=Risk-On        6.0        -0.72        -0.48             -3.40             0.0           8          3.27          2.43              17.06              0.0
+                   spy<200d        2.0        -0.03          NaN             -0.05             0.0           2          7.13           NaN              36.38              0.0
+         spy<200d & vix>=22        1.0        -2.10          NaN            -10.09             0.0           2          7.13           NaN              36.38              0.0
+                   spy>200d       24.0        -0.30        -0.54             -0.75             0.0          25          0.73          1.42               4.48              0.0
+                     vix<18       14.0        -0.23        -0.58             -0.36             0.0          12          0.66          0.58               4.01              0.0
+                    vix>=22        7.0         0.35         0.41              2.41             0.0          12          1.35          1.70               7.67              0.0
+          volatility=Crisis        NaN          NaN          NaN               NaN             NaN           4          4.63          1.78              24.07              0.0
+        volatility=Elevated        8.0         0.53         0.60              3.32             0.0          11          0.24          0.86               2.01              0.0
+         volatility=Low Vol        2.0        -0.82          NaN             -4.00             0.0           2          2.07           NaN              10.45              0.0
+          volatility=Normal        9.0        -1.70        -1.49             -7.34             0.0          12          0.89          0.81               5.36              0.0
+
+== 5. rsi<30 long, 5-day hold, split by entry filter ==
+                        filter  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+         composite=Contraction        NaN          NaN          NaN               NaN             NaN          25          0.63          0.71               3.50             0.00
+         composite=Crisis Mode        NaN          NaN          NaN               NaN             NaN          25          5.06          5.61              26.22             0.00
+     composite=Defensive Pivot        NaN          NaN          NaN               NaN             NaN           6         -2.42           NaN             -11.76             0.00
+composite=Easing into Weakness        NaN          NaN          NaN               NaN             NaN           9         -0.05          0.27              -0.02             0.00
+           composite=Expansion        NaN          NaN          NaN               NaN             NaN          83         -0.46         -0.31              -1.25             0.00
+     composite=Fragile Risk-On        NaN          NaN          NaN               NaN             NaN          26         -1.90         -1.14              -8.53             0.00
+   composite=Healthy Expansion        NaN          NaN          NaN               NaN             NaN          53         -0.84         -0.69              -3.33             0.00
+          composite=Late Cycle        NaN          NaN          NaN               NaN             NaN          69         -0.01          0.70               0.76             0.00
+       composite=Stress Rising        NaN          NaN          NaN               NaN             NaN          48          1.52          1.13               8.59             0.00
+           composite=Vol Spike        NaN          NaN          NaN               NaN             NaN          45          1.38          0.89               7.99             0.00
+             credit=Complacent       84.0         0.41        -0.07              2.97            0.00         394          0.09          1.14               1.43             0.00
+                 credit=Normal      289.0        -0.89        -0.76             -4.28            3.81         245          1.28          2.64               7.34             0.00
+                 credit=Stress      212.0         2.25         0.74             10.29            4.72         228          0.21          1.36               0.65             3.95
+             cycle=Contraction       16.0         3.05         3.43             16.33            0.00         200          0.29          0.86               2.38             2.00
+               cycle=Expansion      993.0         0.41         1.54              2.26            3.32         556          0.34          2.02               2.45             1.62
+              cycle=Late Cycle       62.0         0.95         0.82              4.19            1.61         130          0.08         -0.32               0.96             1.54
+               monetary=Easing        NaN          NaN          NaN               NaN             NaN          83          0.85          1.25               4.93             0.00
+                monetary=Pause        NaN          NaN          NaN               NaN             NaN          75         -0.57         -0.43              -1.84             0.00
+           monetary=Tightening        NaN          NaN          NaN               NaN             NaN         205          0.54          1.49               3.70             0.00
+                          none     1067.0         0.50         1.90              2.68            3.19         857          0.44          2.74               2.83             1.05
+                    risk=Mixed      417.0         0.47         0.75              2.42            2.16         266          0.25          1.48               2.19             0.00
+                 risk=Risk-Off      475.0         1.23         2.08              6.08            3.16         405          0.69          1.81               3.65             2.22
+                  risk=Risk-On      229.0        -0.76        -0.73             -2.93            4.80         233          0.46          1.62               3.32             0.00
+                      spy<200d      553.0         0.72         1.08              3.45            5.42         316          0.49          0.78               2.52             2.22
+            spy<200d & vix>=22      480.0         0.78         1.06              3.68            6.25         245          0.73          0.62               4.33             2.04
+                      spy>200d      525.0         0.25         1.76              1.74            0.76         546          0.40          2.65               2.94             0.55
+                        vix<18      325.0         0.32         1.33              2.11            0.62         317          0.22          0.83               2.00             0.00
+                       vix>=22      574.0         0.63         1.05              3.01            5.40         373          0.72          2.08               4.36             1.88
+             volatility=Crisis      144.0         2.62         0.30              9.88            9.72         119          0.03          1.14               0.78             7.56
+           volatility=Elevated      272.0         0.02         0.64              0.74            1.10         394          0.50          1.67               3.03             0.51
+            volatility=Low Vol       37.0        -0.07        -0.33              0.71            0.00          87          0.38          1.60               2.59             0.00
+             volatility=Normal      169.0         0.02        -0.26              1.10            1.18         303          0.34          0.07               2.67             0.00
+
+== 5. rsi<30 above sma200 long, 5-day hold, split by entry filter ==
+                        filter  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+         composite=Contraction        NaN          NaN          NaN               NaN             NaN           6          0.62          0.23               4.55             0.00
+         composite=Crisis Mode        NaN          NaN          NaN               NaN             NaN           1         -0.82           NaN              -3.65             0.00
+     composite=Defensive Pivot        NaN          NaN          NaN               NaN             NaN           2         -1.29           NaN              -5.20             0.00
+composite=Easing into Weakness        NaN          NaN          NaN               NaN             NaN           1         -1.66           NaN              -8.36             0.00
+           composite=Expansion        NaN          NaN          NaN               NaN             NaN          15         -0.22          0.24               0.63             0.00
+     composite=Fragile Risk-On        NaN          NaN          NaN               NaN             NaN           2          3.96           NaN              20.58             0.00
+   composite=Healthy Expansion        NaN          NaN          NaN               NaN             NaN           8         -0.37         -0.33              -0.89             0.00
+          composite=Late Cycle        NaN          NaN          NaN               NaN             NaN          13          1.92          1.76              10.55             0.00
+       composite=Stress Rising        NaN          NaN          NaN               NaN             NaN          12          1.16          1.12               6.60             0.00
+             credit=Complacent       34.0         1.07         0.89              6.40             0.0          67          0.73          1.43               4.94             0.00
+                 credit=Normal       42.0        -0.38        -0.01             -1.26             0.0          64          1.13          1.50               6.62             0.00
+                 credit=Stress       14.0         0.65         1.38              3.46             0.0          40          0.47          1.53              -1.16             5.00
+             cycle=Contraction        4.0         2.40         2.96             12.95             0.0          43          0.44          2.60               3.53             0.00
+               cycle=Expansion      140.0         0.60         1.96              3.66             0.0         109          0.76          1.23               3.18             1.83
+              cycle=Late Cycle       12.0         1.49         2.59              7.38             0.0          18          1.57          1.30               8.81             0.00
+               monetary=Easing        NaN          NaN          NaN               NaN             NaN          12          0.86          0.59               5.01             0.00
+                monetary=Pause        NaN          NaN          NaN               NaN             NaN          12         -1.07         -0.36              -3.80             0.00
+           monetary=Tightening        NaN          NaN          NaN               NaN             NaN          35          1.23          1.95               7.35             0.00
+                          none      155.0         0.72         2.49              4.23             0.0         169          0.79          2.58               4.00             1.18
+                    risk=Mixed       55.0         1.14         1.54              6.30             0.0          53          0.71          1.02               4.70             0.00
+                 risk=Risk-Off       72.0         0.45         1.62              2.93             0.0          79          0.92          1.84               3.33             2.53
+                  risk=Risk-On       33.0         0.74         0.79              4.14             0.0          40          0.86          1.55               5.40             0.00
+                      spy<200d       17.0         0.31         0.50              2.22             0.0          26          1.36          0.74               0.89             7.69
+            spy<200d & vix>=22       13.0        -0.24         0.23             -0.49             0.0          22          1.38          0.60               4.43             4.55
+                      spy>200d      139.0         0.79         2.53              4.56             0.0         143          0.69          2.34               4.56             0.00
+                        vix<18       84.0         0.90         2.59              5.20             0.0          71          0.45          0.91               3.25             0.00
+                       vix>=22       35.0         0.36         0.77              2.35             0.0          62          1.11          2.24               5.52             1.61
+             volatility=Crisis        4.0         2.50         0.75             13.46             0.0           7         -0.72         -0.27             -15.02            14.29
+           volatility=Elevated       43.0         0.10        -0.16              0.95             0.0          81          0.85          1.80               4.27             1.23
+            volatility=Low Vol       14.0         1.04         0.88              6.26             0.0          12          0.59          1.15               3.69             0.00
+             volatility=Normal       44.0         0.58         0.30              3.62             0.0          78          0.64          1.09               4.26             0.00
+
+== 5. rsi<35 long, 5-day hold, split by entry filter ==
+                        filter  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+         composite=Contraction        NaN          NaN          NaN               NaN             NaN          57          0.50          1.57               3.05             0.00
+         composite=Crisis Mode        NaN          NaN          NaN               NaN             NaN          23          2.28          2.18              12.09             0.00
+     composite=Defensive Pivot        NaN          NaN          NaN               NaN             NaN          14         -0.82         -2.07              -2.95             0.00
+composite=Easing into Weakness        NaN          NaN          NaN               NaN             NaN          20          0.90          0.78               5.05             0.00
+           composite=Expansion        NaN          NaN          NaN               NaN             NaN         219         -0.16         -0.18               0.14             0.46
+     composite=Fragile Risk-On        NaN          NaN          NaN               NaN             NaN          69         -1.04         -2.08              -3.38             1.45
+   composite=Healthy Expansion        NaN          NaN          NaN               NaN             NaN         142         -0.62         -1.20              -2.03             0.00
+          composite=Late Cycle        NaN          NaN          NaN               NaN             NaN         153         -0.16          0.39              -0.00             0.00
+   composite=Late Cycle Stress        NaN          NaN          NaN               NaN             NaN           2         -0.34           NaN              -0.76             0.00
+       composite=Stress Rising        NaN          NaN          NaN               NaN             NaN         105          0.58          0.91               3.89             0.00
+           composite=Vol Spike        NaN          NaN          NaN               NaN             NaN          80          1.11          1.35               6.77             0.00
+             credit=Complacent      194.0         0.07        -0.28              1.12            0.52         913         -0.11          0.24               0.53             0.33
+                 credit=Normal      661.0        -0.11         2.09             -0.05            1.21         536          0.67          1.78               4.34             0.00
+                 credit=Stress      371.0         1.96         1.24              9.64            3.50         389         -0.16          1.65              -0.34             2.31
+             cycle=Contraction       28.0         2.13         2.65             11.44            0.00         329         -0.26          0.83              -0.27             1.52
+               cycle=Expansion     2093.0         0.33         2.86              2.00            1.77        1255          0.19          1.05               1.78             0.48
+              cycle=Late Cycle      147.0         1.06         1.79              2.01            3.40         269         -0.03          0.81               0.86             0.74
+               monetary=Easing        NaN          NaN          NaN               NaN             NaN         158         -0.27          1.21              -0.47             1.27
+                monetary=Pause        NaN          NaN          NaN               NaN             NaN         172          0.10          0.38               1.45             0.00
+           monetary=Tightening        NaN          NaN          NaN               NaN             NaN         480          0.26          0.13               2.36             0.00
+                          none     2257.0         0.39         3.19              2.09            1.86        1800          0.09          1.86               1.38             0.67
+                    risk=Mixed      929.0         0.28         0.72              1.56            1.72         670          0.07          0.31               1.36             0.30
+                 risk=Risk-Off      926.0         1.01         3.29              4.59            1.94         699          0.15          0.77               1.41             1.29
+                  risk=Risk-On      521.0        -0.52         0.11             -1.52            2.69         570          0.00         -0.42               1.15             0.18
+                      spy<200d     1078.0         0.57         2.26              2.47            3.62         541          0.16          1.73               1.54             1.29
+            spy<200d & vix>=22      908.0         0.85         2.64              3.55            3.85         415          0.62          1.82               4.25             0.72
+                      spy>200d     1219.0         0.28         2.32              2.03            0.25        1278          0.04          0.29               1.19             0.39
+                        vix<18      718.0        -0.03         1.12              0.59            0.28         828         -0.06         -0.72               0.60             0.36
+                       vix>=22     1135.0         0.80         3.21              3.49            3.17         646          0.45          2.43               3.48             0.77
+             volatility=Crisis      264.0         1.98         1.82              9.13            5.30         184          0.80          2.34               5.03             2.72
+           volatility=Elevated      561.0         0.29         2.70              2.10            0.71         702          0.03          1.75               0.95             0.43
+            volatility=Low Vol       96.0         0.26         0.79              2.00            0.00         205         -0.42         -1.80              -1.17             0.00
+             volatility=Normal      392.0         0.25         0.97              2.11            0.26         812          0.16          0.42               1.69             0.49
+
+== 5. rsi<35 above sma200 long, 5-day hold, split by entry filter ==
+                        filter  trades_is  excess_%_is  t_excess_is  turbo5_mean_%_is  turbo5_ko_%_is  trades_oos  excess_%_oos  t_excess_oos  turbo5_mean_%_oos  turbo5_ko_%_oos
+         composite=Contraction        NaN          NaN          NaN               NaN             NaN          23          0.33          0.71               2.82             0.00
+         composite=Crisis Mode        NaN          NaN          NaN               NaN             NaN           3          5.57          4.54              28.68             0.00
+     composite=Defensive Pivot        NaN          NaN          NaN               NaN             NaN           7         -0.20         -0.98               1.03             0.00
+composite=Easing into Weakness        NaN          NaN          NaN               NaN             NaN           4         -0.71         -0.27              -2.36             0.00
+           composite=Expansion        NaN          NaN          NaN               NaN             NaN          64          0.28         -0.53               2.43             0.00
+     composite=Fragile Risk-On        NaN          NaN          NaN               NaN             NaN          21         -0.68         -1.29              -2.21             0.00
+   composite=Healthy Expansion        NaN          NaN          NaN               NaN             NaN          33         -0.21         -0.12               0.28             0.00
+          composite=Late Cycle        NaN          NaN          NaN               NaN             NaN          50          1.39          0.18               7.86             0.00
+   composite=Late Cycle Stress        NaN          NaN          NaN               NaN             NaN           2         -0.34           NaN              -0.76             0.00
+       composite=Stress Rising        NaN          NaN          NaN               NaN             NaN          38         -0.93         -1.01              -3.73             0.00
+           composite=Vol Spike        NaN          NaN          NaN               NaN             NaN           6          2.50          1.35              13.45             0.00
+             credit=Complacent      104.0         0.49         1.41              3.23            0.00         270          0.27          0.23               2.43             0.00
+                 credit=Normal      217.0         1.19         2.63              6.76            0.00         217          0.58          1.52               4.01             0.00
+                 credit=Stress       58.0         1.26         0.77              6.61            1.72         103         -0.62          0.47              -3.62             2.91
+             cycle=Contraction       14.0         1.85         1.30              9.90            0.00         103         -1.13         -1.06              -4.20             0.97
+               cycle=Expansion      567.0         0.75         3.14              4.39            0.53         408          0.40          1.39               2.60             0.49
+              cycle=Late Cycle       47.0         1.80         2.84              9.30            0.00          76          0.50         -0.53               3.51             0.00
+               monetary=Easing        NaN          NaN          NaN               NaN             NaN          50          0.13         -0.55               1.55             0.00
+                monetary=Pause        NaN          NaN          NaN               NaN             NaN          55          0.40          1.18               3.10             0.00
+           monetary=Tightening        NaN          NaN          NaN               NaN             NaN         130          0.41         -0.08               3.18             0.00
+                          none      628.0         0.86         3.85              4.88            0.48         577          0.19          1.05               1.79             0.52
+                    risk=Mixed      249.0         0.54         0.91              3.39            0.80         220          0.78          0.72               4.95             0.00
+                 risk=Risk-Off      273.0         1.10         3.42              6.10            0.37         228         -0.26         -0.15              -0.97             1.32
+                  risk=Risk-On      137.0         0.81         2.24              4.63            0.00         167          0.15          0.19               1.97             0.00
+                      spy<200d      105.0         0.83         1.23              4.44            1.90          69         -0.19          0.11              -1.15             2.90
+            spy<200d & vix>=22       79.0         0.67         0.90              3.64            2.53          46         -0.40          0.10              -0.57             2.17
+                      spy>200d      529.0         0.87         3.97              4.99            0.19         511          0.23          1.23               2.12             0.20
+                        vix<18      296.0         0.23         2.21              1.92            0.34         312          0.19          0.11               1.73             0.32
+                       vix>=22      170.0         1.69         2.30              8.84            1.18         150         -0.15          0.90               0.52             0.67
+             volatility=Crisis       25.0         3.84         5.31             20.12            0.00          27          0.12          1.07               2.13             3.70
+           volatility=Elevated      180.0         1.42         1.67              7.65            0.56         196         -0.38          0.07              -1.24             0.51
+            volatility=Low Vol       50.0         0.84         2.16              4.85            0.00          79         -0.23         -1.03              -0.08             0.00
+             volatility=Normal      176.0         0.36         1.20              2.57            0.00         306          0.61          1.44               3.85             0.33
+
+== 5. rsi<50 long, 5-day hold, split by entry filter ==
+Empty DataFrame
+Columns: [filter, trades_is, excess_%_is, t_excess_is, turbo5_mean_%_is, turbo5_ko_%_is, trades_oos, excess_%_oos, t_excess_oos, turbo5_mean_%_oos, turbo5_ko_%_oos]
+Index: []
+
+== 6. Leverage vs hold, no filter ==
+-- always long
+period  hold  trades  mean_%  turbo3_mean_%  turbo3_ko_%  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%
+    IS     3   32143     0.2            0.0          0.0            0.4          0.3             1.0           3.0
+    IS     5   21425     0.3            0.1          0.1            0.4          0.9             1.0           5.6
+    IS    10   11689     0.5            0.6          0.5            1.2          2.3             2.8          11.6
+    IS    21    5861     1.1            1.9          1.6            3.0          6.4             6.4          21.8
+   OOS     3   26537     0.2            0.1          0.0            0.5          0.1             1.3           1.8
+   OOS     5   17676     0.4            0.6          0.0            1.3          0.3             3.0           3.3
+   OOS    10    9636     0.8            1.6          0.1            2.6          1.2             5.4           8.9
+   OOS    21    4789     1.7            3.8          0.6            6.3          3.1            11.3          17.6
+-- rsi<25 long
+period  hold  trades  mean_%  turbo3_mean_%  turbo3_ko_%  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%
+    IS     3     418     0.6            1.1          0.2            2.1          1.9             3.1          11.0
+    IS     5     389     1.1            2.5          0.3            3.3          2.6             2.9          17.0
+    IS    10     349     0.4            0.6          0.9           -0.5          6.6            -1.9          25.5
+    IS    21     320     1.6            2.5          2.8            1.0         12.8            -0.5          35.9
+   OOS     3     348     0.7            1.5          0.0            3.0          0.3             5.1           8.9
+   OOS     5     329     1.0            2.3          0.3            4.1          2.1             8.4          11.9
+   OOS    10     299     1.5            3.5          0.7            6.4          5.0            10.8          17.7
+   OOS    21     275     2.9            6.7          2.9           10.5          9.1            19.7          24.4
+-- rsi<25 above sma200 long
+period  hold  trades  mean_%  turbo3_mean_%  turbo3_ko_%  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%
+    IS     3      26     0.9            2.0          0.0            3.7          0.0             7.8           0.0
+    IS     5      26     0.0           -0.6          0.0           -0.7          0.0            -1.2           3.8
+    IS    10      25     1.1            2.5          0.0            4.4          0.0             7.3           8.0
+    IS    21      25     2.1            5.2          0.0            8.8          0.0            11.8          16.0
+   OOS     3      27     1.5            3.8          0.0            6.6          0.0            11.5           3.7
+   OOS     5      27     1.5            3.9          0.0            6.8          0.0            13.1           3.7
+   OOS    10      27     0.8            1.6          0.0            5.3          7.4            17.9          11.1
+   OOS    21      27     0.6           -1.3          7.4            2.0         11.1            10.6          18.5
+-- rsi<30 long
+period  hold  trades  mean_%  turbo3_mean_%  turbo3_ko_%  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%
+    IS     3    1172     0.8            1.7          0.4            3.1          1.8             5.4           8.4
+    IS     5    1067     0.8            1.6          0.8            2.7          3.2             4.5          12.9
+    IS    10     918     1.2            2.5          1.5            3.6          5.4             2.3          23.0
+    IS    21     779     1.6            3.3          3.0            4.7         11.3             3.6          33.2
+   OOS     3     941     0.5            0.9          0.0            1.5          0.4             2.1           6.5
+   OOS     5     857     0.8            1.8          0.0            2.8          1.1             3.9           9.0
+   OOS    10     750     1.0            2.0          0.3            3.1          3.5             4.5          14.8
+   OOS    21     658     1.8            3.7          1.8            5.1          6.8             8.4          23.6
+-- rsi<30 above sma200 long
+period  hold  trades  mean_%  turbo3_mean_%  turbo3_ko_%  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%
+    IS     3     160     1.0            2.4          0.0            4.2          0.0             8.5           0.6
+    IS     5     155     1.0            2.4          0.0            4.2          0.0             8.8           2.6
+    IS    10     139     1.8            4.6          0.0            7.9          0.0            14.3           7.9
+    IS    21     138     2.8            7.2          0.0           11.9          0.7            20.1          13.0
+   OOS     3     176     0.7            1.5          0.0            1.7          1.1             4.2           4.0
+   OOS     5     169     1.2            2.9          0.0            4.0          1.2             7.2           5.3
+   OOS    10     156     0.8            1.6          0.6            2.3          5.8             8.0          15.4
+   OOS    21     153     1.3            1.5          5.2            1.0         11.8             8.9          20.9
+-- rsi<35 long
+period  hold  trades  mean_%  turbo3_mean_%  turbo3_ko_%  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%
+    IS     3    2501     0.6            1.0          0.2            1.9          0.9             3.2           6.4
+    IS     5    2257     0.7            1.3          0.4            2.1          1.9             3.9          10.5
+    IS    10    1870     0.7            1.1          1.2            1.9          4.9             2.7          18.2
+    IS    21    1488     1.4            2.2          2.6            3.7          9.3             4.6          28.6
+   OOS     3    1969     0.2           -0.0          0.1            0.2          0.3             0.3           4.1
+   OOS     5    1800     0.5            0.7          0.1            1.4          0.7             1.9           6.8
+   OOS    10    1491     0.9            1.9          0.1            3.2          2.3             5.1          12.6
+   OOS    21    1200     2.0            4.3          1.3            6.9          5.7            11.4          21.0
+-- rsi<35 above sma200 long
+period  hold  trades  mean_%  turbo3_mean_%  turbo3_ko_%  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%
+    IS     3     673     1.0            2.3          0.0            4.2          0.1             8.0           2.1
+    IS     5     628     1.2            2.8          0.0            4.9          0.5             9.8           4.0
+    IS    10     554     1.1            2.6          0.0            4.4          1.4             8.7           9.0
+    IS    21     503     2.2            5.6          0.2            9.1          3.8            16.4          15.7
+   OOS     3     616     0.3            0.2          0.2            0.5          0.5             1.0           3.2
+   OOS     5     577     0.6            1.0          0.2            1.8          0.5             2.3           5.7
+   OOS    10     500     0.8            1.3          0.2            2.3          2.4             3.8          12.2
+   OOS    21     458     1.4            2.1          2.2            3.7          6.3             6.5          19.2
+-- rsi<50 long
+Empty DataFrame
+Columns: [period, hold, trades, mean_%, turbo3_mean_%, turbo3_ko_%, turbo5_mean_%, turbo5_ko_%, turbo10_mean_%, turbo10_ko_%]
+Index: []

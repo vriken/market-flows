@@ -1,0 +1,17 @@
+535 stocks, 2015-01-02 → 2026-09-29, 2,612 RSI<30 signals, busiest day 2020-02-27 with 55 signals, ranking by drawdown, idle money in qqq
+
+SPY buy and hold: {'final_x': np.float64(4.52), 'cagr_%': np.float64(13.71), 'max_drawdown_%': np.float64(-33.72), 'worst_year_%': np.float64(-18.18), 'worst_year': 2022}
+
+== All combinations, best growth first ==
+          leverage  stake_%  max_positions  final_x  cagr_%  max_drawdown_%  lowest_equity_x  worst_year_%  worst_year  losing_years  trades  knockout_%  avg_trade_%
+20x bull / 5x else      1.5             30    25.68   31.85          -50.34             0.97        -48.16        2022             2    2085       11.99         6.21
+20x bull / 5x else      1.5             20    19.64   28.87          -49.18             0.97        -46.95        2022             2    1938       12.54         5.34
+20x bull / 5x else      1.0             30    18.68   28.32          -45.45             0.97        -43.15        2022             2    2085       11.99         6.21
+20x bull / 5x else      1.0             20    15.38   26.21          -44.62             0.97        -42.28        2022             2    1938       12.54         5.34
+
+== Best growth for each drawdown you can stomach ==
+  max drawdown ≥ -50%: 20x bull / 5x else, 1.5% stake, 20 slots → CAGR 28.9%, drawdown -49%, worst year -47% (2022)
+  max drawdown ≥ -60%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 31.8%, drawdown -50%, worst year -48% (2022)
+  max drawdown ≥ -70%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 31.8%, drawdown -50%, worst year -48% (2022)
+  max drawdown ≥ -80%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 31.8%, drawdown -50%, worst year -48% (2022)
+  max drawdown ≥ -90%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 31.8%, drawdown -50%, worst year -48% (2022)

@@ -1,0 +1,158 @@
+//@version=6
+indicator("RSI 30 Turbo Levels", overlay=true, max_lines_count=50, max_labels_count=50)
+
+// For intraday charts. Everything is on DAILY RSI(14): the trigger is the price at which today's close would
+// take the daily RSI below 30, computed from yesterday's final RSI averages.
+
+grpSig    = "Signal"
+rsiLen    = input.int(14, "RSI length (daily)", minval=2, group=grpSig)
+oversold  = input.float(30, "Signal when daily RSI crosses below", minval=1, maxval=50, group=grpSig)
+holdDays  = input.int(5, "Hold (trading days)", minval=1, maxval=60, group=grpSig)
+
+grpMkt    = "Market regime (previous day)"
+spySymbol = input.symbol("AMEX:SPY", "Market index", group=grpMkt)
+spyLen    = input.int(200, "Bull when index is above its SMA", minval=20, group=grpMkt)
+vixSymbol = input.symbol("CBOE:VIX", "VIX symbol", group=grpMkt)
+vixHigh   = input.float(22, "...and VIX is below", minval=10, group=grpMkt)
+
+grpTurbo      = "Turbo"
+levBull       = input.float(20, "Leverage in a bull market", minval=1.5, step=0.5, group=grpTurbo)
+levOther      = input.float(5, "Leverage otherwise", minval=1.5, step=0.5, group=grpTurbo)
+finRatePct    = input.float(6.5, "Financing cost (% per year)", minval=0, step=0.25, group=grpTurbo)
+koRiskChoice  = input.string("20%", "Knock-out risk for the safe lines", options=["1%", "2.5%", "5%", "10%", "20%", "30%"], group=grpTurbo, tooltip="Constants fitted on RSI<30 dips in 36 stocks, 2000–14; on 2015–26 the targets were hit 0.7 / 1.9 / 5.1 / 8.6 / 18.8 / 29.0% of the time.")
+miniBufferPct = input.float(5.0, "Mini long: stop-loss above financing level (%)", minval=0, step=0.5, group=grpTurbo)
+volLen        = input.int(20, "Volatility lookback (days)", minval=5, group=grpTurbo)
+showTable     = input.bool(true, "Show table", group=grpTurbo)
+tablePosText = input.string("bottom right", "Table position", options=["top right", "top left", "bottom right", "bottom left", "middle right"], group=grpTurbo)
+tablePosition = switch tablePosText
+    "top left"     => position.top_left
+    "bottom right" => position.bottom_right
+    "bottom left"  => position.bottom_left
+    "middle right" => position.middle_right
+    =>                position.top_right
+
+var array<float> koZ   = array.from(-5.565, -4.153, -3.107, -2.364, -1.944, -1.577, -1.165, -0.903, -0.695)
+var array<float> koPct = array.from(1.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0, 50.0)
+
+zForRisk(pct) =>
+    float z = na
+    for i = 0 to array.size(koPct) - 1
+        if array.get(koPct, i) == pct
+            z := array.get(koZ, i)
+    z
+
+riskForZ(z) =>
+    n = array.size(koZ)
+    float pct = na
+    if not na(z)
+        if z <= array.get(koZ, 0)
+            pct := 0.0
+        else if z >= array.get(koZ, n - 1)
+            pct := 100.0
+        else
+            for i = 1 to n - 1
+                z1 = array.get(koZ, i)
+                if na(pct) and z <= z1
+                    z0 = array.get(koZ, i - 1)
+                    p0 = array.get(koPct, i - 1)
+                    pct := p0 + (array.get(koPct, i) - p0) * (z - z0) / (z1 - z0)
+    pct
+
+riskText(pct) =>
+    na(pct) ? "—" : pct <= 0 ? "<1%" : pct >= 100 ? ">50%" : str.tostring(pct, "#") + "%"
+
+levText(x) =>
+    str.tostring(x, "#.#") + "x"
+
+price(x) =>
+    str.tostring(x, format.mintick)
+
+dailyState() =>
+    chg = ta.change(close)
+    avgGain = ta.rma(math.max(chg, 0), rsiLen)
+    avgLoss = ta.rma(math.max(-chg, 0), rsiLen)
+    vol = ta.stdev(math.log(close / close[1]), volLen, false)
+    [avgGain[1], avgLoss[1], close[1], ta.rsi(close, rsiLen)[1], vol[1]]
+
+[gainPrev, lossPrev, closePrev, rsiPrev, volPrev] = request.security(syminfo.tickerid, "D", dailyState(), lookahead=barmerge.lookahead_on)
+[spyPrev, spySmaPrev] = request.security(spySymbol, "D", [close[1], ta.sma(close, spyLen)[1]], lookahead=barmerge.lookahead_on)
+vixPrev = request.security(vixSymbol, "D", close[1], lookahead=barmerge.lookahead_on)
+
+dailyRsiAt(p) =>
+    chg = p - closePrev
+    gain = (gainPrev * (rsiLen - 1) + math.max(chg, 0)) / rsiLen
+    loss = (lossPrev * (rsiLen - 1) + math.max(-chg, 0)) / rsiLen
+    loss == 0 ? 100.0 : 100 - 100 / (1 + gain / loss)
+
+rsiNow       = dailyRsiAt(close)
+canCross     = rsiPrev >= oversold
+oversoldRatio = oversold / (100 - oversold)
+triggerPrice = canCross ? closePrev - (rsiLen - 1) * (gainPrev / oversoldRatio - lossPrev) : na
+belowTrigger = canCross and close < triggerPrice
+
+bullMarket = not na(spySmaPrev) and spyPrev > spySmaPrev and not na(vixPrev) and vixPrev < vixHigh
+leverage   = bullMarket ? levBull : levOther
+accrual    = 1 + finRatePct / 100 * (holdDays * 7 / 5.0) / 365
+volHold    = volPrev * math.sqrt(holdDays)
+entryRef   = belowTrigger ? close : triggerPrice
+koLevel    = entryRef * (1 - 1 / leverage)
+koRisk     = riskForZ(math.log((1 - 1 / leverage) * accrual) / volHold)
+safeZ      = zForRisk(str.tonumber(str.replace(koRiskChoice, "%", "")))
+maxTurbo   = entryRef * math.exp(safeZ * volHold) / accrual
+maxMini    = maxTurbo / (1 + miniBufferPct / 100)
+
+var int dayStart = na
+if ta.change(time("D")) != 0 or na(dayStart)
+    dayStart := bar_index
+
+var line  trigLine  = na
+var line  koLine    = na
+var line  turboLine = na
+var line  miniLine  = na
+var label trigTag   = na
+var label koTag     = na
+var label turboTag  = na
+var label miniTag   = na
+if barstate.islast
+    for l in array.from(trigLine, koLine, turboLine, miniLine)
+        line.delete(l)
+    for lb in array.from(trigTag, koTag, turboTag, miniTag)
+        label.delete(lb)
+    x1 = timeframe.isdaily ? bar_index - 5 : dayStart
+    x2 = bar_index + 4
+    if canCross
+        trigLine := line.new(x1, triggerPrice, x2, triggerPrice, color=color.new(color.aqua, 0), style=line.style_dashed, width=2)
+        trigTag  := label.new(x2, triggerPrice, "RSI 30 at " + price(triggerPrice) + " (" + str.tostring((triggerPrice / close - 1) * 100, "#.#") + "%)", style=label.style_label_left, color=color.new(color.aqua, 20), textcolor=color.black, size=size.small, tooltip="A daily close below this price takes daily RSI(" + str.tostring(rsiLen) + ") under " + str.tostring(oversold) + ": a buy signal. Buy near the close.")
+        koLine   := line.new(x1, koLevel, x2, koLevel, color=color.new(color.red, 20), style=line.style_dotted)
+        koTag    := label.new(x2, koLevel, levText(leverage) + " KO " + price(koLevel) + " · risk " + riskText(koRisk), style=label.style_label_left, color=color.new(color.red, 30), textcolor=color.white, size=size.tiny, tooltip="Financing / knock-out level for a " + levText(leverage) + " turbo bought at " + price(entryRef) + ". Estimated knock-out risk over " + str.tostring(holdDays) + " days: " + riskText(koRisk) + ".")
+        turboLine := line.new(x1, maxTurbo, x2, maxTurbo, color=color.new(color.orange, 20))
+        turboTag  := label.new(x2, maxTurbo, "turbo ≤ " + price(maxTurbo) + " (" + koRiskChoice + ")", style=label.style_label_left, color=color.new(color.orange, 30), textcolor=color.white, size=size.tiny)
+        miniLine  := line.new(x1, maxMini, x2, maxMini, color=color.new(color.purple, 20))
+        miniTag   := label.new(x2, maxMini, "mini ≤ " + price(maxMini), style=label.style_label_left, color=color.new(color.purple, 30), textcolor=color.white, size=size.tiny)
+
+var table info = table.new(tablePosition, 2, 7, bgcolor=color.new(#161b22, 10), border_width=1)
+cell(col, row, txt, txtColor) =>
+    table.cell(info, col, row, txt, text_color=txtColor, text_size=size.small, text_halign=col == 0 ? text.align_left : text.align_right)
+
+if showTable and barstate.islast
+    muted = color.new(color.white, 40)
+    cell(0, 0, "Daily RSI now", muted)
+    cell(1, 0, str.tostring(rsiNow, "#.0"), rsiNow < oversold ? color.lime : color.white)
+    cell(0, 1, "Yesterday's close RSI", muted)
+    cell(1, 1, str.tostring(rsiPrev, "#.0"), color.white)
+    cell(0, 2, "Trigger (close below)", muted)
+    cell(1, 2, canCross ? price(triggerPrice) + " (" + str.tostring((triggerPrice / close - 1) * 100, "#.#") + "%)" : "already below " + str.tostring(oversold), belowTrigger ? color.lime : color.white)
+    cell(0, 3, "Market", muted)
+    cell(1, 3, (bullMarket ? "bull" : "caution") + " → " + levText(leverage), bullMarket ? color.lime : color.orange)
+    cell(0, 4, "KO level · risk", muted)
+    cell(1, 4, canCross ? price(koLevel) + " · " + riskText(koRisk) : "—", koRisk >= 20 ? color.orange : color.white)
+    cell(0, 5, "Highest turbo fin (" + koRiskChoice + ")", muted)
+    cell(1, 5, canCross ? price(maxTurbo) : "—", color.white)
+    cell(0, 6, "Highest mini fin", muted)
+    cell(1, 6, canCross ? price(maxMini) : "—", color.white)
+
+brokeTrigger   = ta.crossunder(close, triggerPrice)
+crossedTrigger = brokeTrigger and canCross
+alertcondition(crossedTrigger, "Price crossed below the RSI 30 trigger", "{{ticker}} is below its daily RSI 30 trigger — likely buy signal at the close")
+if crossedTrigger
+    alert(syminfo.ticker + " crossed below its RSI 30 trigger " + price(triggerPrice) + " — likely " + levText(leverage) + " buy at the close (KO " + price(koLevel) + ", risk " + riskText(koRisk) + ")", alert.freq_once_per_bar)

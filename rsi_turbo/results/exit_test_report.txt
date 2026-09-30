@@ -1,0 +1,17 @@
+== Exit rules on v2 signals (win_% counts turbo trades that made money)
+                                              trades  held  win_%  stock_%  turbo_%   ko_%  turbo_per_day_%
+period  rule                                                                                               
+2007–14 X1 after 5 days                       1060.0  4.82  56.70     0.61     6.21  10.09             1.29
+        X2 take profit +3%                    1067.0  4.04  60.73     0.71     7.98   9.18             1.97
+        X3 take profit +1 typical 5-day move  1064.0  4.12  59.49     0.70     7.78   9.59             1.89
+        X4 stop halfway to knock-out          1063.0  4.56  55.41     0.49     4.84   5.08             1.06
+        X5 RSI back to 40                     1064.0  3.95  60.06     0.67     7.63   9.59             1.93
+        X6 winners run to RSI 50 / day 10     1036.0  6.82  43.53     0.59     8.29  12.93             1.22
+        X7 breakeven stop after +2%           1068.0  4.72  54.59     0.58     6.09   9.64             1.29
+2015–26 X1 after 5 days                       2292.0  4.77  58.46     0.88     7.48  11.26             1.57
+        X2 take profit +3%                    2309.0  3.89  61.46     0.85     7.83  10.70             2.01
+        X3 take profit +1 typical 5-day move  2296.0  4.04  60.15     0.86     7.74  11.02             1.91
+        X4 stop halfway to knock-out          2302.0  4.56  57.30     0.86     7.27   6.56             1.60
+        X5 RSI back to 40                     2295.0  3.88  61.66     0.88     8.06  10.81             2.08
+        X6 winners run to RSI 50 / day 10     2247.0  6.95  47.22     0.77     6.68  14.78             0.96
+        X7 breakeven stop after +2%           2300.0  4.70  56.78     0.86     7.26  10.61             1.55

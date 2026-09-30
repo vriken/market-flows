@@ -1,0 +1,24 @@
+36 stocks, 2015-01-02 → 2026-09-29, 1,042 RSI<30 signals, busiest day 2025-04-04 with 15 signals, ranking by drawdown, idle money in spy
+
+SPY buy and hold: {'final_x': np.float64(4.52), 'cagr_%': np.float64(13.71), 'max_drawdown_%': np.float64(-33.72), 'worst_year_%': np.float64(-18.18), 'worst_year': 2022}
+
+== All combinations, best growth first ==
+                  leverage  stake_%  max_positions  final_x  cagr_%  max_drawdown_%  lowest_equity_x  worst_year_%  worst_year  losing_years  trades  knockout_%  avg_trade_%
+        20x bull / 5x else      5.0             10    16.25   26.80          -74.53             0.96        -41.05        2020             3     782        9.46         6.18
+        20x bull / 5x else      3.0             10    11.60   23.22          -61.27             0.97        -28.27        2022             3     782        9.46         6.18
+        20% KO risk always      3.0             10    11.09   22.75          -74.05             0.79        -38.60        2020             2     813       16.73         7.46
+        20% KO risk always      5.0             10    10.68   22.35          -88.12             0.67        -66.41        2020             2     813       16.73         7.46
+20% KO risk bull / 5x else      5.0             10    10.17   21.84          -74.39             0.97        -42.50        2020             3     779        8.22         4.67
+        20% KO risk always      2.0             10     9.28   20.90          -63.65             0.85        -25.67        2022             2     813       16.73         7.46
+        20x bull / 5x else      2.0             10     8.98   20.56          -53.25             0.97        -24.91        2022             3     782        9.46         6.18
+20% KO risk bull / 5x else      3.0             10     8.53   20.03          -61.28             0.97        -27.97        2022             3     779        8.22         4.67
+20% KO risk bull / 5x else      2.0             10     7.25   18.37          -53.26             0.96        -24.70        2022             3     779        8.22         4.67
+10% KO risk bull / 5x else      5.0             10     7.24   18.37          -74.21             0.97        -44.13        2020             3     777        3.86         3.15
+10% KO risk bull / 5x else      3.0             10     6.62   17.47          -61.11             0.97        -25.39        2022             3     777        3.86         3.15
+10% KO risk bull / 5x else      2.0             10     6.02   16.52          -53.12             0.96        -22.93        2022             3     777        3.86         3.15
+
+== Best growth for each drawdown you can stomach ==
+  max drawdown ≥ -60%: 20x bull / 5x else, 2% stake, 10 slots → CAGR 20.6%, drawdown -53%, worst year -25% (2022)
+  max drawdown ≥ -70%: 20x bull / 5x else, 3% stake, 10 slots → CAGR 23.2%, drawdown -61%, worst year -28% (2022)
+  max drawdown ≥ -80%: 20x bull / 5x else, 5% stake, 10 slots → CAGR 26.8%, drawdown -75%, worst year -41% (2020)
+  max drawdown ≥ -90%: 20x bull / 5x else, 5% stake, 10 slots → CAGR 26.8%, drawdown -75%, worst year -41% (2020)

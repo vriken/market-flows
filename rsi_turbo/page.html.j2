@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RSI Turbo</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+    h1 { font-size: 1.6rem; margin: 0; }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    a { color: var(--blue); text-decoration: none; }
+    .muted { color: var(--text-muted); font-size: 0.85rem; }
+    .rule { margin: 8px 0 20px; color: var(--text-muted); font-size: 0.9rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .tile .label { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .tile .value { font-size: 1.4rem; font-weight: 600; margin-top: 2px; }
+    .tile .note { color: var(--text-muted); font-size: 0.8rem; }
+    .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.6); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: rgba(110,118,129,0.08); }
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+    .warn { color: var(--yellow); }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem; }
+    .badge.pos { background: rgba(63,185,80,0.15); }
+    .badge.neg { background: rgba(248,81,73,0.15); }
+    .badge.warn { background: rgba(210,153,34,0.15); }
+    .badge.info { background: rgba(88,166,255,0.15); color: var(--blue); }
+    .empty { color: var(--text-muted); font-size: 0.9rem; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>RSI Turbo</h1>
+    <span class="muted">Updated {{ updated }} (Stockholm) · <a href="../">&larr; Market Flows</a></span>
+  </header>
+  <p class="rule">Rule v2.1: buy a turbo long when daily RSI(14) closes below {{ rule.oversold }} and the stock is above its
+    200-day average · {{ rule.bull }}x in a bull market (SPY above its 200-day, VIX below {{ market.high_vix }}),
+    {{ rule.other }}x otherwise · sell at the first close with RSI back at {{ rule.exit_rsi }}, at the latest after
+    {{ rule.hold }} trading days · stake {{ rule.stake }}, max {{ rule.max_positions }} open. Not investment advice.</p>
+
+  <div class="tiles">
+    <div class="tile"><div class="label">Market</div>
+      <div class="value {{ 'pos' if market.bull else 'warn' }}">{{ 'Bull' if market.bull else 'Caution' }}</div>
+      <div class="note">{{ market.leverage }}x on new signals</div></div>
+    <div class="tile"><div class="label">SPY vs 200-day</div><div class="value">{{ market.spy }}</div></div>
+    <div class="tile"><div class="label">VIX</div><div class="value">{{ market.vix }}</div>
+      <div class="note">bull below {{ market.high_vix }}</div></div>
+    <div class="tile"><div class="label">Financing cost</div><div class="value">{{ market.financing }}</div>
+      <div class="note">T-bill + 2.5% a year</div></div>
+    <div class="tile"><div class="label">Markets open</div><div class="value">{{ market.open }}</div></div>
+  </div>
+
+  <section class="card">
+    <h2>Buy ({{ buys|length }})</h2>
+    {% if buys %}
+    <div class="scroll"><table>
+      <tr><th>Stock</th><th>Signal</th><th>Price</th><th>RSI</th><th>Signal day</th><th>Leverage</th>
+        <th>Financing at that leverage</th><th>Knock-out risk, 5 days</th><th>Highest financing, {{ risk_line }}% risk</th><th>Sell by</th></tr>
+      {% for b in buys %}
+      <tr><td><strong>{{ b.ticker }}</strong></td>
+        <td>{% if b.confirmed %}<span class="badge pos">closed below 30</span>{% else %}<span class="badge warn">live, confirm at close</span>{% endif %}</td>
+        <td>{{ b.price }}</td><td>{{ b.rsi }}</td><td>{{ b.day }}</td><td>{{ b.leverage }}</td><td>{{ b.financing }}</td>
+        <td>{{ b.ko_risk }}</td><td>{{ b.max_fin }}</td><td>{{ b.sell_by }}</td></tr>
+      {% endfor %}
+    </table></div>
+    {% else %}<p class="empty">No stock crossed below RSI 30 above its 200-day.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Sell today ({{ sells|length }})</h2>
+    {% if sells %}
+    <div class="scroll"><table>
+      <tr><th>Stock</th><th>Signal</th><th>Reason</th><th>Held</th><th>Product</th></tr>
+      {% for s in sells %}
+      <tr><td><strong>{{ s.ticker }}</strong></td><td>{{ s.signal_date }}</td><td>{{ s.why }}</td>
+        <td>{{ 'yes' if s.yours else '—' }}</td><td>{{ s.product or '—' }}</td></tr>
+      {% endfor %}
+    </table></div>
+    {% else %}<p class="empty">Nothing has RSI back at {{ rule.exit_rsi }} or reaches its last day today.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Open positions ({{ positions|length }} of {{ rule.max_positions }})</h2>
+    {% if positions %}
+    <div class="scroll"><table>
+      <tr><th>Stock</th><th>Rule</th><th>Product</th><th>Qty</th><th>Bought</th><th>Paid (SEK)</th><th>Price</th>
+        <th>Knock-out</th><th>Above KO</th><th>Leverage entry → now</th><th>Turbo P&amp;L (est.)</th><th>Sell by</th></tr>
+      {% for p in positions %}
+      <tr><td><strong>{{ p.ticker }}</strong></td>
+        <td>{% if p.rule == 'off-rule' %}<span class="badge warn">off-rule</span>{% else %}{{ p.rule }}{% endif %}</td>
+        <td>{{ p.product }}</td><td>{{ p.qty }}</td><td>{{ p.bought }}</td><td>{{ p.paid }}</td><td>{{ p.price }}</td>
+        <td>{{ p.ko }}</td><td class="{{ p.gap_tone }}">{{ p.gap }}</td><td>{{ p.leverage }}</td>
+        <td class="{{ p.pnl_tone }}">{{ p.pnl }}</td>
+        <td class="{{ 'neg' if p.rule_exited else '' }}">{{ p.sell_by }}</td></tr>
+      {% endfor %}
+    </table></div>
+    <p class="muted">Turbo P&amp;L is estimated from the underlying and ignores the small daily financing charge; the
+      broker's quote is the real value. Leverage = price ÷ (price − financing level).</p>
+    {% else %}<p class="empty">No open positions.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Results by month</h2>
+    {% if charts.monthly %}{{ charts.monthly|safe }}
+    <p class="muted">{{ totals.trades }} closed trades, {{ '{:+,.0f}'.format(totals.pnl) }} SEK,
+      {{ '{:+.1%}'.format(totals.pnl / totals.staked) }} on {{ '{:,.0f}'.format(totals.staked) }} SEK staked, before
+      courtage. A trade counts in the month it closed; a knocked-out product counts as a full loss.
+      {% if totals.unpriced %}{{ totals.unpriced }} sold trades have no sale price yet.{% endif %}</p>
+    {% else %}<p class="empty">No closed trades with a sale price yet.{% if totals.unpriced %} {{ totals.unpriced }} sold
+      trades are waiting for their sale price.{% endif %}</p>{% endif %}
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Trades vs the model</h2>
+      <div class="scroll"><table>
+        <tr><th>Group</th><th>Trades</th><th>Win rate</th><th>Avg turbo</th><th>Knocked out</th></tr>
+        {% for v in versus %}
+        <tr><td>{{ v.group }}</td><td>{{ v.trades }}</td><td>{{ v.win }}</td>
+          <td class="{{ v.turbo_tone }}">{{ v.turbo }}</td><td>{{ v.ko }}</td></tr>
+        {% endfor %}
+      </table></div>
+      {% if execution.linked_trades %}<p class="muted">On {{ execution.linked_trades }} signal trades the entry was on
+        average {{ '{:+.2f}'.format(execution.entry_vs_signal_close_pct) }}% from the signal close, at
+        {{ '{:.1f}'.format(execution.your_leverage) }}x vs the rule's {{ '{:.1f}'.format(execution.rule_leverage) }}x.</p>{% endif %}
+    </section>
+    <section class="card">
+      <h2>Paper trading</h2>
+      <div class="scroll"><table>
+        <tr><th></th><th>Settled</th><th>Win rate</th><th>Avg stock</th><th>Knocked out</th><th>Avg turbo</th></tr>
+        {% for c in scorecards %}
+        <tr><td>{{ c.title }}</td><td>{{ c.trades }} / {{ criteria.trades }}</td><td>{{ c.win }}</td><td>{{ c.stock }}</td>
+          <td>{{ c.ko }}</td><td>{{ c.turbo }}</td></tr>
+        {% endfor %}
+      </table></div>
+      <p class="muted">Decided in advance: after {{ criteria.trades }} settled v2 trades, go live only if win rate ≥
+        {{ criteria.win_pct|int }}%, average stock move ≥ +{{ criteria.avg_stock_pct }}% and knock-outs ≤
+        {{ criteria.max_ko_pct|int }}%.</p>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Parameter health</h2>
+    {% if health %}
+    <div class="scroll"><table>
+      <tr><th>Part of the rule</th><th>Last {{ window }} years</th><th>Edge</th><th>t</th><th>Edge since 2007</th><th>t</th><th>Edge measured as</th></tr>
+      {% for h in health %}
+      <tr><td>{{ h.part }}</td>
+        <td><span class="badge {{ 'pos' if h.status == 'strong' else 'info' if h.status == 'holding up' else 'neg' }}">{{ h.status }}</span></td>
+        <td>{{ '{:+.2f}'.format(h.last_3y_edge) }}</td><td>{{ '{:.1f}'.format(h.last_3y_t) }}</td>
+        <td>{{ '{:+.2f}'.format(h.full_edge) }}</td><td>{{ '{:.1f}'.format(h.full_t) }}</td>
+        <td class="muted">{{ h.measure }}</td></tr>
+      {% endfor %}
+    </table></div>
+    {{ charts.heatmap|safe }}
+    {{ charts.trend|safe }}
+    <p class="muted">Each part of the rule is traded with and without it on every RSI dip since 2007 (S&amp;P 500, OMX
+      Stockholm 30 and the watchlist). Heatmap: that year's evidence, blue helped and red hurt. Lines: {{ window }}-year
+      rolling edge with a ±2 standard-error band, clustered by week. Strong = last {{ window }} years positive with
+      t ≥ 2; not helping = zero or below. A part that stops helping is a reason to test the alternative on new data,
+      not to swap in the best-looking value. Updated {{ health_updated }}, monthly.</p>
+    {% else %}<p class="empty">Not computed yet.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Close to a signal</h2>
+    {% if watch %}
+    <div class="scroll"><table>
+      <tr><th>Stock</th><th>Status</th><th>Price</th><th>Today</th><th>RSI(14)</th><th>Close below for a signal</th><th>Distance</th></tr>
+      {% for w in watch %}
+      <tr><td><strong>{{ w.ticker }}</strong></td><td>{{ w.status }}</td><td>{{ w.price }}</td>
+        <td class="{{ w.change_tone }}">{{ w.change }}</td><td>{{ w.rsi }}</td><td>{{ w.trigger }}</td><td>{{ w.distance }}</td></tr>
+      {% endfor %}
+    </table></div>
+    <p class="muted">Above the 200-day with RSI under 40: the watchlist and the S&amp;P 500 / OMX Stockholm 30 stocks the
+      morning scan found.</p>
+    {% else %}<p class="empty">Nothing above its 200-day with RSI under 40.</p>{% endif %}
+  </section>
+</main>
+</body>
+</html>

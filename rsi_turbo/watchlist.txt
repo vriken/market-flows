@@ -1,0 +1,50 @@
+# Stocks the daily scanner checks. Yahoo Finance tickers, one per line; add new ones at the bottom.
+# Stockholm listings end in .ST (EQT AB is EQT.ST; plain EQT is a US energy company).
+
+# Tested in the backtest
+AMZN
+AAPL
+MSFT
+NVDA
+GOOGL
+META
+TSLA
+NFLX
+AMD
+INTC
+JPM
+BAC
+GE
+BA
+XOM
+CVX
+JNJ
+PFE
+KO
+WMT
+HD
+CAT
+DIS
+NKE
+SPY
+QQQ
+VOLV-B.ST
+ERIC-B.ST
+INVE-B.ST
+ATCO-A.ST
+SAND.ST
+HM-B.ST
+SEB-A.ST
+SWED-A.ST
+AZN.ST
+ABB.ST
+
+# Added 2026-09-29
+EQT.ST
+LLY
+
+# Short list, added 2026-09-29
+KLAR
+HEM.ST
+FICO
+IREN

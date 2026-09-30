@@ -1,0 +1,19 @@
+535 stocks, 2007-01-02 → 2026-09-29, 3,817 RSI<30 signals, busiest day 2020-02-27 with 55 signals, ranking by drawdown, idle money in cash
+
+SPY buy and hold: {'final_x': np.float64(7.76), 'cagr_%': np.float64(10.94), 'max_drawdown_%': np.float64(-55.19), 'worst_year_%': np.float64(-36.8), 'worst_year': 2008}
+
+== All combinations, best growth first ==
+          leverage  stake_%  max_positions  final_x  cagr_%  max_drawdown_%  lowest_equity_x  worst_year_%  worst_year  losing_years  trades  knockout_%  avg_trade_%
+20x bull / 5x else      1.5             30    12.75   13.76          -47.69             0.78        -22.46        2022             7    3096       11.34         6.73
+20x bull / 5x else      1.5             20     8.80   11.64          -39.08             0.86        -20.54        2022             7    2881       11.87         6.11
+20x bull / 5x else      1.0             30     6.20    9.69          -33.62             0.87        -15.15        2022             7    3096       11.34         6.73
+20x bull / 5x else      1.0             20     4.73    8.18          -27.20             0.91        -13.79        2022             7    2881       11.87         6.11
+
+== Best growth for each drawdown you can stomach ==
+  max drawdown ≥ -30%: 20x bull / 5x else, 1% stake, 20 slots → CAGR 8.2%, drawdown -27%, worst year -14% (2022)
+  max drawdown ≥ -40%: 20x bull / 5x else, 1.5% stake, 20 slots → CAGR 11.6%, drawdown -39%, worst year -21% (2022)
+  max drawdown ≥ -50%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 13.8%, drawdown -48%, worst year -22% (2022)
+  max drawdown ≥ -60%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 13.8%, drawdown -48%, worst year -22% (2022)
+  max drawdown ≥ -70%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 13.8%, drawdown -48%, worst year -22% (2022)
+  max drawdown ≥ -80%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 13.8%, drawdown -48%, worst year -22% (2022)
+  max drawdown ≥ -90%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 13.8%, drawdown -48%, worst year -22% (2022)

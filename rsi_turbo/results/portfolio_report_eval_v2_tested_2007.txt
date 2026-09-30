@@ -1,0 +1,21 @@
+36 stocks, 2007-01-02 → 2026-09-29, 301 RSI<30 signals, busiest day 2020-02-27 with 9 signals, ranking by drawdown, idle money in spy
+
+SPY buy and hold: {'final_x': np.float64(7.76), 'cagr_%': np.float64(10.94), 'max_drawdown_%': np.float64(-55.19), 'worst_year_%': np.float64(-36.8), 'worst_year': 2008}
+
+== All combinations, best growth first ==
+          leverage  stake_%  max_positions  final_x  cagr_%  max_drawdown_%  lowest_equity_x  worst_year_%  worst_year  losing_years  trades  knockout_%  avg_trade_%
+20x bull / 5x else      3.0             10    15.49   14.89          -55.83             0.55        -37.73        2008             4     265        7.55        10.99
+20x bull / 5x else      3.0             20    15.31   14.82          -55.83             0.55        -37.73        2008             4     270        7.41        10.66
+20x bull / 5x else      3.0             30    15.31   14.82          -55.83             0.55        -37.73        2008             4     270        7.41        10.66
+20x bull / 5x else      1.5             10    11.14   12.99          -55.51             0.53        -37.26        2008             4     265        7.55        10.99
+20x bull / 5x else      1.5             20    11.07   12.95          -55.51             0.53        -37.26        2008             4     270        7.41        10.66
+20x bull / 5x else      1.5             30    11.07   12.95          -55.51             0.53        -37.26        2008             4     270        7.41        10.66
+20x bull / 5x else      1.0             10     9.91   12.32          -55.40             0.52        -37.11        2008             4     265        7.55        10.99
+20x bull / 5x else      1.0             20     9.87   12.30          -55.40             0.52        -37.11        2008             4     270        7.41        10.66
+20x bull / 5x else      1.0             30     9.87   12.30          -55.40             0.52        -37.11        2008             4     270        7.41        10.66
+
+== Best growth for each drawdown you can stomach ==
+  max drawdown ≥ -60%: 20x bull / 5x else, 3% stake, 10 slots → CAGR 14.9%, drawdown -56%, worst year -38% (2008)
+  max drawdown ≥ -70%: 20x bull / 5x else, 3% stake, 10 slots → CAGR 14.9%, drawdown -56%, worst year -38% (2008)
+  max drawdown ≥ -80%: 20x bull / 5x else, 3% stake, 10 slots → CAGR 14.9%, drawdown -56%, worst year -38% (2008)
+  max drawdown ≥ -90%: 20x bull / 5x else, 3% stake, 10 slots → CAGR 14.9%, drawdown -56%, worst year -38% (2008)

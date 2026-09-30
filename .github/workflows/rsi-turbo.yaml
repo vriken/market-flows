@@ -1,0 +1,91 @@
+name: RSI Turbo Page
+
+on:
+  schedule:
+    # Morning scan: after the New York close, before Stockholm opens (08:15 CEST)
+    - cron: '15 6 * * 1-5'
+    # Refresh before the Stockholm and New York closes
+    - cron: '0 13 * * 1-5'
+    - cron: '30 19 * * 1-5'
+    # Parameter health, first of the month
+    - cron: '0 5 1 * *'
+  workflow_dispatch:
+    inputs:
+      step:
+        description: 'morning (scan + page), refresh (page only) or health (parameter health + page)'
+        default: refresh
+
+concurrency:
+  group: gh-pages-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  page:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Stockholm
+      STEP: ${{ github.event.inputs.step || (github.event.schedule == '15 6 * * 1-5' && 'morning') || (github.event.schedule == '0 5 1 * *' && 'health') || 'refresh' }}
+    steps:
+      - name: Checkout main (code)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Checkout gh-pages (signal log, journal, site)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install ./main
+
+      - name: Load the signal log and journal
+        run: |
+          mkdir -p main/rsi_turbo/live gh-pages/rsi-turbo/data
+          cp -r gh-pages/rsi-turbo/data/. main/rsi_turbo/live/
+
+      - name: Morning scan
+        if: env.STEP == 'morning'
+        working-directory: main/rsi_turbo
+        run: python scan.py --mode morning --no-notify
+
+      - name: Parameter health
+        if: env.STEP == 'health' || hashFiles('gh-pages/rsi-turbo/data/param_health.csv') == ''
+        working-directory: main/rsi_turbo
+        timeout-minutes: 30
+        run: python param_health.py --output live/param_health.csv
+
+      - name: Build page
+        working-directory: main/rsi_turbo
+        run: python build_page.py --output ../../gh-pages/rsi-turbo/index.html
+
+      - name: Save the signal log (the journal is only written from the Mac)
+        run: |
+          for f in signals.csv candidates.csv param_health.csv; do
+            if [ -f "main/rsi_turbo/live/$f" ]; then cp "main/rsi_turbo/live/$f" gh-pages/rsi-turbo/data/; fi
+          done
+          if [ -d main/rsi_turbo/live/reports ]; then cp -r main/rsi_turbo/live/reports gh-pages/rsi-turbo/data/; fi
+
+      - name: Commit and push to gh-pages
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add rsi-turbo
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Update RSI Turbo ($STEP) $(date +'%Y-%m-%d %H:%M')"
+          git pull --rebase
+          git push
