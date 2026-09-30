@@ -1,0 +1,15 @@
+== Limit orders below the signal close (turbo % per trade; per_signal counts unfilled signals as 0)
+                                                signals  filled_%  waited_days  entry_vs_signal_%  stock_%  win_%  turbo_%   ko_%  per_signal_%
+period  rule                                                                                                                                   
+2007–14 L0 signal close                          1064.0    100.00         0.00               0.00     0.67  60.06     7.63   9.59          7.63
+        L1 limit −1%                             1033.0     68.05         1.68              -1.22     0.64  57.33     5.05  12.38          3.44
+        L2 limit −2%                             1036.0     48.55         2.07              -2.25     0.78  56.06     6.22  14.31          3.02
+        L3 limit −3%                             1041.0     34.68         2.43              -3.29     0.95  56.23     7.04  16.62          2.44
+        L4 limit −1 typical day                  1036.0     59.94         1.85              -1.70     0.63  57.33     5.73  11.27          3.43
+        L5 limit −1% next day, else next close   1041.0    100.00         1.00               0.21     0.40  57.64     2.92  10.57          2.92
+2015–26 L0 signal close                          2295.0    100.00         0.00               0.00     0.88  61.66     8.06  10.81          8.06
+        L1 limit −1%                             2243.0     68.08         1.61              -1.32     1.06  62.34     9.37  13.69          6.38
+        L2 limit −2%                             2248.0     48.18         1.94              -2.31     1.22  60.57    10.34  14.13          4.98
+        L3 limit −3%                             2262.0     34.53         2.22              -3.32     1.49  61.08    12.01  15.24          4.15
+        L4 limit −1 typical day                  2246.0     58.33         1.77              -1.85     1.14  62.29    10.19  12.67          5.94
+        L5 limit −1% next day, else next close   2263.0    100.00         1.00               0.10     0.92  63.59     8.55  10.56          8.55

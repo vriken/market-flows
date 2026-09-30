@@ -1,0 +1,307 @@
+234,760 stock-days, 26 features, test years 2008–2026
+
+Walk-forward folds:
+  2008: trained on 66,665 rows, rank IC +0.046
+  2009: trained on 75,189 rows, rank IC +0.173
+  2010: trained on 83,735 rows, rank IC -0.076
+  2011: trained on 92,424 rows, rank IC +0.015
+  2012: trained on 101,279 rows, rank IC -0.031
+  2013: trained on 110,244 rows, rank IC +0.004
+  2014: trained on 119,260 rows, rank IC -0.022
+  2015: trained on 128,266 rows, rank IC -0.033
+  2016: trained on 137,318 rows, rank IC +0.044
+  2017: trained on 146,416 rows, rank IC +0.058
+  2018: trained on 155,518 rows, rank IC +0.001
+  2019: trained on 164,584 rows, rank IC -0.006
+  2020: trained on 173,570 rows, rank IC +0.002
+  2021: trained on 182,622 rows, rank IC +0.078
+  2022: trained on 191,694 rows, rank IC +0.065
+  2023: trained on 200,776 rows, rank IC -0.052
+  2024: trained on 209,832 rows, rank IC +0.083
+  2025: trained on 218,878 rows, rank IC +0.095
+  2026: trained on 227,832 rows, rank IC +0.040
+
+== 1. Prediction quality: mean rank IC +0.0254, positive in 13 of 19 years ==
+ year  train_rows  test_rows  rank_ic  share_below_200d  mean_vix
+ 2008       66665       8592   0.0464            0.9802   32.6074
+ 2009       75189       8556   0.1727            0.4042   31.5716
+ 2010       83735       8706  -0.0757            0.2414   22.5711
+ 2011       92424       8830   0.0147            0.3669   24.2030
+ 2012      101279       8905  -0.0315            0.0121   17.8016
+ 2013      110244       9052   0.0038            0.0000   14.2527
+ 2014      119260       9042  -0.0220            0.0199   14.1466
+ 2015      128266       9062  -0.0334            0.2117   16.6949
+ 2016      137318       9082   0.0436            0.1953   15.8510
+ 2017      146416       9056   0.0580            0.0000   11.0991
+ 2018      155518       9046   0.0007            0.1581   16.5305
+ 2019      164584       9022  -0.0060            0.1128   15.4405
+ 2020      173570       9098   0.0017            0.2313   29.1785
+ 2021      182622       9082   0.0782            0.0000   19.6650
+ 2022      191694       9056   0.0654            0.8092   25.6067
+ 2023      200776       9010  -0.0525            0.0679   16.9069
+ 2024      209832       9062   0.0832            0.0000   15.5792
+ 2025      218878       8990   0.0947            0.1660   18.9580
+ 2026      227832       6526   0.0405            0.0647   18.3540
+
+== 2. Feature importance (rank-IC lost when the feature is shuffled, averaged over years) ==
+                  mean_ic_drop     std  share_of_years_helping
+feature                                                       
+spy_drawdown            0.0213  0.0345                  0.6842
+vix                     0.0074  0.0317                  0.6316
+ret1                    0.0039  0.0043                  0.8421
+spy_rsi                 0.0038  0.0198                  0.5789
+vix_chg5                0.0037  0.0173                  0.5789
+spy_ret20               0.0037  0.0292                  0.6316
+drawdown252             0.0033  0.0070                  0.6842
+ret20                   0.0030  0.0063                  0.6842
+rsi_chg5                0.0016  0.0029                  0.7895
+risk_state              0.0014  0.0138                  0.4211
+dist_sma20              0.0014  0.0032                  0.6842
+ret5                    0.0013  0.0047                  0.6842
+cycle_state             0.0012  0.0140                  0.2632
+credit_state            0.0007  0.0133                  0.4211
+vol_ratio               0.0007  0.0057                  0.4737
+stockholm               0.0006  0.0008                  0.6842
+volatility_state        0.0004  0.0170                  0.4211
+gradient                0.0003  0.0035                  0.5263
+dist_sma50              0.0002  0.0044                  0.6316
+volume_ratio            0.0001  0.0016                  0.4737
+rsi                     0.0001  0.0014                  0.5789
+rsi_prev               -0.0001  0.0016                  0.6316
+vol20                  -0.0007  0.0046                  0.4737
+dist_sma200            -0.0017  0.0134                  0.4211
+spy_dist200            -0.0090  0.0428                  0.4737
+vix_term               -0.0113  0.0266                  0.4211
+
+== 3. Strategies, 5-day hold, split by all ==
+                              strategy   slice  trades  win_%  mean_%  excess_%  t_excess  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%  turbo20_mean_%  turbo20_ko_%
+            own every stock (baseline) 2008–26   27968  54.62    0.35     -0.02     -0.30           0.90         0.50            2.05          4.19            4.98         17.46
+                           RSI<30 rule 2008–26    1377  57.23    0.83      0.48      2.22           2.69         2.03            3.59         10.97            8.57         27.67
+               RSI<30, model top third 2008–26     470  57.87    1.48      1.10      1.08           5.14         4.04            5.69         17.45           12.85         35.74
+            RSI<30, model middle third 2008–26     615  55.12    0.40      0.06      0.47           0.82         1.14            1.13          7.97            4.43         23.58
+            RSI<30, model bottom third 2008–26     420  60.48    0.64      0.32      0.90           2.53         1.43            5.47          8.57           13.76         23.10
+              model top 1% of all days 2008–26     534  56.74    1.52      1.19      3.16           4.14         6.93            6.85         29.21            8.88         57.87
+          SHORT every stock (baseline) 2008–26   27968  45.03   -0.35      0.02      0.30          -2.36         0.58           -4.04          4.35           -6.17         18.71
+                    SHORT RSI>70 cross 2008–26    2903  44.88   -0.24      0.16      2.89          -1.85         0.72           -2.74          3.27           -4.44         13.50
+SHORT RSI>70 cross, model below median 2008–26    1504  45.94   -0.06      0.33      2.69          -1.04         0.47           -1.13          2.46           -2.81         12.63
+     SHORT model bottom 1% of all days 2008–26     164  46.34   -0.51     -0.16      1.53          -4.03         3.05           -9.37         17.68          -16.84         54.88
+
+== 3. Strategies, 5-day hold, split by period ==
+                              strategy   slice  trades  win_%  mean_%  excess_%  t_excess  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%  turbo20_mean_%  turbo20_ko_%
+            own every stock (baseline) 2008–14   10286  53.36    0.22     -0.08     -0.76           0.30         0.85            0.63          5.65            2.31         20.28
+            own every stock (baseline) 2015–26   17682  55.34    0.43      0.02      0.19           1.24         0.30            2.87          3.34            6.53         15.82
+                           RSI<30 rule 2008–14     520  55.19    0.85      0.54      0.47           2.46         3.65            3.03         14.23            7.16         32.12
+                           RSI<30 rule 2015–26     857  58.46    0.82      0.44      2.74           2.83         1.05            3.93          8.98            9.43         24.97
+               RSI<30, model top third 2008–14     171  57.89    2.64      2.33      0.25           9.06         7.60           11.24         23.39           22.09         40.94
+               RSI<30, model top third 2015–26     299  57.86    0.81      0.40      1.54           2.89         2.01            2.51         14.05            7.56         32.78
+            RSI<30, model middle third 2008–14     242  50.83   -0.24     -0.55     -0.62          -2.04         1.65           -3.84          9.92           -4.78         26.86
+            RSI<30, model middle third 2015–26     373  57.91    0.82      0.45      1.13           2.68         0.80            4.36          6.70           10.40         21.45
+            RSI<30, model bottom third 2008–14     156  59.62    0.52      0.24      0.41           2.39         2.56            5.94         11.54           15.49         29.49
+            RSI<30, model bottom third 2015–26     264  60.98    0.71      0.37      0.85           2.62         0.76            5.19          6.82           12.74         19.32
+              model top 1% of all days 2008–14     377  55.17    1.47      1.19      1.74           2.74         7.16            4.55         30.24            6.36         57.82
+              model top 1% of all days 2015–26     157  60.51    1.65      1.20      2.93           7.49         6.37           12.37         26.75           14.92         57.96
+          SHORT every stock (baseline) 2008–14   10286  46.07   -0.22      0.08      0.76          -1.85         0.83           -3.03          5.15           -4.04         19.88
+          SHORT every stock (baseline) 2015–26   17682  44.43   -0.43     -0.02     -0.19          -2.65         0.44           -4.62          3.88           -7.42         18.02
+                    SHORT RSI>70 cross 2008–14     999  45.35   -0.15      0.18      2.62          -1.63         0.80           -2.04          2.90           -4.69         12.41
+                    SHORT RSI>70 cross 2015–26    1904  44.64   -0.28      0.16      1.60          -1.96         0.68           -3.11          3.47           -4.31         14.08
+SHORT RSI>70 cross, model below median 2008–14     576  42.19   -0.18      0.14      2.21          -1.69         0.52           -2.52          2.78           -7.07         13.02
+SHORT RSI>70 cross, model below median 2015–26     928  48.28    0.01      0.45      1.64          -0.63         0.43           -0.26          2.26           -0.16         12.39
+     SHORT model bottom 1% of all days 2008–14      81  33.33   -2.75     -2.47      0.94         -15.81         4.94          -33.29         27.16          -47.92         69.14
+     SHORT model bottom 1% of all days 2015–26      83  59.04    1.67      2.10      1.26           7.47         1.20           13.97          8.43           13.50         40.96
+
+== 3. Strategies, 5-day hold, split by market ==
+                              strategy slice  trades  win_%  mean_%  excess_%  t_excess  turbo5_mean_%  turbo5_ko_%  turbo10_mean_%  turbo10_ko_%  turbo20_mean_%  turbo20_ko_%
+            own every stock (baseline)  bear    6047  52.60    0.15     -0.20      0.25          -0.24         1.69           -0.61         10.80            1.13         31.85
+            own every stock (baseline)  bull   21921  55.17    0.41      0.03     -0.19           1.21         0.17            2.78          2.36            6.04         13.49
+                           RSI<30 rule  bear     527  54.27    1.00      0.65      0.47           3.00         4.17            2.45         19.73            7.29         41.75
+                           RSI<30 rule  bull     850  59.06    0.72      0.37      2.69           2.49         0.71            4.30          5.53            9.36         18.94
+               RSI<30, model top third  bear     300  60.00    2.13      1.75      0.82           7.56         5.67            7.93         23.67           20.01         41.67
+               RSI<30, model top third  bull     170  54.12    0.34     -0.04      0.63           0.85         1.18            1.74          6.47            0.21         25.29
+            RSI<30, model middle third  bear     150  49.33    0.03     -0.28     -0.20          -0.59         1.33           -1.48         13.33           -1.60         36.67
+            RSI<30, model middle third  bull     465  56.99    0.52      0.17      0.67           1.28         1.08            1.98          6.24            6.37         19.35
+            RSI<30, model bottom third  bear     149  48.32   -0.55     -0.84     -1.21          -3.21         3.36           -4.69         18.79           -1.39         40.94
+            RSI<30, model bottom third  bull     271  67.16    1.30      0.96      2.79           5.69         0.37           11.05          2.95           22.09         13.28
+              model top 1% of all days  bear     487  56.47    1.47      1.15      2.36           3.79         7.39            6.32         31.21            9.67         58.73
+              model top 1% of all days  bull      47  59.57    2.05      1.60      2.53           7.71         2.13           12.29          8.51            0.66         48.94
+          SHORT every stock (baseline)  bear    6047  46.87   -0.15      0.20     -0.25          -1.43         1.31           -2.45          9.10           -3.97         32.16
+          SHORT every stock (baseline)  bull   21921  44.53   -0.41     -0.03      0.19          -2.61         0.38           -4.48          3.04           -6.78         14.99
+                    SHORT RSI>70 cross  bear     248  50.81    0.44      0.84      2.20           1.21         0.81            3.43          4.03           -0.69         18.95
+                    SHORT RSI>70 cross  bull    2655  44.33   -0.30      0.10      1.91          -2.13         0.72           -3.32          3.20           -4.79         12.99
+SHORT RSI>70 cross, model below median  bear     173  49.13    0.62      1.02      2.49           2.31         0.58            5.48          3.47           -1.65         21.97
+SHORT RSI>70 cross, model below median  bull    1331  45.53   -0.15      0.24      1.62          -1.47         0.45           -1.98          2.33           -2.96         11.42
+     SHORT model bottom 1% of all days  bear     161  46.58   -0.46     -0.12      1.64          -3.80         3.11           -9.03         17.39          -16.98         54.66
+     SHORT model bottom 1% of all days  bull       3  33.33   -3.21     -2.52       NaN         -16.36         0.00          -27.75         33.33           -9.09         66.67
+
+== 4. Leave-one-bear-out: train on everything except the episode, mean 5-day return ==
+                 episode  rank_ic  all_days_%  rsi30_n  rsi30_%  top_third_n  top_third_%  bottom_third_n  bottom_third_%  model_top1%_n  model_top1%_%
+2008–09 financial crisis    0.103      -0.177      240    1.056          210        1.540              11          -3.170           4433          0.616
+        2011 euro crisis    0.209      -0.185       68    0.046           52        2.352               5         -12.632            106          3.630
+         2015–16 selloff    0.018      -0.032      110    1.936           45        2.670              39           1.500              0            NaN
+         2018 Q4 selloff   -0.032      -1.095       67    1.296           18        2.849              19           0.091              4          6.010
+        2020 covid crash   -0.062       0.039       79   -4.249           74       -3.876               3          -8.623            180         -4.805
+          2022 rate bear    0.123      -0.315      148    0.135          111        0.127              14           1.771            205          3.962
+     2025 tariff selloff    0.054      -0.059       60    0.836           26        3.471              18          -1.626              3          8.183
+
+== 5. Realised 5-day return by decile of the top features (all test years) ==
+-- spy_drawdown
+              range  rows  mean_5d_%
+    -0.516 … -0.156 16787      0.846
+   -0.156 … -0.0913 16785      0.349
+  -0.0913 … -0.0528 16780      0.169
+  -0.0528 … -0.0314 16784      0.542
+  -0.0314 … -0.0188 16768      0.565
+  -0.0188 … -0.0106 16778      0.330
+ -0.0106 … -0.00521 16778      0.275
+-0.00521 … -0.00175 16769      0.229
+       -0.00175 … 0 33546      0.215
+-- vix
+      range  rows  mean_5d_%
+9.14 … 12.4 16824      0.245
+12.4 … 13.6 16902      0.161
+13.6 … 14.8 16637      0.227
+14.8 … 16.1 16846      0.364
+16.1 … 17.4 16707      0.270
+17.4 … 19.1 16828      0.397
+19.1 … 21.3 16777      0.502
+21.3 … 24.2 16726      0.213
+24.2 … 29.4 16774      0.538
+29.4 … 82.7 16754      0.820
+-- ret1
+              range  rows  mean_5d_%
+   -0.352 … -0.0201 16778      0.689
+  -0.0201 … -0.0111 16777      0.486
+ -0.0111 … -0.00611 16777      0.408
+-0.00611 … -0.00245 16777      0.355
+-0.00245 … 0.000624 16778      0.341
+ 0.000624 … 0.00381 16777      0.311
+  0.00381 … 0.00748 16777      0.284
+   0.00748 … 0.0125 16777      0.291
+    0.0125 … 0.0211 16777      0.314
+     0.0211 … 0.523 16778      0.261
+-- spy_rsi
+      range  rows  mean_5d_%
+16.8 … 39.6 16794      0.838
+39.6 … 45.4 16789      0.236
+45.4 … 49.7 16750      0.409
+49.7 … 53.6 16791      0.232
+  53.6 … 57 16768      0.345
+  57 … 59.9 16786      0.541
+59.9 … 62.9 16788      0.397
+62.9 … 65.8 16767      0.354
+65.8 … 69.6 16772      0.220
+69.6 … 87.2 16770      0.165
+-- vix_chg5
+            range  rows  mean_5d_%
+  -0.468 … -0.155 16782      0.374
+ -0.155 … -0.0999 16773      0.239
+-0.0999 … -0.0682 16780      0.193
+-0.0682 … -0.0377 16809      0.346
+-0.0377 … -0.0111 16756      0.420
+ -0.0111 … 0.0181 16791      0.506
+  0.0181 … 0.0544 16756      0.260
+   0.0544 … 0.106 16776      0.576
+    0.106 … 0.192 16802      0.378
+     0.192 … 2.13 16750      0.445
+-- spy_ret20
+             range  rows  mean_5d_%
+  -0.311 … -0.0459 16804      0.760
+ -0.0459 … -0.0193 16765      0.289
+-0.0193 … -0.00357 16788      0.201
+ -0.00357 … 0.0073 16762      0.346
+   0.0073 … 0.0162 16778      0.458
+   0.0162 … 0.0239 16781      0.345
+   0.0239 … 0.0319 16765      0.216
+   0.0319 … 0.0407 16786      0.319
+   0.0407 … 0.0549 16801      0.338
+    0.0549 … 0.236 16745      0.464
+
+== 6. Top 3 features each year (rank-IC lost when shuffled) ==
+      rank_ic  share_below_200d  mean_vix                                                       top_3
+year                                                                                                 
+2008    0.046             0.980    32.607           spy_ret20 +0.028, vix +0.026, spy_drawdown +0.013
+2009    0.173             0.404    31.572    spy_drawdown +0.123, vix +0.084, volatility_state +0.063
+2010   -0.076             0.241    22.571        vix_chg5 +0.045, risk_state +0.027, vol_ratio +0.012
+2011    0.015             0.367    24.203         vix +0.028, credit_state +0.015, spy_dist200 +0.015
+2012   -0.031             0.012    17.802  spy_drawdown +0.045, spy_ret20 +0.028, credit_state +0.020
+2013    0.004             0.000    14.253     spy_drawdown +0.015, dist_sma200 +0.015, spy_rsi +0.008
+2014   -0.022             0.020    14.147       spy_rsi +0.026, spy_ret20 +0.025, spy_drawdown +0.019
+2015   -0.033             0.212    16.695     spy_drawdown +0.034, spy_rsi +0.030, cycle_state +0.021
+2016    0.044             0.195    15.851             cycle_state +0.035, vix_term +0.028, vix +0.018
+2017    0.058             0.000    11.099         vix +0.022, spy_drawdown +0.016, spy_dist200 +0.015
+2018    0.001             0.158    16.531       spy_dist200 +0.026, spy_rsi +0.025, risk_state +0.017
+2019   -0.006             0.113    15.440      spy_drawdown +0.069, vix_chg5 +0.020, vol_ratio +0.010
+2020    0.002             0.231    29.178             spy_ret20 +0.043, vix_term +0.023, ret20 +0.020
+2021    0.078             0.000    19.665     spy_drawdown +0.056, spy_dist200 +0.035, spy_rsi +0.010
+2022    0.065             0.809    25.607          vix +0.034, drawdown252 +0.019, cycle_state +0.018
+2023   -0.052             0.068    16.907    credit_state +0.023, drawdown252 +0.004, vix_chg5 +0.003
+2024    0.083             0.000    15.579        spy_dist200 +0.052, spy_rsi +0.046, spy_ret20 +0.024
+2025    0.095             0.166    18.958    spy_dist200 +0.070, spy_drawdown +0.042, vix_chg5 +0.033
+2026    0.040             0.065    18.354       vix_term +0.032, dist_sma200 +0.030, spy_ret20 +0.017
+
+== 7. Feature importance by market regime at entry (mean over years with ≥500 rows) ==
+                          years  mean_rank_ic  ic_positive_years
+regime                                                          
+SPY above 200d, VIX < 22     18         0.008                 12
+SPY above 200d, VIX ≥ 22      8         0.005                  4
+SPY below 200d, VIX < 22      6        -0.008                  4
+SPY below 200d, VIX ≥ 22     10         0.120                  9
+
+Mean rank-IC lost when shuffled (higher = the model leans on it more in that regime):
+regime            SPY above 200d, VIX < 22  SPY above 200d, VIX ≥ 22  SPY below 200d, VIX < 22  SPY below 200d, VIX ≥ 22
+feature                                                                                                                 
+vix                                 0.0027                    0.0130                   -0.0073                    0.0466
+credit_state                       -0.0009                    0.0302                    0.0081                    0.0096
+ret1                                0.0023                    0.0101                    0.0028                    0.0283
+spy_dist200                        -0.0043                    0.0169                    0.0150                    0.0091
+spy_drawdown                        0.0156                    0.0079                    0.0078                    0.0006
+vol_ratio                          -0.0006                    0.0000                    0.0077                    0.0121
+rsi_chg5                           -0.0010                    0.0015                    0.0021                    0.0098
+ret20                               0.0077                   -0.0022                    0.0004                    0.0059
+dist_sma50                         -0.0006                    0.0010                    0.0058                    0.0030
+ret5                               -0.0025                   -0.0061                    0.0062                    0.0097
+vix_chg5                           -0.0033                   -0.0078                   -0.0121                    0.0293
+volume_ratio                        0.0005                    0.0028                    0.0027                   -0.0010
+drawdown252                        -0.0001                   -0.0038                    0.0041                    0.0047
+stockholm                           0.0001                   -0.0005                    0.0032                    0.0005
+rsi_prev                           -0.0006                    0.0010                   -0.0005                    0.0005
+dist_sma20                          0.0009                   -0.0026                   -0.0026                    0.0042
+volatility_state                   -0.0010                   -0.0071                    0.0071                    0.0005
+rsi                                -0.0000                   -0.0011                    0.0009                   -0.0007
+vol20                              -0.0010                    0.0017                    0.0016                   -0.0062
+gradient                            0.0002                   -0.0000                   -0.0028                   -0.0021
+spy_rsi                             0.0040                   -0.0022                    0.0083                   -0.0177
+dist_sma200                        -0.0026                   -0.0052                   -0.0036                   -0.0056
+risk_state                         -0.0035                   -0.0063                   -0.0170                    0.0050
+cycle_state                        -0.0055                   -0.0157                   -0.0007                    0.0000
+vix_term                           -0.0075                   -0.0502                    0.0122                    0.0051
+spy_ret20                          -0.0025                   -0.0111                   -0.0615                    0.0257
+
+Share of years in which the feature helped:
+regime            SPY above 200d, VIX < 22  SPY above 200d, VIX ≥ 22  SPY below 200d, VIX < 22  SPY below 200d, VIX ≥ 22
+feature                                                                                                                 
+vix                                   0.44                      0.50                      0.50                       0.8
+credit_state                          0.28                      0.50                      0.17                       0.5
+ret1                                  0.67                      0.62                      0.67                       1.0
+spy_dist200                           0.39                      0.38                      0.67                       0.6
+spy_drawdown                          0.78                      0.75                      0.67                       0.3
+vol_ratio                             0.39                      0.38                      0.67                       0.8
+rsi_chg5                              0.39                      0.75                      0.83                       0.7
+ret20                                 0.72                      0.25                      0.33                       0.8
+dist_sma50                            0.56                      0.62                      0.83                       0.7
+ret5                                  0.28                      0.38                      0.83                       0.7
+vix_chg5                              0.67                      0.38                      0.67                       0.7
+volume_ratio                          0.61                      0.75                      0.67                       0.5
+drawdown252                           0.50                      0.62                      0.67                       0.8
+stockholm                             0.61                      0.25                      0.83                       0.5
+rsi_prev                              0.44                      0.50                      0.50                       0.6
+dist_sma20                            0.44                      0.50                      0.33                       0.6
+volatility_state                      0.61                      0.25                      0.67                       0.6
+rsi                                   0.56                      0.50                      0.67                       0.3
+vol20                                 0.39                      0.50                      0.50                       0.3
+gradient                              0.50                      0.50                      0.17                       0.4
+spy_rsi                               0.61                      0.50                      0.33                       0.4
+dist_sma200                           0.50                      0.38                      0.33                       0.5
+risk_state                            0.56                      0.62                      0.50                       0.5
+cycle_state                           0.28                      0.12                      0.33                       0.3
+vix_term                              0.28                      0.25                      0.67                       0.5
+spy_ret20                             0.39                      0.62                      0.00                       0.7

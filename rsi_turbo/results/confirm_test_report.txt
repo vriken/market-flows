@@ -1,0 +1,15 @@
+== Wait for a V before buying (turbo % per trade; per_signal counts skipped signals as 0)
+                                      signals  bought_%  waited_days  entry_vs_signal_%  win_%  turbo_%   ko_%  per_signal_%
+period  rule                                                                                                                
+2007–14 C0 signal close                1064.0    100.00         0.00               0.00  60.06     7.63   9.59          7.63
+        C1 first up day                1035.0     97.97         1.69               0.73  59.27    -0.16  11.14         -0.16
+        C2 close above previous high   1030.0     73.20         2.68               1.95  60.88     1.08   8.89          0.79
+        C3 RSI back above 30           1029.0     88.73         1.83               1.27  60.68    -0.52  10.62         -0.46
+        C4 close above 5-day average   1020.0     78.82         2.92               1.96  62.19     1.79   8.96          1.41
+        C5 2% off the low              1037.0     84.47         2.05               1.05  58.45    -0.36  10.39         -0.30
+2015–26 C0 signal close                2295.0    100.00         0.00               0.00  61.66     8.06  10.81          8.06
+        C1 first up day                2246.0     98.62         1.68               0.67  62.08     3.02  10.11          2.98
+        C2 close above previous high   2238.0     78.60         2.76               2.00  60.38    -0.79   8.30         -0.62
+        C3 RSI back above 30           2244.0     89.04         1.84               1.32  64.01     2.56   9.41          2.28
+        C4 close above 5-day average   2229.0     80.98         3.01               2.09  61.94    -0.24   7.98         -0.19
+        C5 2% off the low              2244.0     87.39         2.06               0.90  63.64     3.24   9.43          2.83

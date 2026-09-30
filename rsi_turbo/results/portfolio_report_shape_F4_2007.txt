@@ -1,0 +1,16 @@
+535 stocks, 2007-01-02 → 2026-09-29, 1,327 RSI<30 signals, busiest day 2021-06-18 with 26 signals, ranking by drawdown, idle money in spy
+
+SPY buy and hold: {'final_x': np.float64(7.76), 'cagr_%': np.float64(10.94), 'max_drawdown_%': np.float64(-55.19), 'worst_year_%': np.float64(-36.8), 'worst_year': 2008}
+
+== All combinations, best growth first ==
+          leverage  stake_%  max_positions  final_x  cagr_%  max_drawdown_%  lowest_equity_x  worst_year_%  worst_year  losing_years  trades  knockout_%  avg_trade_%
+20x bull / 5x else      1.5             30    32.23   19.24          -54.04             0.51        -35.76        2008             3    1178       13.92        10.21
+20x bull / 5x else      1.5             20    28.98   18.60          -54.04             0.51        -35.76        2008             3    1148       14.37         9.68
+20x bull / 5x else      1.0             30    20.80   16.62          -54.21             0.51        -36.10        2008             3    1178       13.92        10.21
+20x bull / 5x else      1.0             20    19.30   16.18          -54.21             0.51        -36.10        2008             3    1148       14.37         9.68
+
+== Best growth for each drawdown you can stomach ==
+  max drawdown ≥ -60%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 19.2%, drawdown -54%, worst year -36% (2008)
+  max drawdown ≥ -70%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 19.2%, drawdown -54%, worst year -36% (2008)
+  max drawdown ≥ -80%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 19.2%, drawdown -54%, worst year -36% (2008)
+  max drawdown ≥ -90%: 20x bull / 5x else, 1.5% stake, 30 slots → CAGR 19.2%, drawdown -54%, worst year -36% (2008)

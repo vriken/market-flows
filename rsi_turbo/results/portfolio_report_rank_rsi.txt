@@ -1,0 +1,23 @@
+36 stocks, 2000-01-03 → 2026-09-29, 2,362 RSI<30 signals, busiest day 2025-04-04 with 15 signals, ranking by rsi
+
+SPY buy and hold: {'final_x': np.float64(8.42), 'cagr_%': np.float64(8.3), 'max_drawdown_%': np.float64(-55.19), 'worst_year_%': np.float64(-36.79), 'worst_year': 2008}
+
+== All combinations, best growth first ==
+          leverage  stake_%  max_positions  final_x  cagr_%  max_drawdown_%  lowest_equity_x  worst_year_%  worst_year  losing_years  trades  knockout_%  avg_trade_%
+20x bull / 5x else      5.0             10    61.99   16.69          -67.73             0.70        -47.11        2020             7    1795        9.14         6.66
+20x bull / 5x else      5.0              5    20.08   11.87          -62.18             0.85        -31.97        2020            10    1512       10.12         5.68
+10x bull / 5x else      5.0             10    10.74    9.28          -63.82             0.78        -47.83        2020             9    1781        3.43         3.82
+20x bull / 5x else      2.0             10     8.07    8.12          -34.28             0.92        -19.74        2020             5    1795        9.14         6.66
+10x bull / 5x else      5.0              5     5.72    6.74          -51.60             0.91        -29.09        2020            10    1496        3.54         3.18
+20x bull / 5x else      2.0              5     4.51    5.79          -30.19             0.96        -12.88        2020            10    1512       10.12         5.68
+10x bull / 5x else      2.0             10     3.31    4.58          -31.36             0.95        -20.23        2020             7    1781        3.43         3.82
+10x bull / 5x else      2.0              5     2.34    3.23          -23.83             0.96        -11.50        2020            10    1496        3.54         3.18
+
+== Best growth for each drawdown you can stomach ==
+  max drawdown ≥ -30%: 10x bull / 5x else, 2% stake, 5 slots → CAGR 3.2%, drawdown -24%, worst year -11% (2020)
+  max drawdown ≥ -40%: 20x bull / 5x else, 2% stake, 10 slots → CAGR 8.1%, drawdown -34%, worst year -20% (2020)
+  max drawdown ≥ -50%: 20x bull / 5x else, 2% stake, 10 slots → CAGR 8.1%, drawdown -34%, worst year -20% (2020)
+  max drawdown ≥ -60%: 20x bull / 5x else, 2% stake, 10 slots → CAGR 8.1%, drawdown -34%, worst year -20% (2020)
+  max drawdown ≥ -70%: 20x bull / 5x else, 5% stake, 10 slots → CAGR 16.7%, drawdown -68%, worst year -47% (2020)
+  max drawdown ≥ -80%: 20x bull / 5x else, 5% stake, 10 slots → CAGR 16.7%, drawdown -68%, worst year -47% (2020)
+  max drawdown ≥ -90%: 20x bull / 5x else, 5% stake, 10 slots → CAGR 16.7%, drawdown -68%, worst year -47% (2020)

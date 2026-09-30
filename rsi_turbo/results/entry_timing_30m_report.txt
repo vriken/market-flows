@@ -1,0 +1,23 @@
+skipped 2 stocks with a split-sized jump or too little history: MRNA, VMRK
+30m bars: 538 stocks, 2026-07-28 → 2026-09-22, 391 confirmed signals
+
+== All trades per entry rule (exit: close 5 trading days after the signal day)
+              trades  win_%  stock_%  turbo_rule_%  ko_rule_%  turbo5x_%  ko5x_%
+variant                                                                         
+E0 close       391.0  42.97     0.34         -0.46      12.28       0.70    0.26
+E1 next open   391.0  41.43     0.10         -5.38      12.28      -0.43    0.00
+E2 early       474.0  43.67     0.40          2.57      12.24       0.99    0.21
+E3 reversal    391.0  40.41     0.21          0.80      10.49       0.12    0.00
+E4 limit dip   391.0  42.71     0.22          1.07      10.49       0.19    0.00
+
+== E2 early entries split by whether the day closed below the trigger
+           trades  win_%  stock_%  turbo_rule_%  ko_rule_%  turbo5x_%  ko5x_%
+confirmed                                                                    
+False       147.0  54.42     1.37         20.84       6.12       5.79    0.00
+True        327.0  38.84    -0.04         -5.64      14.98      -1.17    0.31
+
+== Same signals, entry rule vs buying at the close (paired)
+  E1 next open  n= 391  stock -0.24 pts (t -3.6)  turbo at rule leverage -4.92 pts  fill rate 100%
+  E2 early      n= 325  stock -0.38 pts (t -6.9)  turbo at rule leverage -4.46 pts  fill rate 83%
+  E3 reversal   n= 391  stock -0.13 pts (t -1.3)  turbo at rule leverage +1.26 pts  fill rate 100%
+  E4 limit dip  n= 391  stock -0.12 pts (t -1.0)  turbo at rule leverage +1.53 pts  fill rate 100%

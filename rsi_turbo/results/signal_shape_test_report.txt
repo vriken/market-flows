@@ -1,0 +1,24 @@
+3368 v2.1 trades · all signals: turbo {'2007–14': 7.63, '2015–26': 8.05}
+cut points (2007–14): day move [-2.96 -1.64]%, 5-day drop [-7.18 -4.54]%, above 200-day [2.14 5.28]%
+                                                         trades         turbo_%            ko_%        
+period                                                  2007–14 2015–26 2007–14 2015–26 2007–14 2015–26
+feature                    group                                                                       
+Close in the day's range   near the low                   809.0  1744.0     8.2     9.8     9.6    10.0
+                           middle                         191.0   431.0     7.3     2.6     9.4    14.2
+                           near the high                   50.0   116.0     1.9     0.9    12.0    10.3
+Signal day's move          big down day                   355.0   977.0     8.6    10.5    12.7    12.7
+                           moderate                       354.0   683.0     7.8     9.8     8.8     8.9
+                           mild or up                     355.0   644.0     6.5     2.5     7.3     9.8
+Drop over 5 days           middle                         354.0   699.0     5.4     5.4     9.9    11.0
+                           steepest                       355.0  1004.0     6.5    10.0    13.8    12.7
+                           mildest                        355.0   601.0    10.9     7.8     5.1     7.2
+Gap down at the open       gapped below yesterday's low   366.0  1040.0     6.4     8.0     9.8    11.8
+                           no gap                         698.0  1264.0     8.3     8.1     9.5     9.9
+Distance above the 200-day middle                         354.0   741.0     6.2     9.7     7.6     8.1
+                           just above                     355.0   732.0     5.8     3.7     8.7     9.3
+                           far above                      355.0   831.0    10.8    10.5    12.4    14.4
+RSI at the signal          under 25                        53.0   112.0     7.8    17.3    11.3     8.9
+                           25–30                         1011.0  2192.0     7.6     7.6     9.5    10.9
+Volume vs 20-day average   below average                  187.0   385.0     8.2    10.2     7.0     6.8
+                           1–2x                           591.0  1299.0     7.0     6.7     9.1    11.8
+                           over 2x                        263.0   591.0     7.0     9.0    13.3    11.5

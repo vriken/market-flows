@@ -1,0 +1,337 @@
+//@version=6
+strategy("RSI 30 Turbo Swing", overlay=true, process_orders_on_close=true, pyramiding=0, default_qty_type=strategy.percent_of_equity, default_qty_value=100, initial_capital=10000, max_labels_count=500, max_lines_count=500)
+
+// Works on daily and intraday charts (use regular trading hours). The signal is always DAILY RSI(14), checked on
+// the session's last bar and bought at its close: the 2023–26 intraday test found that buying earlier on a break,
+// waiting for an intraday reversal, or buying the next morning did not beat the close.
+// Strategy Tester reports the underlying stock. The table reports the turbo: knocked out (−100%) when a bar's low
+// touches the financing level, which accrues the financing cost daily.
+
+grpSig    = "Signal"
+rsiLen    = input.int(14, "Daily RSI length", minval=2, group=grpSig)
+oversold  = input.float(30, "Buy when daily RSI closes below", minval=1, maxval=50, group=grpSig)
+overbought = input.float(70, "Mark daily RSI closing above", minval=50, maxval=99, group=grpSig, tooltip="Informational. Backtest: a slightly worse than average moment to open a long, and not a short signal.")
+holdDays  = input.int(5, "Sell at the latest after (trading days)", minval=1, maxval=60, group=grpSig, tooltip="The backtest edge was concentrated in the first 5 days and gone by day 10.")
+exitRsi   = input.float(40, "Sell earlier when daily RSI closes at or above (0 = off)", minval=0, maxval=100, group=grpSig, tooltip="Rule v2.1. Exit test on ~535 stocks 2007–26: selling at the first close with RSI back at 40 beat a plain 5-day hold by 3–4 points a year in both periods.")
+useTrend  = input.bool(true, "Only buy above the 200-day average", group=grpSig, tooltip="Rule v2. Portfolio test on ~535 stocks 2007–26: 17–20% a year with the filter; 7–13% and −84% to −96% drawdowns without.")
+tradeFrom = input.time(timestamp("2000-01-01T00:00:00"), "Take trades from", group=grpSig)
+entryMode = input.string("Close", "Entry", options=["Close", "Early: first bar below trigger", "Next session, first bar", "Reversal within 2 sessions", "Next session limit dip"], group=grpSig, tooltip="Test on 1-hour bars 2023–26, 535 stocks, same exit: Close was best. Early −0.53 pts and Reversal −0.26 pts per trade (clearly worse); Next session and Limit dip about equal, their small gains came from a few crash weeks. Early, Reversal and Limit dip need an intraday chart; on daily bars Next session buys at the next close.")
+
+grpMkt    = "Market regime (previous day)"
+spySymbol = input.symbol("AMEX:SPY", "Market index", group=grpMkt)
+spyLen    = input.int(200, "Bull when index is above its SMA", minval=20, group=grpMkt)
+vixSymbol = input.symbol("CBOE:VIX", "VIX symbol", group=grpMkt)
+vixHigh   = input.float(22, "...and VIX is below", minval=10, group=grpMkt)
+
+grpTurbo   = "Turbo"
+levBull    = input.float(20, "Leverage in a bull market", minval=1.5, step=0.5, group=grpTurbo, tooltip="Portfolio backtest 2000–26 on 36 large caps, 2–5% stakes, max 10 open, rest in SPY: 20x bull / 5x otherwise gave 15–22% a year with 58–75% max drawdown. Much too high for very volatile stocks: check the orange line.")
+levOther   = input.float(5, "Leverage otherwise", minval=1.5, step=0.5, group=grpTurbo, tooltip="Below the 200-day or with high VIX, 10x knocked out about 1 in 5 dip-buys and earned less than 5x.")
+stakeGuide = input.string("1–1.5% of portfolio, max 20–30 open", "Stake guide (shown in table)", group=grpTurbo)
+finRatePct = input.float(6.5, "Financing cost (% per year)", minval=0, step=0.25, group=grpTurbo, tooltip="Reference rate plus issuer margin. The Python backtest used the US T-bill rate + 2.5%.")
+spreadPct  = input.float(0.5, "Round-trip spread (% of turbo price)", minval=0, step=0.1, group=grpTurbo)
+myFinancing = input.float(0.0, "My product's financing level (0 = none)", minval=0, group=grpTurbo, tooltip="From the product sheet of the turbo or mini long you hold or are looking at. Leverage = price ÷ (price − financing level).")
+myStop      = input.float(0.0, "My mini long's stop-loss level (0 = turbo)", minval=0, group=grpTurbo, tooltip="A mini long is knocked out at its stop-loss level, above the financing level; a turbo at its financing level.")
+
+grpLines      = "Levels"
+showLevels    = input.bool(true, "Draw trigger and financing levels", group=grpLines)
+koRiskChoice  = input.string("20%", "Knock-out risk for the safe lines", options=["1%", "2.5%", "5%", "10%", "20%", "30%"], group=grpLines, tooltip="Constants fitted on RSI<30 dips in 36 stocks, 2000–14. On 2015–26 the 1 / 2.5 / 5 / 10 / 20 / 30% targets were hit 0.7 / 1.9 / 5.1 / 8.6 / 18.8 / 29.0% of the time. 20% matches what 20x means for a typical large cap.")
+miniBufferPct = input.float(5.0, "Mini long: stop-loss above financing level (%)", minval=0, step=0.5, group=grpLines, tooltip="From the product sheet: (stop-loss level / financing level − 1) × 100.")
+volLen        = input.int(20, "Volatility lookback (days)", minval=5, group=grpLines)
+
+grpShow      = "Display"
+showRegimeBg = input.bool(true, "Tint bars outside a bull market", group=grpShow)
+showTable    = input.bool(true, "Show table", group=grpShow)
+tablePosText = input.string("top right", "Table position", options=["top right", "top left", "bottom right", "bottom left", "middle right"], group=grpShow)
+tablePosition = switch tablePosText
+    "top left"     => position.top_left
+    "bottom right" => position.bottom_right
+    "bottom left"  => position.bottom_left
+    "middle right" => position.middle_right
+    =>                position.top_right
+
+var array<float> koZ   = array.from(-5.565, -4.153, -3.107, -2.364, -1.944, -1.577, -1.165, -0.903, -0.695)
+var array<float> koPct = array.from(1.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0, 50.0)
+
+zForRisk(pct) =>
+    float z = na
+    for i = 0 to array.size(koPct) - 1
+        if array.get(koPct, i) == pct
+            z := array.get(koZ, i)
+    z
+
+riskForZ(z) =>
+    n = array.size(koZ)
+    float pct = na
+    if not na(z)
+        if z <= array.get(koZ, 0)
+            pct := 0.0
+        else if z >= array.get(koZ, n - 1)
+            pct := 100.0
+        else
+            for i = 1 to n - 1
+                z1 = array.get(koZ, i)
+                if na(pct) and z <= z1
+                    z0 = array.get(koZ, i - 1)
+                    p0 = array.get(koPct, i - 1)
+                    pct := p0 + (array.get(koPct, i) - p0) * (z - z0) / (z1 - z0)
+    pct
+
+riskText(pct) =>
+    na(pct) ? "—" : pct <= 0 ? "<1%" : pct >= 100 ? ">50%" : str.tostring(pct, "#") + "%"
+
+pct(x) =>
+    na(x) ? "—" : (x >= 0 ? "+" : "") + str.tostring(x, "#.##") + "%"
+
+levText(x) =>
+    str.tostring(x, "#.#") + "x"
+
+price(x) =>
+    str.tostring(x, format.mintick)
+
+dailyState() =>
+    chg = ta.change(close)
+    avgGain = ta.rma(math.max(chg, 0), rsiLen)
+    avgLoss = ta.rma(math.max(-chg, 0), rsiLen)
+    vol = ta.stdev(math.log(close / close[1]), volLen, false)
+    [avgGain[1], avgLoss[1], close[1], ta.rsi(close, rsiLen)[1], vol[1], ta.sma(close, 200)[1]]
+
+[gainPrev, lossPrev, closePrev, rsiPrev, volPrev, smaTrendPrev] = request.security(syminfo.tickerid, "D", dailyState(), lookahead=barmerge.lookahead_on)
+[spyPrev, spySmaPrev] = request.security(spySymbol, "D", [close[1], ta.sma(close, spyLen)[1]], lookahead=barmerge.lookahead_on)
+vixPrev = request.security(vixSymbol, "D", close[1], lookahead=barmerge.lookahead_on)
+
+dailyRsiAt(p) =>
+    chg = p - closePrev
+    gain = (gainPrev * (rsiLen - 1) + math.max(chg, 0)) / rsiLen
+    loss = (lossPrev * (rsiLen - 1) + math.max(-chg, 0)) / rsiLen
+    loss == 0 ? 100.0 : 100 - 100 / (1 + gain / loss)
+
+sessionClose = timeframe.isdaily or session.islastbar_regular
+dayChanged   = ta.change(time("D")) != 0
+newSession   = timeframe.isdaily or dayChanged
+rsiNow       = dailyRsiAt(close)
+canCross     = rsiPrev >= oversold
+triggerPrice = canCross ? closePrev - (rsiLen - 1) * (gainPrev / (oversold / (100 - oversold)) - lossPrev) : na
+trendOk      = not useTrend or (not na(smaTrendPrev) and close > smaTrendPrev)
+buySignal    = sessionClose and canCross and rsiNow < oversold and trendOk and time >= tradeFrom
+overboughtNow = sessionClose and rsiNow > overbought and rsiPrev <= overbought
+
+bullMarket = not na(spySmaPrev) and spyPrev > spySmaPrev and not na(vixPrev) and vixPrev < vixHigh
+chosenLeverage = bullMarket ? levBull : levOther
+
+finRate = finRatePct / 100
+spread  = spreadPct / 100
+accrualOverHold = 1 + finRate * (holdDays * 7 / 5.0) / 365
+volOverHold = volPrev * math.sqrt(holdDays)
+
+koRiskAt(lev) =>
+    riskForZ(math.log((1 - 1 / lev) * accrualOverHold) / volOverHold)
+
+safeZ       = zForRisk(str.tonumber(str.replace(koRiskChoice, "%", "")))
+maxTurboFin = close * math.exp(safeZ * volOverHold) / accrualOverHold
+maxMiniFin  = maxTurboFin / (1 + miniBufferPct / 100)
+maxTurboLev = close / (close - maxTurboFin)
+maxMiniLev  = close / (close - maxMiniFin)
+riskNow     = koRiskAt(chosenLeverage)
+hasProduct  = myFinancing > 0 and myFinancing < close
+myKo        = myStop > 0 ? myStop : myFinancing
+myLev       = hasProduct ? close / (close - myFinancing) : na
+myRisk      = hasProduct and myKo < close ? riskForZ(math.log(myKo * accrualOverHold / close) / volOverHold) : na
+
+var bool  inTrade          = false
+var float entryPrice       = na
+var int   entryTime        = na
+var float leverage         = na
+var float finStart         = na
+var line  finLine          = na
+var int   sessionCount     = 0
+var int   signalSession    = na
+var int   lastEntrySession = -1
+var bool  pending          = false
+var float limitPrice       = na
+
+var int   tradeCount = 0
+var int   winCount   = 0
+var int   koCount    = 0
+var float sumTurbo   = 0.0
+var float sumStock   = 0.0
+
+if newSession
+    sessionCount += 1
+prevHigh = high[1]
+
+financingLevel() =>
+    finStart * (1 + finRate * ((time - entryTime) / 86400000.0) / 365)
+
+exitedNow = false
+if inTrade
+    finLevel = financingLevel()
+    line.set_xy2(finLine, bar_index, finLevel)
+    knocked = low <= finLevel
+    recovered = sessionClose and exitRsi > 0 and rsiNow >= exitRsi and sessionCount > signalSession
+    if knocked or recovered or (sessionClose and sessionCount >= signalSession + holdDays)
+        stockRet = knocked ? finLevel / entryPrice - 1 : close / entryPrice - 1
+        turboRet = knocked ? -1.0 : (close - finLevel) / (entryPrice - finStart) * (1 - spread) - 1
+        tradeCount += 1
+        winCount   += turboRet > 0 ? 1 : 0
+        koCount    += knocked ? 1 : 0
+        sumTurbo   += turboRet
+        sumStock   += stockRet
+        inTrade    := false
+        exitedNow  := true
+        exitText = knocked ? "KO" : pct(turboRet * 100)
+        exitTip = (knocked ? "Knocked out at " + price(finLevel) : recovered ? "Sold: daily RSI back to " + str.tostring(rsiNow, "#") : "Sold " + str.tostring(holdDays) + " trading days after the signal") + "\nTurbo " + (knocked ? "−100%" : pct(turboRet * 100)) + " at " + levText(leverage) + "\nStock " + pct(stockRet * 100)
+        exitColor = knocked ? color.red : turboRet > 0 ? color.teal : color.gray
+        label.new(bar_index, high, exitText, style=label.style_label_down, color=exitColor, textcolor=color.white, size=size.tiny, tooltip=exitTip)
+        strategy.close("Long", comment=knocked ? "KO" : recovered ? "RSI " + str.tostring(exitRsi) : "Day " + str.tostring(holdDays))
+        alert(syminfo.ticker + ": " + (knocked ? "knocked out" : "sell, day " + str.tostring(holdDays)) + " " + exitText, alert.freq_once_per_bar_close)
+
+enterNow    = false
+enterPrice  = close
+placeMarket = true
+if pending and not inTrade
+    if entryMode == "Next session, first bar" and sessionCount == signalSession + 1
+        enterNow := true
+    else if entryMode == "Reversal within 2 sessions" and sessionCount > signalSession
+        if close > prevHigh
+            enterNow := true
+        else if sessionClose and sessionCount >= signalSession + 2
+            pending := false
+    else if entryMode == "Next session limit dip" and sessionCount > signalSession
+        if low <= limitPrice
+            enterNow    := true
+            enterPrice  := math.min(limitPrice, open)
+            placeMarket := false
+        else if sessionClose
+            strategy.cancel("Long")
+            enterNow := true
+    if sessionCount > signalSession + 2
+        pending := false
+
+earlyMode = entryMode == "Early: first bar below trigger" and not timeframe.isdaily
+if not inTrade and not pending and not enterNow and not exitedNow and time >= tradeFrom
+    if earlyMode
+        if canCross and trendOk and close < triggerPrice and sessionCount != lastEntrySession
+            enterNow      := true
+            signalSession := sessionCount
+    else if buySignal
+        signalSession := sessionCount
+        if entryMode == "Close" or entryMode == "Early: first bar below trigger"
+            enterNow := true
+        else
+            pending := true
+            if entryMode == "Next session limit dip"
+                limitPrice := close * (1 - 0.5 * volPrev)
+                strategy.entry("Long", strategy.long, limit=limitPrice, comment="Buy limit")
+
+if enterNow
+    pending          := false
+    inTrade          := true
+    entryPrice       := enterPrice
+    entryTime        := time
+    lastEntrySession := sessionCount
+    leverage         := chosenLeverage
+    finStart         := enterPrice * (1 - 1 / leverage)
+    finLine          := line.new(bar_index, finStart, bar_index, finStart, color=color.new(color.red, 30), style=line.style_dashed)
+    marketNote = bullMarket ? "bull" : "caution"
+    entryTip = "Entry: " + entryMode + "\nDaily RSI " + str.tostring(rsiNow, "#.0") + "\nBuy " + levText(leverage) + " turbo (" + marketNote + " market) at " + price(enterPrice) + "\nFinancing / knock-out ≈ " + price(finStart) + ", est. risk " + riskText(riskNow) + " over " + str.tostring(holdDays) + " days\nHighest financing at " + koRiskChoice + " risk: " + price(maxTurboFin) + " (≤" + levText(maxTurboLev) + ")\nSell at the close " + str.tostring(holdDays) + " trading days after the signal"
+    label.new(bar_index, low, levText(leverage), style=label.style_label_up, color=color.green, textcolor=color.white, size=size.tiny, tooltip=entryTip)
+    if placeMarket
+        strategy.entry("Long", strategy.long, comment="Buy")
+    alert(syminfo.ticker + ": BUY " + levText(leverage) + " turbo (" + marketNote + ", " + entryMode + "), daily RSI " + str.tostring(rsiNow, "#.0") + ", financing near " + price(finStart) + ", est. knock-out risk " + riskText(riskNow), alert.freq_once_per_bar_close)
+
+if inTrade
+    strategy.exit("KO", "Long", stop=financingLevel())
+
+brokeTrigger   = ta.crossunder(close, triggerPrice)
+crossedTrigger = brokeTrigger and canCross and not timeframe.isdaily
+if crossedTrigger
+    alert(syminfo.ticker + " is below its daily RSI 30 trigger " + price(triggerPrice) + " — buy near the close if it stays there", alert.freq_once_per_bar_close)
+
+plotshape(overboughtNow, title="Daily RSI closed above overbought", style=shape.xcross, location=location.abovebar, color=color.new(color.orange, 40), size=size.tiny)
+bgcolor(showRegimeBg and not bullMarket ? color.new(color.orange, 94) : na, title="Outside a bull market")
+
+var int dayStart = na
+if newSession or na(dayStart)
+    dayStart := bar_index
+
+var array<line>  levelLines  = array.new<line>()
+var array<label> levelLabels = array.new<label>()
+if showLevels and (barstate.islast or barstate.islastconfirmedhistory)
+    for l in levelLines
+        line.delete(l)
+    for lb in levelLabels
+        label.delete(lb)
+    array.clear(levelLines)
+    array.clear(levelLabels)
+    x1 = timeframe.isdaily ? bar_index - 5 : dayStart
+    x2 = bar_index + 3
+    levelFin = close * (1 - 1 / chosenLeverage)
+    if canCross
+        array.push(levelLines, line.new(x1, triggerPrice, x2, triggerPrice, color=color.aqua, style=line.style_dashed, width=2))
+        array.push(levelLabels, label.new(x2, triggerPrice, "RSI 30 at " + price(triggerPrice) + " (" + str.tostring((triggerPrice / close - 1) * 100, "#.#") + "%)" + (trendOk ? "" : " · below 200-day: no signal"), style=label.style_label_left, color=color.new(trendOk ? color.aqua : color.gray, 20), textcolor=color.black, size=size.tiny, tooltip="A daily close below this price takes daily RSI(" + str.tostring(rsiLen) + ") under " + str.tostring(oversold) + ": buy before the close."))
+    array.push(levelLines, line.new(x1, levelFin, x2, levelFin, color=color.new(color.red, 20), style=line.style_dotted))
+    array.push(levelLabels, label.new(x2, levelFin, levText(chosenLeverage) + " financing " + price(levelFin) + " · risk " + riskText(riskNow), style=label.style_label_left, color=color.new(color.red, 30), textcolor=color.white, size=size.tiny, tooltip="Financing / knock-out level if you bought a " + levText(chosenLeverage) + " turbo at the current price."))
+    array.push(levelLines, line.new(x1, maxTurboFin, x2, maxTurboFin, color=color.new(color.orange, 10), width=2))
+    array.push(levelLabels, label.new(x2, maxTurboFin, "turbo ≤ " + price(maxTurboFin) + " (" + koRiskChoice + ")", style=label.style_label_left, color=color.new(color.orange, 20), textcolor=color.white, size=size.tiny, tooltip="Highest turbo financing level for a " + str.tostring(holdDays) + "-day hold at " + koRiskChoice + " knock-out risk. Max leverage " + levText(maxTurboLev) + "."))
+    array.push(levelLines, line.new(x1, maxMiniFin, x2, maxMiniFin, color=color.new(color.purple, 10), width=2))
+    if hasProduct
+        array.push(levelLines, line.new(x1, myKo, x2, myKo, color=color.fuchsia, width=2))
+        array.push(levelLabels, label.new(x2, myKo, "your KO " + price(myKo) + " · " + levText(myLev) + " · risk " + riskText(myRisk), style=label.style_label_left, color=color.new(color.fuchsia, 20), textcolor=color.white, size=size.tiny, tooltip="Your product: financing " + price(myFinancing) + (myStop > 0 ? ", stop-loss " + price(myStop) : "") + ". Leverage now " + levText(myLev) + ", " + str.tostring((close / myKo - 1) * 100, "#.#") + "% above knock-out."))
+    array.push(levelLabels, label.new(x2, maxMiniFin, "mini ≤ " + price(maxMiniFin), style=label.style_label_left, color=color.new(color.purple, 20), textcolor=color.white, size=size.tiny, tooltip="Highest mini long financing level (stop-loss buffer " + str.tostring(miniBufferPct) + "%). Max leverage " + levText(maxMiniLev) + "."))
+
+var table stats = table.new(tablePosition, 2, 21, bgcolor=color.new(#161b22, 10), border_width=1)
+
+cell(col, row, txt, txtColor) =>
+    table.cell(stats, col, row, txt, text_color=txtColor, text_size=size.small, text_halign=col == 0 ? text.align_left : text.align_right)
+
+if showTable and (barstate.islast or barstate.islastconfirmedhistory)
+    openTurbo = inTrade ? ((close - financingLevel()) / (entryPrice - finStart) - 1) * 100 : na
+    avgTurbo  = tradeCount > 0 ? sumTurbo / tradeCount * 100 : na
+    avgStock  = tradeCount > 0 ? sumStock / tradeCount * 100 : na
+    winRate   = tradeCount > 0 ? winCount / float(tradeCount) * 100 : na
+    koRate    = tradeCount > 0 ? koCount / float(tradeCount) * 100 : na
+    muted = color.new(color.white, 40)
+    spyGap = na(spySmaPrev) ? na : (spyPrev / spySmaPrev - 1) * 100
+
+    cell(0, 0, "Daily RSI " + str.tostring(rsiLen) + " now", muted)
+    cell(1, 0, str.tostring(rsiNow, "#.0") + " (yesterday " + str.tostring(rsiPrev, "#.0") + ")", rsiNow < oversold ? color.lime : rsiNow > overbought ? color.orange : color.white)
+    cell(0, 1, "Close below for a signal", muted)
+    cell(1, 1, canCross ? price(triggerPrice) + " (" + str.tostring((triggerPrice / close - 1) * 100, "#.#") + "%)" : "already below " + str.tostring(oversold), canCross and close < triggerPrice ? color.lime : color.white)
+    cell(0, 2, "Index vs " + str.tostring(spyLen) + "-day (prev)", muted)
+    cell(1, 2, pct(spyGap), na(spyGap) ? color.white : spyGap > 0 ? color.lime : color.orange)
+    cell(0, 3, "VIX (prev close)", muted)
+    cell(1, 3, na(vixPrev) ? "—" : str.tostring(vixPrev, "#.#"), vixPrev >= vixHigh ? color.orange : color.white)
+    cell(0, 4, "Leverage for a signal now", muted)
+    cell(1, 4, levText(chosenLeverage) + (bullMarket ? " (bull)" : " (caution)"), bullMarket ? color.lime : color.orange)
+    cell(0, 5, "Est. knock-out risk, " + str.tostring(holdDays) + "d", muted)
+    cell(1, 5, riskText(riskNow), riskNow >= 20 ? color.orange : color.white)
+    cell(0, 6, "Stake guide", muted)
+    cell(1, 6, stakeGuide, color.white)
+    cell(0, 7, "Position", muted)
+    cell(1, 7, inTrade ? "day " + str.tostring(sessionCount - signalSession) + " of " + str.tostring(holdDays) + ", " + levText(leverage) : "flat", color.white)
+    cell(0, 8, "Knock-out level", muted)
+    cell(1, 8, inTrade ? price(financingLevel()) : "—", color.white)
+    cell(0, 9, "Open turbo P&L", muted)
+    cell(1, 9, pct(openTurbo), na(openTurbo) ? color.white : openTurbo >= 0 ? color.lime : color.red)
+    cell(0, 10, "Closed trades on this chart", muted)
+    cell(1, 10, str.tostring(tradeCount), color.white)
+    cell(0, 11, "Win rate", muted)
+    cell(1, 11, na(winRate) ? "—" : str.tostring(winRate, "#") + "%", color.white)
+    cell(0, 12, "Avg turbo per trade", muted)
+    cell(1, 12, pct(avgTurbo), na(avgTurbo) ? color.white : avgTurbo >= 0 ? color.lime : color.red)
+    cell(0, 13, "Knock-outs", muted)
+    cell(1, 13, na(koRate) ? "—" : str.tostring(koCount) + " (" + str.tostring(koRate, "#.#") + "%)", koCount > 0 ? color.orange : color.white)
+    cell(0, 14, "Avg stock move per trade", muted)
+    cell(1, 14, pct(avgStock), color.white)
+    cell(0, 15, "Highest turbo financing (" + koRiskChoice + " risk)", muted)
+    cell(1, 15, price(maxTurboFin) + " (≤" + levText(maxTurboLev) + ")", chosenLeverage > maxTurboLev ? color.orange : color.white)
+    cell(0, 16, "Highest mini long financing", muted)
+    cell(1, 16, price(maxMiniFin) + " (≤" + levText(maxMiniLev) + ")", color.white)
+    cell(0, 19, "Your product: leverage now", muted)
+    cell(1, 19, hasProduct ? levText(myLev) + " (financing " + price(myFinancing) + ")" : "set it in the settings", color.white)
+    cell(0, 20, "Your product: to knock-out · risk", muted)
+    cell(1, 20, hasProduct ? str.tostring((close / myKo - 1) * 100, "#.#") + "% · " + riskText(myRisk) : "—", not na(myRisk) and myRisk >= 20 ? color.orange : color.white)
+    cell(0, 18, "Above 200-day (prev)", muted)
+    cell(1, 18, na(smaTrendPrev) ? "—" : (close > smaTrendPrev ? "yes" : "no — no signal") + " (" + pct((close / smaTrendPrev - 1) * 100) + ")", close > smaTrendPrev ? color.white : color.orange)
+    cell(0, 17, "Entry mode", muted)
+    cell(1, 17, entryMode + (pending ? " (waiting)" : ""), entryMode == "Close" ? color.white : color.orange)

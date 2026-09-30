@@ -1,0 +1,50 @@
+Entry at signal close vs next open (all signals, overlapping allowed, 2000-2026):
+                          setup  h     n  entry_close_%  entry_next_open_%
+             rsi_cross_below_30  3  2359          0.660              0.528
+             rsi_cross_below_30  5  2358          0.741              0.610
+             rsi_cross_below_30 10  2354          1.137              1.000
+rsi_cross_below_30_above_sma200  3   365          0.776              0.789
+rsi_cross_below_30_above_sma200  5   364          0.947              0.958
+rsi_cross_below_30_above_sma200 10   362          1.307              1.315
+                         always  3 58653          0.226              0.181
+                         always  5 39099          0.343              0.286
+                         always 10 21324          0.645              0.621
+
+RSI cross below 30, long, 5-day hold — by year:
+        n  excess_pct  turbo5_pct
+year                             
+2000   77        1.33        6.15
+2001   88       -0.43       -0.88
+2002  110       -0.45       -0.53
+2003   31        4.51       22.80
+2004   59       -0.47       -2.41
+2005   55        1.31        6.75
+2006   64        1.09        5.88
+2007   63       -0.26       -1.14
+2008  161        1.25        3.15
+2009   34        0.52        3.54
+2010   55        1.17        6.43
+2011   86       -1.50       -6.23
+2012   62       -0.38       -0.47
+2013   43        1.69        9.28
+2014   79        0.99        5.88
+2015   78        1.58        6.42
+2016   92        1.58        9.02
+2017   53       -0.08        0.34
+2018   98        0.64        4.36
+2019   57        0.90        5.56
+2020   76       -2.98      -15.59
+2021   51        2.44       13.17
+2022  116       -0.32       -0.34
+2023   57        0.56        3.27
+2024   63        0.52        3.27
+2025   70        0.96        5.70
+2026   46        0.19        1.99
+years with positive excess: 18/27
+
+RSI cross below 30, long — by ticker group (5-day, 2000-2026):
+             n  excess_pct
+mkt                       
+ETF         87        1.09
+SE         550        0.41
+US stock  1287        0.46

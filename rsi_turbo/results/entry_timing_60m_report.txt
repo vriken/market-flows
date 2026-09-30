@@ -1,0 +1,31 @@
+$RDDT: 1h data not available for startTime=1711027800 and endTime=1790692831. The requested range must be within the last 730 days.
+$GEV: 1h data not available for startTime=1711546200 and endTime=1790692831. The requested range must be within the last 730 days.
+$SOLV: 1h data not available for startTime=1711459800 and endTime=1790692831. The requested range must be within the last 730 days.
+
+3 Failed downloads:
+['RDDT']: 1h data not available for startTime=1711027800 and endTime=1790692831. The requested range must be within the last 730 days.
+['GEV']: 1h data not available for startTime=1711546200 and endTime=1790692831. The requested range must be within the last 730 days.
+['SOLV']: 1h data not available for startTime=1711459800 and endTime=1790692831. The requested range must be within the last 730 days.
+skipped 12 stocks with a split-sized jump or too little history: ALGN, BE, BNY, CNC, DXCM, GL, DOC, MRNA, SMCI, SNPS, VMRK, WST
+60m bars: 535 stocks, 2023-11-21 → 2026-09-22, 3148 confirmed signals
+
+== All trades per entry rule (exit: close 5 trading days after the signal day)
+              trades  win_%  stock_%  turbo_rule_%  ko_rule_%  turbo5x_%  ko5x_%
+variant                                                                         
+E0 close      3148.0  57.12     0.73          7.08      14.55       2.57    0.64
+E1 next open  3148.0  57.62     0.85          7.54      13.72       3.28    0.51
+E2 early      3659.0  54.52     0.55          4.26      16.67       1.60    0.96
+E3 reversal   3056.0  57.20     0.60          5.56      11.94       2.08    0.39
+E4 limit dip  3148.0  58.77     0.89          8.43      12.20       3.42    0.64
+
+== E2 early entries split by whether the day closed below the trigger
+           trades  win_%  stock_%  turbo_rule_%  ko_rule_%  turbo5x_%  ko5x_%
+confirmed                                                                    
+False      1021.0  62.49     1.59         20.42      10.19       6.78    0.78
+True       2638.0  51.44     0.15         -1.99      19.18      -0.41    1.02
+
+== Same signals, entry rule vs buying at the close (paired)
+  E1 next open  n=3148  stock +0.12 pts (t +3.7)  turbo at rule leverage +0.46 pts  fill rate 100%
+  E2 early      n=2600  stock -0.53 pts (t -20.5)  turbo at rule leverage -9.08 pts  fill rate 83%
+  E3 reversal   n=3056  stock -0.26 pts (t -6.4)  turbo at rule leverage -3.17 pts  fill rate 97%
+  E4 limit dip  n=3148  stock +0.16 pts (t +3.8)  turbo at rule leverage +1.35 pts  fill rate 100%

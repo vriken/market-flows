@@ -1,0 +1,29 @@
+Ranking from 2008–14 only: spy_drawdown, vix, credit_state, risk_state, drawdown252, volatility_state, spy_ret20, ret1, dist_sma200, vol_ratio, ret5, dist_sma20, rsi_chg5, rsi, volume_ratio, ret20, stockholm, gradient, rsi_prev, dist_sma50, cycle_state, vix_chg5, vol20, spy_rsi, spy_dist200, vix_term 
+
+  evaluating top 1 (ranked on 2008–14) (1 features)
+  evaluating top 3 (ranked on 2008–14) (3 features)
+  evaluating top 5 (ranked on 2008–14) (5 features)
+  evaluating top 8 (ranked on 2008–14) (8 features)
+  evaluating top 12 (ranked on 2008–14) (12 features)
+  evaluating top 18 (ranked on 2008–14) (18 features)
+  evaluating all 26 (26 features)
+  evaluating market fear only (7 features)
+  evaluating stock only (15 features)
+  evaluating market-flows regime only (4 features)
+  evaluating stock + market fear (22 features)
+  evaluating market fear + market-flows regime (11 features)
+
+== Out-of-sample 2015–26: rank IC overall and by regime, and RSI<30 dips split by the model ==
+                           config  features  mean_ic  ic_positive_years  years  ic SPY above 200d, VIX < 22  ic SPY above 200d, VIX ≥ 22  ic SPY below 200d, VIX < 22  ic SPY below 200d, VIX ≥ 22  dips_all_5d_%  dips_top_third_5d_%  dips_bottom_third_5d_%
+        top 1 (ranked on 2008–14)         1    0.025                  8     12                        0.046                        0.056                       -0.052                        0.036          0.679                1.145                   0.497
+        top 3 (ranked on 2008–14)         3    0.003                  6     12                        0.038                       -0.019                       -0.028                        0.049          0.679                0.662                   0.827
+        top 5 (ranked on 2008–14)         5    0.001                  7     12                        0.035                        0.005                       -0.061                        0.089          0.679                0.809                   0.816
+        top 8 (ranked on 2008–14)         8    0.014                  8     12                        0.035                        0.061                       -0.034                        0.105          0.679                0.838                   0.716
+       top 12 (ranked on 2008–14)        12    0.008                  6     12                        0.020                        0.034                       -0.005                        0.107          0.679                0.411                   0.904
+       top 18 (ranked on 2008–14)        18    0.010                  8     12                        0.032                        0.023                       -0.015                        0.096          0.679                0.414                   0.934
+                           all 26        26    0.027                  8     12                        0.019                       -0.002                       -0.011                        0.143          0.679                0.582                   0.843
+                 market fear only         7    0.009                  9     12                        0.008                       -0.004                       -0.005                        0.097          0.679                1.408                   0.079
+                       stock only        15    0.022                  9     12                        0.006                        0.008                        0.071                        0.105          0.679                0.999                   0.210
+         market-flows regime only         4    0.019                  8     12                        0.042                       -0.162                        0.094                        0.050          0.679                0.487                   0.906
+              stock + market fear        22    0.020                  9     12                        0.016                       -0.002                        0.009                        0.131          0.679                0.568                   1.086
+market fear + market-flows regime        11    0.021                  9     12                        0.026                       -0.048                       -0.006                        0.067          0.679                1.143                   0.111

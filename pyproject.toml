@@ -28,6 +28,7 @@ market-flows = "market_flows.cli:main"
 [tool.ruff]
 target-version = "py311"
 line-length = 120
+src = [".", "rsi_turbo"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
@@ -35,7 +36,7 @@ ignore = ["E501", "SIM102", "SIM105"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "rsi_turbo"]
 
 [tool.setuptools.packages.find]
 include = ["market_flows*"]

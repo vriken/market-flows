@@ -30,8 +30,16 @@ market_flows/
       pdhl.py          # PDHL (Previous Day High/Low) breakout strategy
       vwap_reversion.py # VWAP mean reversion strategy
       momentum.py      # SMA Stack Momentum (gradient runner) strategy
+rsi_turbo/             # RSI<30 turbo swing strategy: research scripts, live scanner, dashboard, GitHub page
+  scan.py              # Scanner (launch agents on the Mac; morning run also in GitHub Actions)
+  dashboard.py         # Local Streamlit dashboard (localhost:8501): signals, positions, trade journal
+  build_page.py        # Static page published to gh-pages/rsi-turbo/
+  param_health.py      # Is each part of the rule still earning its place, by year
+  publish.py           # Pushes the local journal to gh-pages/rsi-turbo/data/
+  live/                # Signal log, journal, reports (gitignored; the page's copy lives on gh-pages)
 tests/
   test_backtest.py     # Backtest engine and strategy tests
+  test_rsi_turbo.py    # Trade journal and settlement tests
 ```
 
 ## Setup
@@ -166,6 +174,24 @@ Weekly backtest runs via GitHub Actions (`.github/workflows/backtest.yaml`):
 - Results published to gh-pages branch
 - Week-over-week tracking via `data/backtest/history.jsonl`
 - Manual trigger: `gh workflow run backtest.yaml -f strategy=all -f start_date=2025-01-01`
+
+## RSI Turbo
+
+Rule v2.1: buy a turbo long when daily RSI(14) closes below 30 above the 200-day; 20x in a bull market (SPY above its
+200-day, VIX below 22), 5x otherwise; sell at the first close with RSI back at 40, at the latest after 5 days.
+Scripts in `rsi_turbo/` import each other flat, so run them from that folder:
+
+```bash
+cd rsi_turbo
+python scan.py --mode morning --no-notify   # or se-preclose / us-preclose / intraday / auto
+python param_health.py                      # writes results/param_health.csv
+python build_page.py                        # writes live/page/index.html
+streamlit run dashboard.py
+```
+
+`.github/workflows/rsi-turbo.yaml` runs the morning scan and rebuilds https://vriken.github.io/market-flows/rsi-turbo/
+on weekdays (06:15, 13:00, 19:30 UTC) and parameter health monthly. The cloud keeps its own signal log on gh-pages;
+the journal is written only from the Mac (`publish.py`, run by the dashboard after each save).
 
 ## Conventions
 
