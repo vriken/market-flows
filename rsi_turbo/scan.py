@@ -492,18 +492,21 @@ def notify(title, message):
                    check=False)
 
 
-def day_shape(s):
-    """Where the signal day closed in its range. Bottom third was the stronger setup in the portfolio test
-    (Sharpe +0.03 to +0.10 in both periods); top third meant it had already bounced and did worst."""
+def day_shape(s, live=False):
+    """Where the signal day closed in its range (or, live, where it trades so far). Bottom third was the stronger
+    setup in the portfolio test (Sharpe +0.03 to +0.10 in both periods); top third meant it had already bounced and
+    did worst."""
     where = s["close_in_range"]
     part = "bottom third" if where < 1 / 3 else "middle third" if where < 2 / 3 else "top third (already bounced — weaker)"
+    if live:
+        return f"day {s['day_move']:+.1%} so far, trading in the {part} of today's range"
     return f"day {s['day_move']:+.1%}, closed in the {part} of its range"
 
 
-def signal_lines(signals):
+def signal_lines(signals, live):
     lines = []
     for s in signals:
-        lines += [f"  {s['ticker']:10s} price {s['close']:.2f}  RSI {s['rsi']:.1f}  market {s['market']} · {day_shape(s)}",
+        lines += [f"  {s['ticker']:10s} price {s['close']:.2f}  RSI {s['rsi']:.1f}  market {s['market']} · {day_shape(s, live)}",
                   f"             {s['leverage']}x → financing ≈ {s['financing']:.2f}, est. knock-out risk over "
                   f"{HOLD} days {s['ko_risk']}",
                   f"             highest financing at 20% risk (typical for 20x) {s['max_fin_20']:.2f} · at 10% risk "
@@ -620,7 +623,7 @@ def run(mode, now, quiet):
     if signals:
         lines.append("LIKELY BUY — RSI below 30 on the live price, above the 200-day; confirm near the close:"
                      if settings["provisional"] else "BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:")
-        lines += signal_lines(signals)
+        lines += signal_lines(signals, settings["provisional"])
     else:
         lines.append("No buy signals.")
     if below_trend_dips:

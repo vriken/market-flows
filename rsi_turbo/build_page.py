@@ -39,7 +39,8 @@ def chart(fig, first):
 def buys(snap):
     rows = snap[snap.confirmed | (snap.live & snap.signal)].sort_values("rsi") if len(snap) else snap
     return [{"ticker": r.ticker, "confirmed": r.confirmed, "price": number(r.close), "rsi": f"{r.rsi:.1f}",
-             "day": "—" if pd.isna(r.signal_ref["close_in_range"]) else scan.day_shape(r.signal_ref), "leverage": f"{r.leverage}x", "financing": number(r.financing),
+             "day": "—" if pd.isna(r.signal_ref["close_in_range"]) else scan.day_shape(r.signal_ref, live=not r.confirmed),
+             "leverage": f"{r.leverage}x", "financing": number(r.financing),
              "ko_risk": r.ko_risk, "max_fin": number(r.max_fin_20), "sell_by": str(r.sell_on)}
             for r in rows.itertuples()]
 

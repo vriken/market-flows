@@ -164,12 +164,13 @@ def signed(value, spec, colour=True):
     return f":{'green' if value >= 0 else 'red'}[{text}]" if colour else text
 
 
-def signal_day_text(sig):
+def signal_day_text(sig, live):
     where = sig["close_in_range"]
     if pd.isna(where):
         return "—"
     colour, part = ("green", "low") if where < 1 / 3 else ("orange", "middle") if where < 2 / 3 else ("red", "high")
-    return f":{colour}[closed near {part}] · {sig['day_move']:+.1%}"
+    text = f"near today's {part} so far" if live else f"closed near {part}"
+    return f":{colour}[{text}] · {sig['day_move']:+.1%}"
 
 
 def act_today(snap, signal_log, journal):
@@ -185,7 +186,7 @@ def act_today(snap, signal_log, journal):
             ("Signal", 1.8, lambda r: "closed below 30" if r["confirmed"] else ":orange[live — confirm at close]"),
             ("Price", 1, lambda r: f"{r['close']:,.2f}"),
             ("RSI", 0.7, lambda r: f"{r['rsi']:.1f}"),
-            ("Signal day", 1.6, lambda r: signal_day_text(r["signal_ref"])),
+            ("Signal day", 1.6, lambda r: signal_day_text(r["signal_ref"], live=not r["confirmed"])),
             ("Leverage", 0.8, lambda r: f"{r['leverage']}x"),
             ("Financing at that leverage", 1.4, lambda r: f"{r['financing']:,.2f}"),
             ("Knock-out risk, 5 days", 1.2, lambda r: r["ko_risk"]),
