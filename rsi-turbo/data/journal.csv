@@ -1,0 +1,8 @@
+bought_on,ticker,rule,signal_date,product,product_financing,ko_level,qty,parity,fill_price,fill_fx,fill_underlying,leverage,exit_price,closed_on,result_pct,knocked_out,exit_reason,notes
+2026-09-29,BAC,v2,2026-09-28,T LONG BANKOFA NORDNET SE4,49.1365,49.1365,170,10,5.94,10.0131196975708,55.07,9.3,,,,,,
+2026-09-29,LLY,off-rule,,B LONGLLY AF SG,1111.8363,1111.8363,3500,1000,0.829,10.0123,1194.63,14.4,,,,,,"3500 @ 0.829 SEK, parity 1000; entry stock price implied at USD/SEK 10.0123"
+2026-09-29,AMZN,off-rule,,T LONG AMAZON NORDNET SE45,242.3756,242.3756,224,10,5.57,10.0123,247.94,44.6,sold,2026-09-29,,,sold,"224 @ 5.57 SEK, parity 10; entry stock price implied at USD/SEK 10.0123; sold 2026-09-29, price not entered yet"
+2026-09-29,NVDA,off-rule,,TLNG NVDA VT752,224.38,224.38,137,10,9.13,10.0123,233.50,25.6,sold,2026-09-29,,,sold,"137 @ 9.13 SEK, parity 10; entry stock price implied at USD/SEK 10.0123; sold 2026-09-29, price not entered yet"
+2026-09-29,META,off-rule,,T LONG FACEBOOK NORDNET SE32,680.7802,680.7802,271,100,4.62,10.0123,726.92,15.8,sold,2026-09-29,,,sold,"271 @ 4.62 SEK, parity 100; entry stock price implied at USD/SEK 10.0123; sold 2026-09-29, price not entered yet"
+2026-09-29,EQT.ST,off-rule,,T LONG EQT NORDNET SE11,282.286,282.286,156,1,7.74,1.0,290.03,37.5,sold,2026-09-29,,,sold,"156 @ 7.74 SEK, parity 1; entry stock price implied at USD/SEK 1; sold 2026-09-29, price not entered yet"
+2026-09-29,LLY,off-rule,,B LONGLLY AF SG,1111.8363,1111.8363,4000,1000,0.694,10.012100219726562,1181.15,17.0,,,,,,"second lot, averaging down on the 0.829 SEK lot"
