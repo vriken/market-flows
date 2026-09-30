@@ -51,6 +51,10 @@
     .badge.warn { background: rgba(210,153,34,0.15); }
     .badge.info { background: rgba(88,166,255,0.15); color: var(--blue); }
     .empty { color: var(--text-muted); font-size: 0.9rem; }
+    .button { display: inline-block; padding: 3px 12px; border: 1px solid var(--border); border-radius: 6px;
+      background: rgba(88,166,255,0.1); color: var(--blue); font-size: 0.8rem; white-space: nowrap; }
+    .button:hover { background: rgba(88,166,255,0.2); }
+    .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
     .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
   </style>
 </head>
@@ -58,7 +62,8 @@
 <main>
   <header>
     <h1>RSI Turbo</h1>
-    <span class="muted">Updated {{ updated }} (Stockholm) · <a href="../">&larr; Market Flows</a></span>
+    <span class="muted">Updated {{ updated }} (Stockholm) · <a href="../">&larr; Market Flows</a> ·
+      <a class="button" href="{{ dashboard }}/#your-trades" target="_blank" rel="noopener">Log a trade</a></span>
   </header>
   <p class="rule">Rule v2.1: buy a turbo long when daily RSI(14) closes below {{ rule.oversold }} and the stock is above its
     200-day average · {{ rule.bull }}x in a bull market (SPY above its 200-day, VIX below {{ market.high_vix }}),
@@ -78,16 +83,18 @@
   </div>
 
   <section class="card">
-    <h2>Buy ({{ buys|length }})</h2>
+    <div class="section-head"><h2>Buy ({{ buys|length }})</h2>
+      <span class="muted">Buttons open your local dashboard, so they only work on your Mac.</span></div>
     {% if buys %}
     <div class="scroll"><table>
       <tr><th>Stock</th><th>Signal</th><th>Price</th><th>RSI</th><th>Signal day</th><th>Leverage</th>
-        <th>Financing at that leverage</th><th>Knock-out risk, 5 days</th><th>Highest financing, {{ risk_line }}% risk</th><th>Sell by</th></tr>
+        <th>Financing at that leverage</th><th>Knock-out risk, 5 days</th><th>Highest financing, {{ risk_line }}% risk</th><th>Sell by</th><th></th></tr>
       {% for b in buys %}
       <tr><td><strong>{{ b.ticker }}</strong></td>
         <td>{% if b.confirmed %}<span class="badge pos">closed below 30</span>{% else %}<span class="badge warn">live, confirm at close</span>{% endif %}</td>
         <td>{{ b.price }}</td><td>{{ b.rsi }}</td><td>{{ b.day }}</td><td>{{ b.leverage }}</td><td>{{ b.financing }}</td>
-        <td>{{ b.ko_risk }}</td><td>{{ b.max_fin }}</td><td>{{ b.sell_by }}</td></tr>
+        <td>{{ b.ko_risk }}</td><td>{{ b.max_fin }}</td><td>{{ b.sell_by }}</td>
+        <td><a class="button" href="{{ dashboard }}/#buy" target="_blank" rel="noopener">Bought</a></td></tr>
       {% endfor %}
     </table></div>
     {% else %}<p class="empty">No stock crossed below RSI 30 above its 200-day.</p>{% endif %}
@@ -107,18 +114,20 @@
   </section>
 
   <section class="card">
-    <h2>Open positions ({{ positions|length }} of {{ rule.max_positions }})</h2>
+    <div class="section-head"><h2>Open positions ({{ positions|length }} of {{ rule.max_positions }})</h2>
+      <a class="button" href="{{ dashboard }}/#your-trades" target="_blank" rel="noopener">Log a trade</a></div>
     {% if positions %}
     <div class="scroll"><table>
       <tr><th>Stock</th><th>Rule</th><th>Product</th><th>Qty</th><th>Bought</th><th>Paid (SEK)</th><th>Price</th>
-        <th>Knock-out</th><th>Above KO</th><th>Leverage entry → now</th><th>Turbo P&amp;L (est.)</th><th>Sell by</th></tr>
+        <th>Knock-out</th><th>Above KO</th><th>Leverage entry → now</th><th>Turbo P&amp;L (est.)</th><th>Sell by</th><th></th></tr>
       {% for p in positions %}
       <tr><td><strong>{{ p.ticker }}</strong></td>
         <td>{% if p.rule == 'off-rule' %}<span class="badge warn">off-rule</span>{% else %}{{ p.rule }}{% endif %}</td>
         <td>{{ p.product }}</td><td>{{ p.qty }}</td><td>{{ p.bought }}</td><td>{{ p.paid }}</td><td>{{ p.price }}</td>
         <td>{{ p.ko }}</td><td class="{{ p.gap_tone }}">{{ p.gap }}</td><td>{{ p.leverage }}</td>
         <td class="{{ p.pnl_tone }}">{{ p.pnl }}</td>
-        <td class="{{ 'neg' if p.rule_exited else '' }}">{{ p.sell_by }}</td></tr>
+        <td class="{{ 'neg' if p.rule_exited else '' }}">{{ p.sell_by }}</td>
+        <td><a class="button" href="{{ dashboard }}/#positions" target="_blank" rel="noopener">Close</a></td></tr>
       {% endfor %}
     </table></div>
     <p class="muted">Turbo P&amp;L is estimated from the underlying and ignores the small daily financing charge; the

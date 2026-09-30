@@ -147,7 +147,7 @@ def close_button(i, row, container):
 
 def rows_with_action(df, columns, action):
     """A table drawn row by row, so each row can end in its own button. columns: (header, width, row -> text)."""
-    widths = [w for _, w, _ in columns] + [1.1]
+    widths = [w for _, w, _ in columns] + [1.6]
     for cell, (header, _, _) in zip(st.columns(widths), columns, strict=False):
         cell.caption(header)
     for i, row in df.iterrows():
@@ -164,19 +164,20 @@ def signed(value, spec, colour=True):
     return f":{'green' if value >= 0 else 'red'}[{text}]" if colour else text
 
 
-def signal_day_text(sig):
+def signal_day_text(sig, live):
     where = sig["close_in_range"]
     if pd.isna(where):
         return "—"
     colour, part = ("green", "low") if where < 1 / 3 else ("orange", "middle") if where < 2 / 3 else ("red", "high")
-    return f":{colour}[closed near {part}] · {sig['day_move']:+.1%}"
+    text = f"near today's {part} so far" if live else f"closed near {part}"
+    return f":{colour}[{text}] · {sig['day_move']:+.1%}"
 
 
 def act_today(snap, signal_log, journal):
     today_iso = date.today().isoformat()
     buys = snap[snap.confirmed | (snap.live & snap.signal)].sort_values("rsi") if len(snap) else snap
     sells = scan.exits_due(signal_log, journal, snap.to_dict("records") if len(snap) else [], today_iso, {"SE", "US"})
-    st.subheader(f"Buy ({len(buys)})")
+    st.subheader(f"Buy ({len(buys)})", anchor="buy")
     if buys.empty:
         st.caption("No stock crossed below RSI 30. Check the watchlist for stocks close to their trigger.")
     else:
@@ -185,7 +186,7 @@ def act_today(snap, signal_log, journal):
             ("Signal", 1.8, lambda r: "closed below 30" if r["confirmed"] else ":orange[live — confirm at close]"),
             ("Price", 1, lambda r: f"{r['close']:,.2f}"),
             ("RSI", 0.7, lambda r: f"{r['rsi']:.1f}"),
-            ("Signal day", 1.6, lambda r: signal_day_text(r["signal_ref"])),
+            ("Signal day", 1.6, lambda r: signal_day_text(r["signal_ref"], live=not r["confirmed"])),
             ("Leverage", 0.8, lambda r: f"{r['leverage']}x"),
             ("Financing at that leverage", 1.4, lambda r: f"{r['financing']:,.2f}"),
             ("Knock-out risk, 5 days", 1.2, lambda r: r["ko_risk"]),
@@ -209,7 +210,7 @@ def act_today(snap, signal_log, journal):
 
 def positions(snap, signal_log, journal):
     held = snapshot.positions(snap, signal_log, journal)
-    st.subheader(f"Open positions ({len(held)} of {scan.MAX_POSITIONS})")
+    st.subheader(f"Open positions ({len(held)} of {scan.MAX_POSITIONS})", anchor="positions")
     if held.empty:
         st.caption("Use the Bought button on a buy signal, or \"Log a trade\" below, when you buy.")
         return
@@ -333,7 +334,7 @@ def usd_sek():
 
 
 def your_trades():
-    st.subheader("Your trades vs the model")
+    st.subheader("Your trades vs the model", anchor="your-trades")
     journal = load_journal()
     left, right = st.columns(2)
     with left, st.form("log_trade", clear_on_submit=True):

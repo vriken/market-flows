@@ -16,6 +16,7 @@ from data import recent_daily
 
 HERE = Path(__file__).parent
 WATCH_ROWS = 25
+DASHBOARD = "http://localhost:8501"
 
 
 def pct(value, spec="+.1%"):
@@ -38,7 +39,8 @@ def chart(fig, first):
 def buys(snap):
     rows = snap[snap.confirmed | (snap.live & snap.signal)].sort_values("rsi") if len(snap) else snap
     return [{"ticker": r.ticker, "confirmed": r.confirmed, "price": number(r.close), "rsi": f"{r.rsi:.1f}",
-             "day": "—" if pd.isna(r.signal_ref["close_in_range"]) else scan.day_shape(r.signal_ref), "leverage": f"{r.leverage}x", "financing": number(r.financing),
+             "day": "—" if pd.isna(r.signal_ref["close_in_range"]) else scan.day_shape(r.signal_ref, live=not r.confirmed),
+             "leverage": f"{r.leverage}x", "financing": number(r.financing),
              "ko_risk": r.ko_risk, "max_fin": number(r.max_fin_20), "sell_by": str(r.sell_on)}
             for r in rows.itertuples()]
 
@@ -113,7 +115,7 @@ def main():
         versus=versus_rows, execution=execution, scorecards=scorecards(signal_log, journal),
         health=param_health.verdicts(health).to_dict("records") if health is not None else [],
         health_updated=f"{pd.Timestamp(health_path.stat().st_mtime, unit='s'):%Y-%m-%d}" if health is not None else "",
-        window=param_health.WINDOW_YEARS, watch=watchlist(snap), risk_line=snapshot.RISK_LINE,
+        window=param_health.WINDOW_YEARS, watch=watchlist(snap), risk_line=snapshot.RISK_LINE, dashboard=DASHBOARD,
         criteria=scan.PAPER_CRITERIA)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(html)
