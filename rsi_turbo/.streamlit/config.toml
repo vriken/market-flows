@@ -8,6 +8,7 @@ textColor = "#e1e7e6"
 [server]
 headless = true
 port = 8501
+address = "127.0.0.1"
 
 [browser]
 gatherUsageStats = false
