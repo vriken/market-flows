@@ -1,0 +1,29 @@
+RSI<30 turbo scan — 2026-09-29 17:57 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +6.6% vs 200-day, VIX 16.1 (bull; the next session's signals use 20x)
+Open positions marked taken in the journal: 3 of 30
+Paper trading, every v2 signal: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+Your taken trades: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  BAC        price 55.47  RSI 27.1  market bull · day -2.2%, closed in the bottom third of its range
+             20x → financing ≈ 52.70, est. knock-out risk over 5 days 24%
+             highest financing at 20% risk (typical for 20x) 52.37 · at 10% risk 50.92
+             sell at the first close with RSI 40+, at the latest 2026-10-05 · stake 1–1.5% of the portfolio
+  BNY        price 148.44  RSI 28.6  market bull · day -1.1%, closed in the bottom third of its range
+             20x → financing ≈ 141.02, est. knock-out risk over 5 days 14%
+             highest financing at 20% risk (typical for 20x) 142.58 · at 10% risk 139.83
+             sell at the first close with RSI 40+, at the latest 2026-10-05 · stake 1–1.5% of the portfolio
+  SCHW       price 98.30  RSI 29.8  market bull · day -0.7%, closed in the middle third of its range
+             20x → financing ≈ 93.39, est. knock-out risk over 5 days 27%
+             highest financing at 20% risk (typical for 20x) 92.38 · at 10% risk 89.62
+             sell at the first close with RSI 40+, at the latest 2026-10-05 · stake 1–1.5% of the portfolio
+  MS         price 193.64  RSI 29.4  market bull · day -1.4%, closed in the bottom third of its range
+             20x → financing ≈ 183.96, est. knock-out risk over 5 days 20%
+             highest financing at 20% risk (typical for 20x) 183.91 · at 10% risk 179.35
+             sell at the first close with RSI 40+, at the latest 2026-10-05 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (17): BA, HD, AWK, BX, CBOE, CMI, DASH, EIX, EXE, FIS, HSY, MTB, NI, PNC, SRE, VICI, XYL
+
+Watch — above the 200-day, RSI under 35: ALL 27.9, AMP 30.8, AIZ 31.7, CAH 32.7, CFG 33.1, NSC 34.1, UNP 34.1, GL 34.2
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data)

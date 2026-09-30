@@ -1,0 +1,9 @@
+RSI<30 turbo scan — 2026-09-29 17:40 — Stockholm before the 17:30 close — 13 stocks checked
+Market: SPY +6.7% vs 200-day, VIX 16.4 (bull; the next session's signals use 20x)
+Open positions marked taken in the journal: 1 of 30
+Paper trading, every v2 signal: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+Your taken trades: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+
+No buy signals.
+
+Watch — above the 200-day, RSI under 35: EVO.ST 33.6

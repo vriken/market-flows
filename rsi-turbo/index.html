@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RSI Turbo</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+    h1 { font-size: 1.6rem; margin: 0; }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    a { color: var(--blue); text-decoration: none; }
+    .muted { color: var(--text-muted); font-size: 0.85rem; }
+    .rule { margin: 8px 0 20px; color: var(--text-muted); font-size: 0.9rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .tile .label { color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .tile .value { font-size: 1.4rem; font-weight: 600; margin-top: 2px; }
+    .tile .note { color: var(--text-muted); font-size: 0.8rem; }
+    .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.6); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: rgba(110,118,129,0.08); }
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+    .warn { color: var(--yellow); }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem; }
+    .badge.pos { background: rgba(63,185,80,0.15); }
+    .badge.neg { background: rgba(248,81,73,0.15); }
+    .badge.warn { background: rgba(210,153,34,0.15); }
+    .badge.info { background: rgba(88,166,255,0.15); color: var(--blue); }
+    .empty { color: var(--text-muted); font-size: 0.9rem; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>RSI Turbo</h1>
+    <span class="muted">Updated 2026-09-30 10:08 (Stockholm) · <a href="../">&larr; Market Flows</a></span>
+  </header>
+  <p class="rule">Rule v2.1: buy a turbo long when daily RSI(14) closes below 30 and the stock is above its
+    200-day average · 20x in a bull market (SPY above its 200-day, VIX below 22),
+    5x otherwise · sell at the first close with RSI back at 40, at the latest after
+    5 trading days · stake 1–1.5% of the portfolio, max 30 open. Not investment advice.</p>
+
+  <div class="tiles">
+    <div class="tile"><div class="label">Market</div>
+      <div class="value pos">Bull</div>
+      <div class="note">20x on new signals</div></div>
+    <div class="tile"><div class="label">SPY vs 200-day</div><div class="value">+6.8%</div></div>
+    <div class="tile"><div class="label">VIX</div><div class="value">15.9</div>
+      <div class="note">bull below 22</div></div>
+    <div class="tile"><div class="label">Financing cost</div><div class="value">6.6%</div>
+      <div class="note">T-bill + 2.5% a year</div></div>
+    <div class="tile"><div class="label">Markets open</div><div class="value">SE</div></div>
+  </div>
+
+  <section class="card">
+    <h2>Buy (0)</h2>
+    <p class="empty">No stock crossed below RSI 30 above its 200-day.</p>
+  </section>
+
+  <section class="card">
+    <h2>Sell today (0)</h2>
+    <p class="empty">Nothing has RSI back at 40 or reaches its last day today.</p>
+  </section>
+
+  <section class="card">
+    <h2>Open positions (3 of 30)</h2>
+    
+    <div class="scroll"><table>
+      <tr><th>Stock</th><th>Rule</th><th>Product</th><th>Qty</th><th>Bought</th><th>Paid (SEK)</th><th>Price</th>
+        <th>Knock-out</th><th>Above KO</th><th>Leverage entry → now</th><th>Turbo P&amp;L (est.)</th><th>Sell by</th></tr>
+      
+      <tr><td><strong>BAC</strong></td>
+        <td>v2</td>
+        <td>T LONG BANKOFA NORDNET SE4</td><td>170</td><td>2026-09-29</td><td>5.94</td><td>54.96</td>
+        <td>49.14</td><td class="pos">+11.9%</td><td>9.3x → 9.4x</td>
+        <td class="neg">-1.9%</td>
+        <td class="">2026-10-05 (3d)</td></tr>
+      
+      <tr><td><strong>LLY</strong></td>
+        <td><span class="badge warn">off-rule</span></td>
+        <td>B LONGLLY AF SG</td><td>3500</td><td>2026-09-29</td><td>0.829</td><td>1,184.63</td>
+        <td>1,111.84</td><td class="pos">+6.5%</td><td>14.4x → 16.3x</td>
+        <td class="neg">-12.1%</td>
+        <td class="">your call</td></tr>
+      
+      <tr><td><strong>LLY</strong></td>
+        <td><span class="badge warn">off-rule</span></td>
+        <td>B LONGLLY AF SG</td><td>4000</td><td>2026-09-29</td><td>0.694</td><td>1,184.63</td>
+        <td>1,111.84</td><td class="pos">+6.5%</td><td>17.0x → 16.3x</td>
+        <td class="pos">+5.0%</td>
+        <td class="">your call</td></tr>
+      
+    </table></div>
+    <p class="muted">Turbo P&amp;L is estimated from the underlying and ignores the small daily financing charge; the
+      broker's quote is the real value. Leverage = price ÷ (price − financing level).</p>
+    
+  </section>
+
+  <section class="card">
+    <h2>Results by month</h2>
+    <p class="empty">No closed trades with a sale price yet. 4 sold
+      trades are waiting for their sale price.</p>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Trades vs the model</h2>
+      <div class="scroll"><table>
+        <tr><th>Group</th><th>Trades</th><th>Win rate</th><th>Avg turbo</th><th>Knocked out</th></tr>
+        
+        <tr><td>Model: every v2 signal</td><td>0</td><td>—</td>
+          <td class="">—</td><td>—</td></tr>
+        
+        <tr><td>v2 signals you took, model&#39;s result</td><td>0</td><td>—</td>
+          <td class="">—</td><td>—</td></tr>
+        
+        <tr><td>v2 signals you took, your result</td><td>0</td><td>—</td>
+          <td class="">—</td><td>—</td></tr>
+        
+        <tr><td>v2 signals you skipped, model&#39;s result</td><td>0</td><td>—</td>
+          <td class="">—</td><td>—</td></tr>
+        
+        <tr><td>Your off-rule trades</td><td>0</td><td>—</td>
+          <td class="">—</td><td>—</td></tr>
+        
+      </table></div>
+      <p class="muted">On 1 signal trades the entry was on
+        average -0.72% from the signal close, at
+        9.3x vs the rule's 20.0x.</p>
+    </section>
+    <section class="card">
+      <h2>Paper trading</h2>
+      <div class="scroll"><table>
+        <tr><th></th><th>Settled</th><th>Win rate</th><th>Avg stock</th><th>Knocked out</th><th>Avg turbo</th></tr>
+        
+        <tr><td>Every v2 signal</td><td>0 / 40</td><td>—</td><td>—</td>
+          <td>—</td><td>—</td></tr>
+        
+        <tr><td>Signals you took</td><td>0 / 40</td><td>—</td><td>—</td>
+          <td>—</td><td>—</td></tr>
+        
+      </table></div>
+      <p class="muted">Decided in advance: after 40 settled v2 trades, go live only if win rate ≥
+        50%, average stock move ≥ +0.3% and knock-outs ≤
+        15%.</p>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Parameter health</h2>
+    
+    <div class="scroll"><table>
+      <tr><th>Part of the rule</th><th>Last 3 years</th><th>Edge</th><th>t</th><th>Edge since 2007</th><th>t</th><th>Edge measured as</th></tr>
+      
+      <tr><td>20x in a bull market, 5x otherwise</td>
+        <td><span class="badge info">holding up</span></td>
+        <td>+5.22</td><td>1.4</td>
+        <td>+1.00</td><td>0.4</td>
+        <td class="muted">turbo return at the rule&#39;s leverage minus the other one</td></tr>
+      
+      <tr><td>Sell when RSI is back at 40</td>
+        <td><span class="badge info">holding up</span></td>
+        <td>+0.63</td><td>1.2</td>
+        <td>+0.53</td><td>3.3</td>
+        <td class="muted">turbo return per day held minus holding the full 5 days</td></tr>
+      
+      <tr><td>Only above the 200-day</td>
+        <td><span class="badge info">holding up</span></td>
+        <td>+2.82</td><td>0.5</td>
+        <td>+5.24</td><td>2.0</td>
+        <td class="muted">turbo return above minus below the 200-day</td></tr>
+      
+      <tr><td>RSI below 30 at the close</td>
+        <td><span class="badge info">holding up</span></td>
+        <td>+0.17</td><td>0.7</td>
+        <td>+0.25</td><td>3.0</td>
+        <td class="muted">stock return minus SPY over the hold, % points</td></tr>
+      
+      <tr><td>Sell after 5 days at the latest</td>
+        <td><span class="badge info">holding up</span></td>
+        <td>+0.74</td><td>1.5</td>
+        <td>+0.02</td><td>0.1</td>
+        <td class="muted">turbo return per day held minus a 10-day limit</td></tr>
+      
+      <tr><td>Flag: signal closed near the day&#39;s low</td>
+        <td><span class="badge info">holding up</span></td>
+        <td>+12.56</td><td>1.5</td>
+        <td>+4.04</td><td>1.2</td>
+        <td class="muted">turbo return, bottom third of the range minus the rest</td></tr>
+      
+    </table></div>
+    <div style="height:300px; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-4.1.1.min.js" integrity="sha256-O24V1F27f8pb0glCkelh3cVHLNiHAJ5gCaVtq2aNch8=" crossorigin="anonymous"></script>                <div id="f5656220-e548-45c1-a3c3-c896074197da" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("f5656220-e548-45c1-a3c3-c896074197da")) {                    Plotly.newPlot(                        "f5656220-e548-45c1-a3c3-c896074197da",                        [{"colorbar":{"outlinewidth":0,"thickness":10,"tickfont":{"color":"#8b949e"},"ticktext":["≤ −3 hurt","−2","0","2","≥ 3 helped"],"tickvals":[-3,-2,0,2,3],"title":{"font":{"color":"#8b949e"},"text":"t"}},"colorscale":[[0,"#f85149"],[0.5,"#30363d"],[1,"#58a6ff"]],"customdata":{"dtype":"f8","bdata":"87\u002fgIlwM6z8AAAAAAABQQPNyTGyiRABA3ZbDaNdZ8z8AAAAAAABEQDpuA6z9CO4\u002fV6yhGNpUpb8AAAAAAIBLQLQVu1RA9rS\u002fMcPAvqMx2D8AAAAAAMBiQOoKZzMWB\u002fw\u002fp+c54qK87j8AAAAAAIBqQPjLj9ZcEAlAw86Iqql8vb8AAAAAAIBrQFnDCbQuHOW\u002fXCJyBrn14T8AAAAAAOBnQFEv+yHrigFACKa\u002fMEeA2z8AAAAAABBxQH6Gqr+Qbv0\u002f1VeO+vL43j8AAAAAACBmQLLtKB2tAwlAfV7jc2852j8AAAAAACBoQHFYd6NWtwBAC8EzA5C4zD8AAAAAACBqQDXHd6HfY\u002fI\u002fTeEp5fBs0j8AAAAAAAB2QGZ6xfiqevI\u002fYPg+\u002f+A7qT8AAAAAAOBkQPadHCDrYss\u002fyGJLXat8uT8AAAAAAEBqQLJhhUcFedU\u002fzZLKGapj0T8AAAAAAEB0QHfL971GL\u002fA\u002ftAPbTFad4b8AAAAAAOBhQP\u002f9e6zfKO6\u002fDEnbiee7178AAAAAAKBoQIvdxOcXc+u\u002fanB1fa8MxD8AAAAAAMByQBHd1Vu8JeI\u002fZqfokV5jnb8AAAAAAEBoQDG52Bm6Zaq\u002fkVnOa+dC4D8AAAAAAABeQKpn4SEZ3eg\u002f6pKA3x6tGsAAAAAAAHCDQMFnOWGDEei\u002fLGuTffQdDsAAAAAAAEShQGXxWLT6yt+\u002fSz7ZLrIOFkAAAAAAAOiBQJwRRa4P8dw\u002farS+dMRq9D8AAAAAAPCGQGh9mlMb4Ng\u002fA\u002fpYn56Q8j8AAAAAAFSUQPg7kbmtZLY\u002fsfvcjjvjEsAAAAAAADCLQB6zsNMBZeC\u002f3ag1JNYmIkAAAAAAAFiBQMXVVsa9xO8\u002fWLFHZ7XNG0AAAAAAAICQQPc4zgwBX+E\u002fnOYpOy5SHUAAAAAAALCUQBXy70e84+4\u002fsJzl5R+iBUAAAAAAAHiVQDqr7dPTadY\u002fRzPgPL0bGEAAAAAAACCIQEOSpe+Gz\u002fE\u002fmkNnjqZoHEAAAAAAANSdQNp\u002frnOD9\u002fA\u002ffBHEGs\u002fqC0AAAAAAAOiLQAI9De+sLtQ\u002f1eLT0rNJN0AAAAAAAKyZQNaCHLnOJfs\u002fH0WMo8ro+D8AAAAAANCLQKygi34gPsQ\u002f0EQvVDyCJ8AAAAAAAMydQDw9rZ520vK\u002f0RcZhdde8r8AAAAAAOSXQDYRg\u002fO1GMO\u002fv4XcSmghLUAAAAAAAEiRQIj6GNKA+v8\u002fwyugoLJzJsAAAAAAAMiXQIyWtl75J+u\u002ffUH7ZB3UEEAAAAAAABCPQIjGSvoAI9U\u002fB9XRLpqnJ8AAAAAAAABQQMCfOh17iQHAZ6mfh3ZiN0AAAAAAAABEQDhZqzYKT+8\u002fiCfnK77mOMAAAAAAAIBLQFjRPK8zR\u002f6\u002fe7\u002fW3YAfJMAAAAAAAMBiQLfxHF1r2fi\u002fgzdFSbakMEAAAAAAAIBqQOhMnQcpU\u002fA\u002f0ZDWGWETM8AAAAAAAIBrQB9uUZ8PXwLAD34\u002fHnz6M0AAAAAAAOBnQKYbbczBTQ1AS2QYflllGkAAAAAAABBxQMSDrYGoxPA\u002f1gdotVd20D8AAAAAACBmQGQA9+rbJpU\u002f4zg0MiaZAEAAAAAAACBoQH6BXX5oitc\u002fjOI1pmacGkAAAAAAACBqQDC\u002fojGt4gBA19s24JKZLsAAAAAAAAB2QGKefFGc1ArAe4UZmyxoHEAAAAAAAOBkQCSE\u002f9Fy+PU\u002f3ESDH6OHJ0AAAAAAAEBqQIwXDHej4fA\u002fYYAIia6I1D8AAAAAAEB0QPSpwJ7z66I\u002fofjvCtFnEMAAAAAAAOBhQPoDcCg\u002fe9K\u002f+CP38FhkGsAAAAAAAKBoQE6AqJhQvv2\u002f+F5vCRBlIUAAAAAAAMByQJDIpqmbWv8\u002fJMA7i3Qg8r8AAAAAAEBoQKtn8TiHHcS\u002fcpvgIbw2G0AAAAAAAABeQO0eH8BsROg\u002fp4CMdxIZ2z8AAAAAAABQQIWaW4RY3dY\u002fKldcyd9B4j8AAAAAAABEQHgO6bUXMfM\u002fF61LW9pVyz8AAAAAAIBLQMZzbvNeoN0\u002fusZ5BHfY+D8AAAAAAMBiQGDXfLyI6ANAHKVsnuOa3z8AAAAAAIBqQEwBQerU1uk\u002fDSEXH8Zr0b8AAAAAAIBrQPG0ZpZum+m\u002f5ruZYBfy9j8AAAAAAOBnQLr6RTrmDv0\u002fGQAUsR1qxj8AAAAAABBxQCj3N1Znpts\u002fuW4CJdOg6j8AAAAAACBmQNCdvAyWU\u002fg\u002fzAXEQMHRsD8AAAAAACBoQB4WqitorMM\u002ftIiF48j17T8AAAAAACBqQO\u002fQTO1QlwBANXe+pLVdyD8AAAAAAAB2QBpZb7yIVN0\u002fscGD1kiX8j8AAAAAAOBkQALfD+E0t+w\u002flO4peVh67T8AAAAAAEBqQBcL\u002f67KdP8\u002fBVHqrbmAlT8AAAAAAEB0QDJ+tqucPqY\u002fAU1Ch4hW0r8AAAAAAOBhQNiIYuNIkOy\u002fm45YQLm48j8AAAAAAKBoQKiYf47qGgVArNRtChMw8j8AAAAAAMByQOPcinTiCP0\u002fgP3aDgR71T8AAAAAAEBoQKVrFgyTM9I\u002ftzgO00Rhzb8AAAAAAABeQASb0nKIJMy\u002fJF6Uij1qcr8AAAAAAABQQBRPmn\u002feAoO\u002fUQgmGnnZtL8AAAAAAABEQEml1KaawcC\u002fChq72cj27L8AAAAAAIBLQIYMEXt\u002f+fO\u002fpn5QIZ8Z2T8AAAAAAMBiQOEoZUcCMeg\u002fFN4vmgY57r8AAAAAAIBqQMKf9tGSWPe\u002fnkHJYdvpyr8AAAAAAIBrQGlOQbnCu9O\u002fCPKljtfT4b8AAAAAAOBnQDD72zJySuC\u002fh30dvjN4xz8AAAAAABBxQObr+gQ8Qsk\u002fzzvHsnLPib8AAAAAACBmQIYZzOOrLYa\u002feEKFktmz7L8AAAAAACBoQO4tSykvpPC\u002f5nzYzGFgxz8AAAAAACBqQAycMY50i9Q\u002fPFteJ+3Rqz8AAAAAAAB2QLbLXzPJNLk\u002f3Ak7QYPZ3D8AAAAAAOBkQCxcRZeAHug\u002fv5zAj9Bt\u002fT8AAAAAAEBqQNUXcQBrDgJAqyqobeb\u002fzT8AAAAAAEB0QLzYsMOQGtU\u002fAe0yRFWD+L8AAAAAAOBhQDb6jpYUEPu\u002fNwH4+KiV4r8AAAAAAKBoQILNCicltee\u002fK9n1832M9D8AAAAAAMByQInxXySLnf4\u002fhKxYSienoz8AAAAAAEBoQCnIdEEay6Q\u002f9ASHoZrp5D8AAAAAAABeQBNzw\u002fJYMug\u002fbLIagxV1MkAAAAAAAABQQGoDZ9ihA\u002fY\u002fp41X4\u002fdGJkAAAAAAAABEQLDOUehbK\u002fI\u002famQptcmxC8AAAAAAAIBLQCjQzFjod9C\u002fnRtUlWlIHEAAAAAAAKBiQCIK6LH2wfE\u002f32kXn9+aEkAAAAAAAABqQGsKTUBORdU\u002fVHJju7ApLkAAAAAAACBrQK8Wybe+PPE\u002fZ3mZ3Ex0IsAAAAAAAIBnQF8Zzrh5+uC\u002f5IEgCZxEL8AAAAAAAOBwQHkD2FPkXvK\u002feiBQeoH6IEAAAAAAAGBlQAVFyTCo8+s\u002f5Ta3bvQnIUAAAAAAAABoQPuk3sDDmuc\u002fkQ1G4qxTAEAAAAAAAOBpQFQH28WFZM0\u002fJ7502tJcP0AAAAAAAPB1QLxhUHcQfAlAUuJfbqNJLkAAAAAAAOBkQIk6TBCIx\u002fE\u002fg5hdOQzOIsAAAAAAAOBpQEpTHb56ufC\u002frcsq7KPOI8AAAAAAAEB0QHePwU1EJOK\u002ftSGAthcZAUAAAAAAAOBhQOJJtp22y8E\u002fLLJJuSteG8AAAAAAAIBoQPEZotL9oua\u002flSgnPHEjFEAAAAAAAMByQCSyR+PED+M\u002fLYHYFV8lM0AAAAAAAEBoQEyq8aMmzfE\u002f3fTYDroBOEAAAAAAAABeQALrGhT8mfQ\u002f","shape":"6, 20, 3"},"hovertemplate":"%{y}, %{x}\u003cbr\u003eedge %{customdata[0]:+.2f} (%{text})\u003cbr\u003et = %{customdata[2]:.1f} · %{customdata[1]:.0f} trades\u003cextra\u003e\u003c\u002fextra\u003e","text":[["stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points","stock return minus SPY over the hold, % points"],["turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day","turbo return above minus below the 200-day"],["turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one","turbo return at the rule's leverage minus the other one"],["turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days","turbo return per day held minus holding the full 5 days"],["turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit","turbo return per day held minus a 10-day limit"],["turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest","turbo return, bottom third of the range minus the rest"]],"x":{"dtype":"i2","bdata":"1wfYB9kH2gfbB9wH3QfeB98H4AfhB+IH4wfkB+UH5gfnB+gH6QfqBw=="},"xgap":2,"y":["RSI below 30 at the close","Only above the 200-day","20x in a bull market, 5x otherwise","Sell when RSI is back at 40","Sell after 5 days at the latest","Flag: signal closed near the day's low"],"ygap":2,"z":{"dtype":"f8","bdata":"83JMbKJEAEA6bgOs\u002fQjuP7QVu1RA9rS\u002f6gpnMxYH\u002fD8AAAAAAAAIQFnDCbQuHOW\u002fUS\u002f7IeuKAUB+hqq\u002fkG79PwAAAAAAAAhAcVh3o1a3AEA1x3eh32PyP2Z6xfiqevI\u002f9p0cIOtiyz+yYYVHBXnVP3fL971GL\u002fA\u002f\u002f\u002f17rN8o7r+L3cTnF3PrvxHd1Vu8JeI\u002fMbnYGbplqr+qZ+EhGd3oP8FnOWGDEei\u002fZfFYtPrK37+cEUWuD\u002fHcP2h9mlMb4Ng\u002f+DuRua1ktj8es7DTAWXgv8XVVsa9xO8\u002f9zjODAFf4T8V8u9HvOPuPzqr7dPTadY\u002fQ5Kl74bP8T\u002faf65zg\u002ffwPwI9De+sLtQ\u002f1oIcuc4l+z+soIt+ID7EPzw9rZ520vK\u002fNhGD87UYw7+I+hjSgPr\u002fP4yWtl75J+u\u002fiMZK+gAj1T\u002fAnzode4kBwDhZqzYKT+8\u002fWNE8rzNH\u002fr+38Rxda9n4v+hMnQcpU\u002fA\u002fH25Rnw9fAsAAAAAAAAAIQMSDrYGoxPA\u002fZAD36tsmlT9+gV1+aIrXPzC\u002fojGt4gBAAAAAAAAACMAkhP\u002fRcvj1P4wXDHej4fA\u002f9KnAnvProj\u002f6A3AoP3vSv06AqJhQvv2\u002fkMimqZta\u002fz+rZ\u002fE4hx3Ev+0eH8BsROg\u002fhZpbhFjd1j94Dum1FzHzP8ZzbvNeoN0\u002fYNd8vIjoA0BMAUHq1NbpP\u002fG0ZpZum+m\u002fuvpFOuYO\u002fT8o9zdWZ6bbP9CdvAyWU\u002fg\u002fHhaqK2iswz\u002fv0EztUJcAQBpZb7yIVN0\u002fAt8P4TS37D8XC\u002f+uynT\u002fPzJ+tqucPqY\u002f2Ihi40iQ7L+omH+O6hoFQOPcinTiCP0\u002fpWsWDJMz0j8Em9JyiCTMvxRPmn\u002feAoO\u002fSaXUpprBwL+GDBF7f\u002fnzv+EoZUcCMeg\u002fwp\u002f20ZJY979pTkG5wrvTvzD72zJySuC\u002f5uv6BDxCyT+GGczjqy2Gv+4tSykvpPC\u002fDJwxjnSL1D+2y18zyTS5PyxcRZeAHug\u002f1RdxAGsOAkC82LDDkBrVPzb6jpYUEPu\u002fgs0KJyW157+J8V8ki53+PynIdEEay6Q\u002fE3PD8lgy6D9qA2fYoQP2P7DOUehbK\u002fI\u002fKNDMWOh30L8iCuix9sHxP2sKTUBORdU\u002frxbJt7488T9fGc64efrgv3kD2FPkXvK\u002fBUXJMKjz6z\u002f7pN7Aw5rnP1QH28WFZM0\u002fAAAAAAAACECJOkwQiMfxP0pTHb56ufC\u002fd4\u002fBTUQk4r\u002fiSbadtsvBP\u002fEZotL9oua\u002fJLJH48QP4z9MqvGjJs3xPwLrGhT8mfQ\u002f","shape":"6, 20"},"zmax":3,"zmid":0,"zmin":-3,"type":"heatmap"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05}}},"yaxis":{"autorange":"reversed","gridcolor":"#21262d","tickfont":{"color":"#8b949e"},"linecolor":"#30363d","zerolinecolor":"#30363d"},"xaxis":{"dtick":1,"gridcolor":"#21262d","tickfont":{"color":"#8b949e"},"linecolor":"#30363d"},"margin":{"l":10,"r":10,"t":30,"b":10},"font":{"color":"#e6edf3","size":12},"hoverlabel":{"font":{"color":"#e6edf3"},"bgcolor":"#161b22","bordercolor":"#30363d"},"height":300,"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","showlegend":false},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
+    <div style="height:620px; width:100%;">                            <div id="aa97f602-ca77-4372-b796-88ca7c417026" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("aa97f602-ca77-4372-b796-88ca7c417026")) {                    Plotly.newPlot(                        "aa97f602-ca77-4372-b796-88ca7c417026",                        [{"fill":"toself","fillcolor":"rgba(88,166,255,0.18)","hoverinfo":"skip","line":{"width":0},"x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH6gfpB+gH5wfmB+UH5AfjB+IH4QfgB98H3gfdB9wH2wfaB9kH"},"y":{"dtype":"f8","bdata":"wSojPZIZ+D97Kqeso+XvP8TnviBg+PA\u002fUiN1q7Lo6T8VQOc\u002fOV3rP1CZkH\u002fhpOI\u002fHjoGDdb75z+0\u002f6J2HujlP7VIIeDcluI\u002fghspcUl24j+5mIIunD\u002fgP2XPmSzcR+A\u002ftiDLYSwe4D\u002fD5etEDsbeP1SOvXqJPtk\u002fejStAZhk0z\u002f7cGpE4+vaP74xSRsOsOU\u002faGlQQggH1r++QD99+WPgv6A\u002fA0+sLOS\u002fXMIvYPzD4r+bcNL0Fg\u002fZvyZZ\u002fnpursW\u002fY3wErKBNw7\u002fOfceM7\u002fGzv+B21iWAp5o\u002fv8nlu103wz\u002f\u002fAbo0uqrIP2ImqkAL8Ms\u002fAEThlQ6OMb8AFboUsGuvP4BMdW2LSGG\u002fDuhUbHmnxj\u002fUtewexC7Ev+ADAZ\u002fBf8+\u002f"},"type":"scatter","xaxis":"x","yaxis":"y"},{"customdata":{"dtype":"f8","bdata":"AAAAAABcn0AK5WTTIQP3PwAAAAAA4GNAAAAAAABgn0Dr8N3YQUL3PwAAAAAAoG5AAAAAAABkn0BBKz1+xGgGQAAAAAAAEHpAAAAAAABon0CbCLf0atX\u002fPwAAAAAAMIJAAAAAAABsn0BTgQIoWnkCQAAAAAAAeINAAAAAAABwn0CYrOeGePj\u002fPwAAAAAAYIVAAAAAAAB0n0BVSaqPzSUNQAAAAAAACIRAAAAAAAB4n0BQ0n1HhYkMQAAAAAAAGIRAAAAAAAB8n0COrnst3CYLQAAAAAAAGIJAAAAAAACAn0Aw3MUFD4MBQAAAAAAAkIdAAAAAAACEn0CumPn6fXz3PwAAAAAAwIZAAAAAAACIn0DRd8xE813xPwAAAAAAyIZAAAAAAACMn0DPmmInjMnvPwAAAAAA6IVAAAAAAACQn0CTum2T5TPKPwAAAAAAKIVAAAAAAACUn0C0UJE5lg3ZvwAAAAAAwIRAAAAAAACYn0CrA+KiHnPmvwAAAAAAAIRAAAAAAACcn0BBYcvqJyDJvwAAAAAAmIVAAAAAAACgn0BmIhjy2ePkPwAAAAAAMINA","shape":"18, 3"},"hovertemplate":"%{customdata[0]}–%{x}: %{y:+.2f} (stock return minus SPY over the hold, % points)\u003cbr\u003et = %{customdata[1]:.1f} · %{customdata[2]} trades\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#58a6ff","width":2},"marker":{"color":["#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#f85149","#f85149","#f85149","#58a6ff"],"line":{"color":"#0d1117","width":2},"size":8},"mode":"lines+markers","x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH"},"y":{"dtype":"f8","bdata":"RQpDCZop5D8G\u002feuk8tnaP8aESU5PzeM\u002fBq4HIGrX2T9l4TJB9FPdPyjdvb2votI\u002ft8Mw3dj33j80gNEDzRLcPyW7Gk+0ZNc\u002fOc9XcoVL0z\u002f\u002fUdN5vILLP5lgMQPo6MY\u002f2hQXhiFlxT+f1GVA3dumP8rsQ4vekri\u002fxUpZnMD0xL8DQlDYPnCnvxT6QfQTWcU\u002f"},"type":"scatter","xaxis":"x","yaxis":"y"},{"fill":"toself","fillcolor":"rgba(88,166,255,0.18)","hoverinfo":"skip","line":{"width":0},"x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH6gfpB+gH5wfmB+UH5AfjB+IH4QfgB98H3gfdB9wH2wfaB9kH"},"y":{"dtype":"f8","bdata":"aACtKhgNIUAfzyvbQgQqQDauYiEyAzFAJXl9p8jPKECdo9tu6OsyQJW9r5B2hDNAijoY\u002fz5lNUAb6\u002f6CGoYwQHR4JBWsuipAupTSJc5pK0CayiapY1UvQFDYqK9eYzpAci4yd5LrQED1J6gJrRo6QNqVFV6bAStAfZkws1CcK0DX8PSL14AqQLqbQoVFcy5A7IzdugMnI8AxhBUOuJsiwM4QM9poHBjAGvL5c7koJcDkDVVWA1IXwHxgN0aZnRDA4MyvFw9W979qsuEoQHIJwBgYrQDiLAXAyE6blkqdDcCYxuUHye4YwEJttAauOBDALI5vq4w3I8BkcxR98rQpwPtUFcVhKy7AIpuDpFXdJ8C6oUWgemQVwCoXL3wgoCrA"},"type":"scatter","xaxis":"x2","yaxis":"y2"},{"customdata":{"dtype":"f8","bdata":"AAAAAABcn0AeUi99EA\u002fcvwAAAAAAmqpAAAAAAABgn0ARYChBF7XqPwAAAAAAeqtAAAAAAABkn0D519MrN3fWPwAAAAAAYKRAAAAAAABon0CnOLHDW\u002fLIvwAAAAAAsqZAAAAAAABsn0DS95NQwHHYPwAAAAAATKVAAAAAAABwn0BSuMIfAcblPwAAAAAAYqNAAAAAAAB0n0CgeHZPXc31PwAAAAAA7qZAAAAAAAB4n0BbD3lByvDsPwAAAAAAVK1AAAAAAAB8n0CMFFujNh7yPwAAAAAAHKtAAAAAAACAn0Dn+M+gKKT1PwAAAAAArq9AAAAAAACEn0DDLhhH+TL1PwAAAAAA7KtAAAAAAACIn0AGV5Ep3aX8PwAAAAAAXbFAAAAAAACMn0BKVyIyvgD5PwAAAAAAxKpAAAAAAACQn0DSW3oI2lD0PwAAAAAAWLFAAAAAAACUn0BeHgko9xPPPwAAAAAA5rBAAAAAAACYn0Dva32uAhnpPwAAAAAAvrFAAAAAAACcn0BLPWoWwWbWPwAAAAAAPbBAAAAAAACgn0BdnfNXfCfdPwAAAAAATKxA","shape":"18, 3"},"hovertemplate":"%{customdata[0]}–%{x}: %{y:+.2f} (turbo return above minus below the 200-day)\u003cbr\u003et = %{customdata[1]:.1f} · %{customdata[2]} trades\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#58a6ff","width":2},"marker":{"color":["#f85149","#58a6ff","#58a6ff","#f85149","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff"],"line":{"color":"#0d1117","width":2},"size":8},"mode":"lines+markers","x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH"},"y":{"dtype":"f8","bdata":"gy0EoxAmA8CF\u002fBEWC6QOQJOCgzwdUgRAWG9fdmRu9b+rp0XBvEUIQP3s73Vg0RNAOR9rfRNXIUDq8gqC0JQUQMKkfW9ZUxNAtE6npZUeFkD\u002fXe6e0\u002fgYQILbLb797ShAxITWnL6vLUB85BI0LEYkQP2ObqiHY\u002fc\u002fKyIujDgcD0CZsn33fZT\u002fP5odypSDmAZA"},"type":"scatter","xaxis":"x2","yaxis":"y2"},{"fill":"toself","fillcolor":"rgba(88,166,255,0.18)","hoverinfo":"skip","line":{"width":0},"x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH6gfpB+gH5wfmB+UH5AfjB+IH4QfgB98H3gfdB9wH2wfaB9kH"},"y":{"dtype":"f8","bdata":"lttNwsj7JkDggXz+6x4bQFrtQjcSmTZA71b0tli7LUD\u002fZl2npsM2QO1IVwG0uCtA1p3gx\u002fqgMkDJ+xstft8pQHxD8X3XQyhAwALyiQjYBkARFuVpD+8QQHKZcQWFOCVAn85zPCz\u002fMEBUMkY1ZJcwQAbwnxkpeSBAjnaVksGvIkBQ8Z1ybAwgQEzliQjDMClAllu1m9U4AcC08DWhZXsTwLAWT3IwVhzAAioNS9g1K8Brcdm4sG8lwEGRE+sEEhnAwsM6pyC1LsAKu1Qx5OYnwAjasAn5xyjA1WM\u002fXScoF8AaM7ADmsgXwJCBQkJptu6\u002fr8FzF7tpI8DyOeT8qVEpwDzoHCBCWTbAZteJYnt7M8DjOycBFKU2wNfn34SCeTrA"},"type":"scatter","xaxis":"x3","yaxis":"y3"},{"customdata":{"dtype":"f8","bdata":"AAAAAABcn0DSOmfTs0HpvwAAAAAA4GNAAAAAAABgn0DFXrbxwEDxvwAAAAAAoG5AAAAAAABkn0C8b2h8OPTCPwAAAAAAEHpAAAAAAABon0B98Ku5rbzZvwAAAAAAMIJAAAAAAABsn0BRd7AJmUHiPwAAAAAAeINAAAAAAABwn0DmPHk6E5DWPwAAAAAAYIVAAAAAAAB0n0Aj1Un4Pt38PwAAAAAACIRAAAAAAAB4n0BGsxkyp7HnPwAAAAAAGIRAAAAAAAB8n0BDT3RZBqfmPwAAAAAAGIJAAAAAAACAn0BvPHDDYgP0vwAAAAAAkIdAAAAAAACEn0AjLkZXrITuvwAAAAAAwIZAAAAAAACIn0Dl7nZ0XWLXvwAAAAAAyIZAAAAAAACMn0DxXWlCDYTtPwAAAAAA6IVAAAAAAACQn0Ay\u002fCgoI4fbPwAAAAAAKIVAAAAAAACUn0Dr88gKFnbfvwAAAAAAwIRAAAAAAACYn0D6gzmxQprRPwAAAAAAAIRAAAAAAACcn0C7\u002f0vrSU7fPwAAAAAAmIVAAAAAAACgn0D05A0Wcaj2PwAAAAAAMINA","shape":"18, 3"},"hovertemplate":"%{customdata[0]}–%{x}: %{y:+.2f} (turbo return at the rule's leverage minus the other one)\u003cbr\u003et = %{customdata[1]:.1f} · %{customdata[2]} trades\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#58a6ff","width":2},"marker":{"color":["#f85149","#f85149","#58a6ff","#f85149","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#f85149","#f85149","#f85149","#58a6ff","#58a6ff","#f85149","#58a6ff","#58a6ff","#58a6ff"],"line":{"color":"#0d1117","width":2},"size":8},"mode":"lines+markers","x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH"},"y":{"dtype":"f8","bdata":"F\u002fRxRzz3HcDWNhADsrofwKGvyKW27Pg\u002fFPOKElfuDcALlNZRozUUQHwOx9PxnQBAyYnOfUerIUB4xIdWYvYLQCIjo56HXwlAWFk05\u002fYRE8ACYMT4uN4OwKFUkkM3+QLAndRdA1Z1FUB45mVjL34HQPhz2mJeeQXA1qy3ZaUS8j\u002fZ4wuI5jr5P2eOnKGN4hRA"},"type":"scatter","xaxis":"x3","yaxis":"y3"},{"fill":"toself","fillcolor":"rgba(88,166,255,0.18)","hoverinfo":"skip","line":{"width":0},"x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH6gfpB+gH5wfmB+UH5AfjB+IH4QfgB98H3gfdB9wH2wfaB9kH"},"y":{"dtype":"f8","bdata":"xHVMVP+x9T8L9F3iJIT+P5hgvRftTPs\u002fcNgnHAs\u002f8z\u002feZ10NPjL0P6iXuMbHVPA\u002foQY7bQwx9j94IWmHGT3qP0JIfiCEyPE\u002flntQO4Ff7T+EQNmsiO\u002f3P8YefKtPZPg\u002fF05Il9aZ+D+gJ2CLOiXtP2voUgxKAus\u002fASoUXTdY+D9i5O8oHjz9Px90qcZU4fo\u002fXIQ1l4Zu27+wW1N1rw+gPyhUZXr8usE\u002fqk1BRfal1r\u002fa2VKytfLgv0QBzndK8ta\u002faFshBuINzr9QmjgMqrLEv4BM+4sOTsC\u002fAB90JZe+pj\u002fqDGho97XMvyCk6Iq1uaw\u002f+4oIA\u002fXq0L8+Kzo9VR3Qv7bSVACcW9G\u002fAI\u002f6Ed4Bqb9Y5XOG8WjIPyUVvkiZ3uS\u002f"},"type":"scatter","xaxis":"x4","yaxis":"y4"},{"customdata":{"dtype":"f8","bdata":"AAAAAABcn0Cu3IWgDm7mPwAAAAAA4GNAAAAAAABgn0AHh2jqGI4DQAAAAAAAoG5AAAAAAABkn0BWjgP8Djj+PwAAAAAAEHpAAAAAAABon0BoN5lojzn0PwAAAAAAMIJAAAAAAABsn0CyKCOpT1v1PwAAAAAAeINAAAAAAABwn0DtTyAmtdXyPwAAAAAAYIVAAAAAAAB0n0DuhjLRV1kBQAAAAAAACIRAAAAAAAB4n0ArbC54yEDyPwAAAAAAGIRAAAAAAAB8n0BF48gCDVUBQAAAAAAAGIJAAAAAAACAn0ATzxADZjP4PwAAAAAAkIdAAAAAAACEn0BpSYwQycH5PwAAAAAAwIZAAAAAAACIn0BiUVWmWnX3PwAAAAAAyIZAAAAAAACMn0Dyg9wi5+XzPwAAAAAA6IVAAAAAAACQn0Au0f+Oj+\u002fgPwAAAAAAKIVAAAAAAACUn0DQfCSy3C\u002fqPwAAAAAAwIRAAAAAAACYn0D5Oi1OfDQDQAAAAAAAAIRAAAAAAACcn0AlZ8ejGY8AQAAAAAAAmIVAAAAAAACgn0C+AH++of3yPwAAAAAAMINA","shape":"18, 3"},"hovertemplate":"%{customdata[0]}–%{x}: %{y:+.2f} (turbo return per day held minus holding the full 5 days)\u003cbr\u003et = %{customdata[1]:.1f} · %{customdata[2]} trades\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#58a6ff","width":2},"marker":{"color":["#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff"],"line":{"color":"#0d1117","width":2},"size":8},"mode":"lines+markers","x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH"},"y":{"dtype":"f8","bdata":"YtbaX2WF1j9bOJaJocjwPyCMLSfehOo\u002fhEclOEjQ3T8O3Q6+6CrgP9Pp7AsVNNg\u002fwkuSGdoW5z89Hk+tmw\u002fTPzrpqdl4fuI\u002fdqhRmP1L2T86LVJrM1nlP1nzt2qTouQ\u002fxs1U+UPd4j+KmxqyCWXIPy2DZNOdXs8\u002fhtRg7JaP6j8\u002ff5qkm7ztPwgT3CCzBeQ\u002f"},"type":"scatter","xaxis":"x4","yaxis":"y4"},{"fill":"toself","fillcolor":"rgba(88,166,255,0.18)","hoverinfo":"skip","line":{"width":0},"x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH6gfpB+gH5wfmB+UH5AfjB+IH4QfgB98H3gfdB9wH2wfaB9kH"},"y":{"dtype":"f8","bdata":"2ZCAhC392j+mvN4oDPfqP3Jbl3yeV90\u002fHSiWYlSK3T9oDoba9JHRPyLbrG9RVeo\u002fFDMR1oI\u002f8T8X7wlRhXHuP7SWSr0IP+k\u002fVjqPIrrZ4j92of2GRj\u002frP+6MHA2ibfk\u002f125dKsWY+z+96TSLUCP4PwaucGqwQuM\u002f40ZxLvYW8j92ywyn0xL2P2yeJBx3Vvw\u002fWuYvnCUQ0r\u002fXiaMGVVLkv7sXQVaaq\u002fC\u002f+4gK8Utb9r928385LETuv6zgg8bNO9S\u002f\u002frgX5sOE0r8m0ZJhDzTgv4T02bJLG\u002fC\u002f0IUl6ceT87+YB5aka8r1v1xRG77lr\u002fW\u002fs85bxMRr9b\u002f0U7EIonD6v5tFBkHKEvO\u002f2O61djo39r8SrSgQwfLnv6nj7o9nZvK\u002f"},"type":"scatter","xaxis":"x5","yaxis":"y5"},{"customdata":{"dtype":"f8","bdata":"AAAAAABcn0DIzFeJCqjtvwAAAAAA4GNAAAAAAABgn0BoNLCcbFa+PwAAAAAAoG5AAAAAAABkn0D0g0pk+RzwvwAAAAAAEHpAAAAAAABon0CZgdtczUXsvwAAAAAAMIJAAAAAAABsn0CPKdjh3OH2vwAAAAAAeINAAAAAAABwn0C03N+tFYzevwAAAAAAYIVAAAAAAAB0n0DO0RryxS\u002fNvwAAAAAACIRAAAAAAAB4n0B+10OSrrfWvwAAAAAAGIRAAAAAAAB8n0DQ9162vaTbvwAAAAAAGIJAAAAAAACAn0D6vLuOfb\u002fgvwAAAAAAkIdAAAAAAACEn0A5lx4yUUTgPwAAAAAAwIZAAAAAAACIn0DgF+eCdiT2PwAAAAAAyIZAAAAAAACMn0DVff0uDxb2PwAAAAAA6IVAAAAAAACQn0AH2Er2pVndPwAAAAAAKIVAAAAAAACUn0DrCvOrk3bpvwAAAAAAwIRAAAAAAACYn0AaB8MBHui0PwAAAAAAAIRAAAAAAACcn0AYqMyM+qbnPwAAAAAAmIVAAAAAAACgn0DbYHRR\u002fjP3PwAAAAAAMINA","shape":"18, 3"},"hovertemplate":"%{customdata[0]}–%{x}: %{y:+.2f} (turbo return per day held minus a 10-day limit)\u003cbr\u003et = %{customdata[1]:.1f} · %{customdata[2]} trades\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#58a6ff","width":2},"marker":{"color":["#f85149","#58a6ff","#f85149","#f85149","#f85149","#f85149","#f85149","#f85149","#f85149","#f85149","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#f85149","#58a6ff","#58a6ff","#58a6ff"],"line":{"color":"#0d1117","width":2},"size":8},"mode":"lines+markers","x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH"},"y":{"dtype":"f8","bdata":"5X6dXThO17+cfLDFWCKoP\u002fYvIK+lwt2\u002fJ3fBUGpg179a0A\u002fSJAzmv0TCChk4gtC\u002fInkooIvBwb80QETwo0bKv9fpACoO0cu\u002fZl1Jhrq5yr+goNVKbhbGP66elhNxzOQ\u002frHa8uNGJ5j8E4OncdALSP\u002fFjpHfnc9m\u002fiPICg721pj8WDXZHUtPXP9WkGLVt0uc\u002f"},"type":"scatter","xaxis":"x5","yaxis":"y5"},{"fill":"toself","fillcolor":"rgba(88,166,255,0.18)","hoverinfo":"skip","line":{"width":0},"x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH6gfpB+gH5wfmB+UH5AfjB+IH4QfgB98H3gfdB9wH2wfaB9kH"},"y":{"dtype":"f8","bdata":"kI7cNKUzOkDqOcNPo2kwQCwuXpwTLDNA5HrwAsw+NkATJsZaL\u002fg2QJKWiuvKoSpARvndN0dwJEC+RPkS1UYpQIZKLFBMUTFAJiPwAU6tOUB+pPtNQf07QOzFb+RTHjpAT1sXO6RMLkBfw4JhBCEsQANLcCADYi9AOEY76p33LEB6lcHkxjc0QCJyFrf+Tz1AAuFWsRTOEMBymISPVfEiwMB8DAn\u002fjynAHgzwrEaVOsDkFlCbRFQ6wMN5JWiulzXA9nxwV6iZFsAQLaxlB8\u002fkv0CWlxtipcC\u002fwzGOWxTVGMD0QIAVbiswwIk26fiRXjXAS79zfxokOMD+ihnOguwvwINiCtDGHyHAM\u002fni2etiJcCUU1cTPe0WwHC7KpJ+QB3A"},"type":"scatter","xaxis":"x6","yaxis":"y6"},{"customdata":{"dtype":"f8","bdata":"AAAAAABcn0D2sa0O+gjyPwAAAAAA4GNAAAAAAABgn0D0qlIAkd7uPwAAAAAAgG5AAAAAAABkn0CaT3czhSviPwAAAAAAwHlAAAAAAABon0DjHAb\u002fB23sPwAAAAAA8IFAAAAAAABsn0CQpm5fJArXPwAAAAAAKINAAAAAAABwn0BSQdTU837ivwAAAAAAGIVAAAAAAAB0n0DOGjZdMZfmvwAAAAAAqINAAAAAAAB4n0AB4eX9cmHPvwAAAAAAyINAAAAAAAB8n0BF8nve\u002fTjuPwAAAAAA0IFAAAAAAACAn0DFNeoAcK3\u002fPwAAAAAAcIdAAAAAAACEn0CVYpez\u002fov+PwAAAAAAqIZAAAAAAACIn0Bf4kDUF570PwAAAAAAqIZAAAAAAACMn0BKgfOD7nHWvwAAAAAA0IVAAAAAAACQn0AQafw+qG7jvwAAAAAAEIVAAAAAAACUn0DR7NUkM33gvwAAAAAAuIRAAAAAAACYn0AmhQxj+Pe\u002fPwAAAAAA+INAAAAAAACcn0AwZEmTdyrnPwAAAAAAkIVAAAAAAACgn0CyIizfHfr3PwAAAAAAMINA","shape":"18, 3"},"hovertemplate":"%{customdata[0]}–%{x}: %{y:+.2f} (turbo return, bottom third of the range minus the rest)\u003cbr\u003et = %{customdata[1]:.1f} · %{customdata[2]} trades\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#58a6ff","width":2},"marker":{"color":["#58a6ff","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#f85149","#f85149","#f85149","#58a6ff","#58a6ff","#58a6ff","#58a6ff","#f85149","#f85149","#f85149","#58a6ff","#58a6ff","#58a6ff"],"line":{"color":"#0d1117","width":2},"size":8},"mode":"lines+markers","x":{"dtype":"i2","bdata":"2QfaB9sH3AfdB94H3wfgB+EH4gfjB+QH5QfmB+cH6AfpB+oH"},"y":{"dtype":"f8","bdata":"tN9RkIXjIkAKytoVqFwVQCRj2V479RBARpPWNdFdG0BRguXOtwcMQAToXBNqphXAzHP0udxMFsCm9BxgHED8vyt8kXIOOBZA+fO4PQOMKUAWQ84SyVYrQK+mk87pdyRAbTBnKnHFCcBqah3VhIcYwDrNbzmKyBXAx0t2Cfc86z+Dkv45OH4VQOG5wIp5HClA"},"type":"scatter","xaxis":"x6","yaxis":"y6"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05}}},"xaxis":{"anchor":"y","domain":[0.0,0.46499999999999997],"matches":"x5","showticklabels":false,"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d"},"yaxis":{"anchor":"x","domain":[0.7266666666666668,1.0],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d","zerolinecolor":"#30363d"},"xaxis2":{"anchor":"y2","domain":[0.5349999999999999,0.9999999999999999],"matches":"x6","showticklabels":false,"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d"},"yaxis2":{"anchor":"x2","domain":[0.7266666666666668,1.0],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d","zerolinecolor":"#30363d"},"xaxis3":{"anchor":"y3","domain":[0.0,0.46499999999999997],"matches":"x5","showticklabels":false,"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d"},"yaxis3":{"anchor":"x3","domain":[0.3633333333333334,0.6366666666666667],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d","zerolinecolor":"#30363d"},"xaxis4":{"anchor":"y4","domain":[0.5349999999999999,0.9999999999999999],"matches":"x6","showticklabels":false,"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d"},"yaxis4":{"anchor":"x4","domain":[0.3633333333333334,0.6366666666666667],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d","zerolinecolor":"#30363d"},"xaxis5":{"anchor":"y5","domain":[0.0,0.46499999999999997],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d"},"yaxis5":{"anchor":"x5","domain":[0.0,0.2733333333333334],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d","zerolinecolor":"#30363d"},"xaxis6":{"anchor":"y6","domain":[0.5349999999999999,0.9999999999999999],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d"},"yaxis6":{"anchor":"x6","domain":[0.0,0.2733333333333334],"tickfont":{"color":"#8b949e"},"gridcolor":"#21262d","linecolor":"#30363d","zerolinecolor":"#30363d"},"annotations":[{"font":{"size":12,"color":"#e6edf3"},"showarrow":false,"text":"RSI below 30 at the close","x":0.23249999999999998,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":12,"color":"#e6edf3"},"showarrow":false,"text":"Only above the 200-day","x":0.7674999999999998,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":12,"color":"#e6edf3"},"showarrow":false,"text":"20x in a bull market, 5x otherwise","x":0.23249999999999998,"xanchor":"center","xref":"paper","y":0.6366666666666667,"yanchor":"bottom","yref":"paper"},{"font":{"size":12,"color":"#e6edf3"},"showarrow":false,"text":"Sell when RSI is back at 40","x":0.7674999999999998,"xanchor":"center","xref":"paper","y":0.6366666666666667,"yanchor":"bottom","yref":"paper"},{"font":{"size":12,"color":"#e6edf3"},"showarrow":false,"text":"Sell after 5 days at the latest","x":0.23249999999999998,"xanchor":"center","xref":"paper","y":0.2733333333333334,"yanchor":"bottom","yref":"paper"},{"font":{"size":12,"color":"#e6edf3"},"showarrow":false,"text":"Flag: signal closed near the day's low","x":0.7674999999999998,"xanchor":"center","xref":"paper","y":0.2733333333333334,"yanchor":"bottom","yref":"paper"}],"shapes":[{"line":{"color":"#8b949e","width":1},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":0,"y1":0,"yref":"y"},{"line":{"color":"#8b949e","width":1},"type":"line","x0":0,"x1":1,"xref":"x2 domain","y0":0,"y1":0,"yref":"y2"},{"line":{"color":"#8b949e","width":1},"type":"line","x0":0,"x1":1,"xref":"x3 domain","y0":0,"y1":0,"yref":"y3"},{"line":{"color":"#8b949e","width":1},"type":"line","x0":0,"x1":1,"xref":"x4 domain","y0":0,"y1":0,"yref":"y4"},{"line":{"color":"#8b949e","width":1},"type":"line","x0":0,"x1":1,"xref":"x5 domain","y0":0,"y1":0,"yref":"y5"},{"line":{"color":"#8b949e","width":1},"type":"line","x0":0,"x1":1,"xref":"x6 domain","y0":0,"y1":0,"yref":"y6"}],"margin":{"l":10,"r":10,"t":30,"b":10},"font":{"color":"#e6edf3","size":12},"hoverlabel":{"font":{"color":"#e6edf3"},"bgcolor":"#161b22","bordercolor":"#30363d"},"height":620,"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","showlegend":false},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
+    <p class="muted">Each part of the rule is traded with and without it on every RSI dip since 2007 (S&amp;P 500, OMX
+      Stockholm 30 and the watchlist). Heatmap: that year's evidence, blue helped and red hurt. Lines: 3-year
+      rolling edge with a ±2 standard-error band, clustered by week. Strong = last 3 years positive with
+      t ≥ 2; not helping = zero or below. A part that stops helping is a reason to test the alternative on new data,
+      not to swap in the best-looking value. Updated 2026-09-30, monthly.</p>
+    
+  </section>
+
+  <section class="card">
+    <h2>Close to a signal</h2>
+    
+    <div class="scroll"><table>
+      <tr><th>Stock</th><th>Status</th><th>Price</th><th>Today</th><th>RSI(14)</th><th>Close below for a signal</th><th>Distance</th></tr>
+      
+      <tr><td><strong>BAC</strong></td><td>below 30</td><td>54.96</td>
+        <td class="neg">-0.9%</td><td>25.5</td><td>—</td><td>—</td></tr>
+      
+      <tr><td><strong>BNY</strong></td><td>below 30</td><td>146.98</td>
+        <td class="neg">-1.0%</td><td>26.4</td><td>—</td><td>—</td></tr>
+      
+      <tr><td><strong>ALL</strong></td><td>below 30</td><td>225.42</td>
+        <td class="neg">-0.9%</td><td>26.6</td><td>—</td><td>—</td></tr>
+      
+      <tr><td><strong>MS</strong></td><td>below 30</td><td>192.76</td>
+        <td class="neg">-0.5%</td><td>28.5</td><td>—</td><td>—</td></tr>
+      
+      <tr><td><strong>OKE</strong></td><td>watch</td><td>86.86</td>
+        <td class="neg">-2.0%</td><td>31.4</td><td>86.20</td><td>-0.8%</td></tr>
+      
+      <tr><td><strong>AMP</strong></td><td>watch</td><td>497.32</td>
+        <td class="pos">+0.2%</td><td>31.6</td><td>492.53</td><td>-1.0%</td></tr>
+      
+      <tr><td><strong>AIZ</strong></td><td>watch</td><td>263.65</td>
+        <td class="pos">+0.0%</td><td>32.0</td><td>261.41</td><td>-0.8%</td></tr>
+      
+      <tr><td><strong>EVO.ST</strong></td><td>watch</td><td>786.20</td>
+        <td class="neg">-1.2%</td><td>32.8</td><td>772.33</td><td>-1.8%</td></tr>
+      
+      <tr><td><strong>GL</strong></td><td>watch</td><td>166.08</td>
+        <td class="neg">-0.4%</td><td>33.0</td><td>164.47</td><td>-1.0%</td></tr>
+      
+      <tr><td><strong>USB</strong></td><td>watch</td><td>58.14</td>
+        <td class="neg">-1.1%</td><td>33.1</td><td>57.30</td><td>-1.4%</td></tr>
+      
+      <tr><td><strong>SCHW</strong></td><td>watch</td><td>99.10</td>
+        <td class="pos">+0.8%</td><td>33.2</td><td>97.45</td><td>-1.7%</td></tr>
+      
+      <tr><td><strong>NSC</strong></td><td>watch</td><td>313.00</td>
+        <td class="neg">-0.0%</td><td>34.0</td><td>308.93</td><td>-1.3%</td></tr>
+      
+      <tr><td><strong>UNP</strong></td><td>watch</td><td>274.15</td>
+        <td class="pos">+0.0%</td><td>34.2</td><td>270.06</td><td>-1.5%</td></tr>
+      
+      <tr><td><strong>VZ</strong></td><td>watch</td><td>45.98</td>
+        <td class="neg">-1.5%</td><td>34.4</td><td>44.93</td><td>-2.3%</td></tr>
+      
+      <tr><td><strong>STT</strong></td><td>watch</td><td>177.78</td>
+        <td class="neg">-1.1%</td><td>34.4</td><td>174.41</td><td>-1.9%</td></tr>
+      
+      <tr><td><strong>JPM</strong></td><td>watch</td><td>334.98</td>
+        <td class="neg">-0.5%</td><td>34.7</td><td>328.31</td><td>-2.0%</td></tr>
+      
+      <tr><td><strong>MDLZ</strong></td><td>watch</td><td>59.32</td>
+        <td class="neg">-1.4%</td><td>34.8</td><td>58.19</td><td>-1.9%</td></tr>
+      
+      <tr><td><strong>KHC</strong></td><td>watch</td><td>23.45</td>
+        <td class="neg">-0.5%</td><td>34.8</td><td>22.95</td><td>-2.1%</td></tr>
+      
+      <tr><td><strong>NTRS</strong></td><td></td><td>172.94</td>
+        <td class="neg">-0.9%</td><td>35.7</td><td>168.46</td><td>-2.6%</td></tr>
+      
+      <tr><td><strong>CVS</strong></td><td></td><td>87.10</td>
+        <td class="neg">-0.9%</td><td>35.8</td><td>83.91</td><td>-3.7%</td></tr>
+      
+      <tr><td><strong>NUE</strong></td><td></td><td>236.24</td>
+        <td class="neg">-3.4%</td><td>35.9</td><td>225.60</td><td>-4.5%</td></tr>
+      
+      <tr><td><strong>CF</strong></td><td></td><td>115.71</td>
+        <td class="pos">+0.2%</td><td>36.0</td><td>109.26</td><td>-5.6%</td></tr>
+      
+      <tr><td><strong>OXY</strong></td><td></td><td>54.94</td>
+        <td class="neg">-2.1%</td><td>36.0</td><td>52.51</td><td>-4.4%</td></tr>
+      
+      <tr><td><strong>VTR</strong></td><td></td><td>86.91</td>
+        <td class="neg">-0.1%</td><td>36.1</td><td>85.40</td><td>-1.7%</td></tr>
+      
+      <tr><td><strong>STLD</strong></td><td></td><td>221.90</td>
+        <td class="neg">-3.7%</td><td>36.1</td><td>210.90</td><td>-5.0%</td></tr>
+      
+    </table></div>
+    <p class="muted">Above the 200-day with RSI under 40: the watchlist and the S&amp;P 500 / OMX Stockholm 30 stocks the
+      morning scan found.</p>
+    
+  </section>
+</main>
+</body>
+</html>

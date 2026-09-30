@@ -1,0 +1,17 @@
+RSI<30 turbo scan — 2026-09-30 09:28 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +6.8% vs 200-day, VIX 16.0 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+Signals you took: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+
+No buy signals.
+
+No signal, below the 200-day (4): CASY, CINF, CPRT, SNA
+
+Didn't hold at the close (RSI finished at 30 or above) — treat as no signal:
+  AIZ        was 29.9 at 17:10
+  AMP        was 29.9 at 17:21
+
+Watch — above the 200-day, RSI under 35: BAC 25.5, BNY 26.4, ALL 26.6, MS 28.5, OKE 31.4, AMP 31.6, AIZ 32.0, GL 33.0, USB 33.1, SCHW 33.2, NSC 34.0, UNP 34.2, VZ 34.4, STT 34.4, JPM 34.7
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data)

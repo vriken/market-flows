@@ -1,0 +1,11 @@
+RSI<30 turbo scan — 2026-09-29 21:45 — US before the 22:00 close — 66 stocks checked
+Market: SPY +6.8% vs 200-day, VIX 16.0 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+Signals you took: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+
+No buy signals.
+
+Watch — above the 200-day, RSI under 35: BAC 25.5, BNY 26.4, ALL 26.6, MS 28.5, OKE 31.4, AMP 31.6, AIZ 32.0, GL 33.0, USB 33.1, SCHW 33.2, NSC 34.0, UNP 34.2, VZ 34.4, STT 34.4, JPM 34.7
+
+Skipped: KLAR (no bar today), BXP (no bar today)
