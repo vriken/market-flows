@@ -4,9 +4,8 @@ on:
   schedule:
     # Morning scan: after the New York close, before Stockholm opens (08:15 CEST)
     - cron: '15 6 * * 1-5'
-    # Refresh before the Stockholm and New York closes
-    - cron: '0 13 * * 1-5'
-    - cron: '30 19 * * 1-5'
+    # Refresh every 30 minutes while Stockholm or New York is open, in summer and winter time
+    - cron: '*/30 7-21 * * 1-5'
     # Parameter health, first of the month
     - cron: '0 5 1 * *'
   workflow_dispatch:

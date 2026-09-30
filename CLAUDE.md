@@ -189,9 +189,10 @@ python build_page.py                        # writes live/page/index.html
 streamlit run dashboard.py
 ```
 
-`.github/workflows/rsi-turbo.yaml` runs the morning scan and rebuilds https://vriken.github.io/market-flows/rsi-turbo/
-on weekdays (06:15, 13:00, 19:30 UTC) and parameter health monthly. The cloud keeps its own signal log on gh-pages;
-the journal is written only from the Mac (`publish.py`, run by the dashboard after each save).
+`.github/workflows/rsi-turbo.yaml` runs the morning scan (06:15 UTC) and rebuilds
+https://vriken.github.io/market-flows/rsi-turbo/ every 30 minutes 07:00–21:30 UTC on weekdays, and parameter health
+monthly. The cloud keeps its own signal log on gh-pages; the journal is written only from the Mac (`publish.py`, run by
+the dashboard after each save, pushes it and starts a page rebuild with the vriken token from the keychain).
 
 ## Conventions
 
