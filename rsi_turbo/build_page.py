@@ -16,6 +16,7 @@ from data import recent_daily
 
 HERE = Path(__file__).parent
 WATCH_ROWS = 25
+DASHBOARD = "http://localhost:8501"
 
 
 def pct(value, spec="+.1%"):
@@ -113,7 +114,7 @@ def main():
         versus=versus_rows, execution=execution, scorecards=scorecards(signal_log, journal),
         health=param_health.verdicts(health).to_dict("records") if health is not None else [],
         health_updated=f"{pd.Timestamp(health_path.stat().st_mtime, unit='s'):%Y-%m-%d}" if health is not None else "",
-        window=param_health.WINDOW_YEARS, watch=watchlist(snap), risk_line=snapshot.RISK_LINE,
+        window=param_health.WINDOW_YEARS, watch=watchlist(snap), risk_line=snapshot.RISK_LINE, dashboard=DASHBOARD,
         criteria=scan.PAPER_CRITERIA)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(html)

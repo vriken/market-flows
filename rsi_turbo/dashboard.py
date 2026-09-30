@@ -147,7 +147,7 @@ def close_button(i, row, container):
 
 def rows_with_action(df, columns, action):
     """A table drawn row by row, so each row can end in its own button. columns: (header, width, row -> text)."""
-    widths = [w for _, w, _ in columns] + [1.1]
+    widths = [w for _, w, _ in columns] + [1.6]
     for cell, (header, _, _) in zip(st.columns(widths), columns, strict=False):
         cell.caption(header)
     for i, row in df.iterrows():
@@ -176,7 +176,7 @@ def act_today(snap, signal_log, journal):
     today_iso = date.today().isoformat()
     buys = snap[snap.confirmed | (snap.live & snap.signal)].sort_values("rsi") if len(snap) else snap
     sells = scan.exits_due(signal_log, journal, snap.to_dict("records") if len(snap) else [], today_iso, {"SE", "US"})
-    st.subheader(f"Buy ({len(buys)})")
+    st.subheader(f"Buy ({len(buys)})", anchor="buy")
     if buys.empty:
         st.caption("No stock crossed below RSI 30. Check the watchlist for stocks close to their trigger.")
     else:
@@ -209,7 +209,7 @@ def act_today(snap, signal_log, journal):
 
 def positions(snap, signal_log, journal):
     held = snapshot.positions(snap, signal_log, journal)
-    st.subheader(f"Open positions ({len(held)} of {scan.MAX_POSITIONS})")
+    st.subheader(f"Open positions ({len(held)} of {scan.MAX_POSITIONS})", anchor="positions")
     if held.empty:
         st.caption("Use the Bought button on a buy signal, or \"Log a trade\" below, when you buy.")
         return
@@ -333,7 +333,7 @@ def usd_sek():
 
 
 def your_trades():
-    st.subheader("Your trades vs the model")
+    st.subheader("Your trades vs the model", anchor="your-trades")
     journal = load_journal()
     left, right = st.columns(2)
     with left, st.form("log_trade", clear_on_submit=True):
