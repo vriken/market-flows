@@ -1,0 +1,21 @@
+RSI<30 turbo scan — 2026-10-01 15:16 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +6.5% vs 200-day, VIX 16.4 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+Signals you took: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  AMP        price 492.35  RSI 29.9  market bull · day -1.0%, closed in the bottom third of its range
+             20x → financing ≈ 467.73, est. knock-out risk over 5 days 28%
+             highest financing at 20% risk (typical for 20x) 461.58 · at 10% risk 447.24
+             sell at the first close with RSI 40+, at the latest 2026-10-07 · stake 1–1.5% of the portfolio
+  OKE        price 85.27  RSI 28.3  market bull · day -1.8%, closed in the bottom third of its range
+             20x → financing ≈ 81.01, est. knock-out risk over 5 days 19%
+             highest financing at 20% risk (typical for 20x) 81.13 · at 10% risk 79.20
+             sell at the first close with RSI 40+, at the latest 2026-10-07 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (24): ABT, AEE, APO, ATO, CNP, CB, CFG, EQT, F, GIS, HIG, JBHT, KIM, KHC, L, LOW, MKC, NOC, PEP, PLD
+
+Watch — above the 200-day, RSI under 35: BNY 23.2, SPG 30.1, STT 30.2, VTR 30.5, NTRS 31.0, JPM 31.6, EVO.ST 31.7, AIZ 31.8, UNP 32.0, GL 32.1, VZ 33.8, UNH 34.4, USB 34.4, CSX 34.7, NUE 34.7
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data)
