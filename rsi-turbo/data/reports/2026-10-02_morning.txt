@@ -1,0 +1,17 @@
+RSI<30 turbo scan — 2026-10-02 14:36 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +6.6% vs 200-day, VIX 16.1 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 2/40 settled · win 0% (≥50) · avg stock -2.98% (≥0.3) · knocked out 100% (≤15) · avg turbo -100.0%
+Signals you took: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+
+No buy signals.
+
+No signal, below the 200-day (10): EQT.ST, AFL, AWK, CTVA, DUK, GS, KMB, RSG, VTR, TEL2-B.ST
+
+Rule exit at the last close (sell at the open if you still hold):
+  BNY        knocked out on 2026-10-01, stock -3.05%, turbo est. -100.0%
+  MS         knocked out on 2026-10-01, stock -2.91%, turbo est. -100.0%
+
+Watch — above the 200-day, RSI under 35: BNY 22.4, ALL 28.8, DOC 30.3, SPG 30.3, NTRS 30.8, AMP 31.8, UNP 32.7, USB 32.7, NSC 32.7, STT 32.9, GL 32.9, GPN 33.0, SCHW 33.2, UNH 33.2, SJM 33.3
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data)
