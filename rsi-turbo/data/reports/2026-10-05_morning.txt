@@ -1,0 +1,24 @@
+RSI<30 turbo scan — 2026-10-05 16:40 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +7.6% vs 200-day, VIX 15.6 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 2/40 settled · win 0% (≥50) · avg stock -2.98% (≥0.3) · knocked out 100% (≤15) · avg turbo -100.0%
+Signals you took: 0/40 settled · win —% (≥50) · avg stock —% (≥0.3) · knocked out —% (≤15) · avg turbo —%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  GPN        price 78.38  RSI 29.6  market bull · day -2.4%, closed in the bottom third of its range
+             20x → financing ≈ 74.46, est. knock-out risk over 5 days 26%
+             highest financing at 20% risk (typical for 20x) 73.83 · at 10% risk 71.70
+             sell at the first close with RSI 40+, at the latest 2026-10-09 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (10): NKE, APP, BALL, SCHW, CLX, FISV, IP, KKR, MCO, REG
+
+SELL before the close:
+  BAC        signal 2026-09-28 · day 5  (yours)
+  SCHW       signal 2026-09-28 · day 5
+
+Rule exit at the last close (sell at the open if you still hold):
+  BA         RSI back to 40 on 2026-10-02, stock 4.97%, turbo est. 97.1%
+
+Watch — above the 200-day, RSI under 35: BNY 28.4, ALL 28.4, AMP 30.4, SPG 30.9, DOC 31.7, GL 32.6, JNJ 32.6, PRU 33.0, INCY 33.6, USB 34.0, JPM 34.5, VZ 34.6, REGN 34.9
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data)
