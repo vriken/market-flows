@@ -1,0 +1,28 @@
+RSI<30 turbo scan — 2026-10-06 15:19 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +8.0% vs 200-day, VIX 15.3 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 6/40 settled · win 33% (≥50) · avg stock -0.04% (≥0.3) · knocked out 33% (≤15) · avg turbo -15.9%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  JNJ        price 252.93  RSI 29.6  market bull · day -1.2%, closed in the bottom third of its range
+             20x → financing ≈ 240.28, est. knock-out risk over 5 days 9%
+             highest financing at 20% risk (typical for 20x) 244.63 · at 10% risk 240.74
+             sell at the first close with RSI 40+, at the latest 2026-10-12 · stake 1–1.5% of the portfolio
+  DOC        price 18.84  RSI 24.8  market bull · day -3.3%, closed in the bottom third of its range
+             20x → financing ≈ 17.90, est. knock-out risk over 5 days 16%
+             highest financing at 20% risk (typical for 20x) 18.04 · at 10% risk 17.67
+             sell at the first close with RSI 40+, at the latest 2026-10-12 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (5): VOLV-B.ST, BKNG, MS, PLD, WTW
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Rule exit at the last close (sell at the open if you still hold):
+  OKE        RSI back to 40 on 2026-10-05, stock 3.88%, turbo est. 75.1%
+  GPN        RSI back to 40 on 2026-10-05, stock 4.85%, turbo est. 95.0%
+
+Watch — above the 200-day, RSI under 35: BNY 25.9, ALL 30.1, INCY 32.0, BMY 32.6, USB 32.9, SPG 33.0, AMP 33.7, VZ 34.2, JPM 34.5
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data)
