@@ -1,0 +1,19 @@
+RSI<30 turbo scan — 2026-10-08 15:30 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +8.1% vs 200-day, VIX 15.5 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 8/40 settled · win 38% (≥50) · avg stock +0.20% (≥0.3) · knocked out 25% (≤15) · avg turbo -7.9%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (21): EQT.ST, FICO, AON, BX, CFG, GIS, HRL, IP, INVH, KIM, LDOS, MTB, MAA, MOS, NOC, PLD, SPG, SNA, TXT, TFC
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Rule exit at the last close (sell at the open if you still hold):
+  JNJ        RSI back to 40 on 2026-10-07, stock 2.18%, turbo est. 42.3%
+
+Watch — above the 200-day, RSI under 35: BNY 24.4, DOC 25.7, ALL 29.5, GL 30.1, NTRS 32.0, INCY 32.3, NDA-SE.ST 32.7, INDU-C.ST 32.8, WELL 33.3, JPM 33.8, STT 34.0, PRU 34.1, VZ 34.3, PFG 34.7
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
