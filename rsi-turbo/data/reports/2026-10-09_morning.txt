@@ -1,0 +1,19 @@
+RSI<30 turbo scan — 2026-10-09 15:18 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +7.6% vs 200-day, VIX 15.2 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 9/40 settled · win 44% (≥50) · avg stock +0.49% (≥0.3) · knocked out 22% (≤15) · avg turbo -0.9%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (4): VOLV-B.ST, GS, KKR, MS
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Rule exit at the last close (sell at the open if you still hold):
+  ALL        RSI back to 40 on 2026-10-08, stock 2.84%, turbo est. 55.3%
+
+Watch — above the 200-day, RSI under 35: BNY 28.3, INDU-C.ST 30.0, NDA-SE.ST 30.5, INCY 31.3, NTRS 33.0, CF 34.5
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
