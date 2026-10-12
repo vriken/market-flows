@@ -1,0 +1,17 @@
+RSI<30 turbo scan — 2026-10-12 17:27 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +8.0% vs 200-day, VIX 15.2 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 9/40 settled · win 44% (≥50) · avg stock +0.49% (≥0.3) · knocked out 22% (≤15) · avg turbo -0.9%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (8): T, CHTR, CMCSA, PCAR, PNC, SBUX, TMUS, VZ
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+  DOC        signal 2026-10-05 · day 5
+
+Watch — above the 200-day, RSI under 35: BNY 26.8, DOC 31.4, INCY 31.4, NDA-SE.ST 31.4, NTRS 32.5, PFG 33.2, DE 33.5, INDU-C.ST 34.8
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
