@@ -1,0 +1,20 @@
+RSI<30 turbo scan — 2026-10-13 16:12 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +7.9% vs 200-day, VIX 15.2 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 10/40 settled · win 50% (≥50) · avg stock +0.50% (≥0.3) · knocked out 20% (≤15) · avg turbo +0.1%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  INCY       price 111.36  RSI 29.2  market bull · day -1.3%, closed in the bottom third of its range
+             20x → financing ≈ 105.79, est. knock-out risk over 5 days 22%
+             highest financing at 20% risk (typical for 20x) 105.55 · at 10% risk 102.82
+             sell at the first close with RSI 40+, at the latest 2026-10-19 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (2): ALB, WY
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: BNY 27.5, NDA-SE.ST 31.4, IVZ 34.1, GRMN 34.7, DOC 34.8, INDU-C.ST 34.8
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
