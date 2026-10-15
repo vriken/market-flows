@@ -1,0 +1,28 @@
+RSI<30 turbo scan — 2026-10-15 13:30 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +6.7% vs 200-day, VIX 17.6 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 10/40 settled · win 50% (≥50) · avg stock +0.50% (≥0.3) · knocked out 20% (≤15) · avg turbo +0.1%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  BEN        price 30.53  RSI 28.2  market bull · day -2.1%, closed in the middle third of its range
+             20x → financing ≈ 29.00, est. knock-out risk over 5 days 15%
+             highest financing at 20% risk (typical for 20x) 29.27 · at 10% risk 28.69
+             sell at the first close with RSI 40+, at the latest 2026-10-21 · stake 1–1.5% of the portfolio
+  IVZ        price 27.93  RSI 25.9  market bull · day -3.4%, closed in the bottom third of its range
+             20x → financing ≈ 26.53, est. knock-out risk over 5 days 19%
+             highest financing at 20% risk (typical for 20x) 26.59 · at 10% risk 25.97
+             sell at the first close with RSI 40+, at the latest 2026-10-21 · stake 1–1.5% of the portfolio
+  STT        price 166.89  RSI 24.4  market bull · day -4.1%, closed in the top third (already bounced — weaker) of its range
+             20x → financing ≈ 158.55, est. knock-out risk over 5 days 16%
+             highest financing at 20% risk (typical for 20x) 159.68 · at 10% risk 156.30
+             sell at the first close with RSI 40+, at the latest 2026-10-21 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (10): BAC, IREN, BX, BXP, CRH, FRT, MS, NTRS, PNR, SKYD
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: BNY 20.1, DOC 32.5, DAL 33.0, STX 33.6, PFG 34.3, SNDK 34.3, INCY 35.0
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
