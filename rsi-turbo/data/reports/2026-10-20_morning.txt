@@ -1,0 +1,16 @@
+RSI<30 turbo scan — 2026-10-20 13:38 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +6.1% vs 200-day, VIX 18.7 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 11/40 settled · win 55% (≥50) · avg stock +0.61% (≥0.3) · knocked out 18% (≤15) · avg turbo +2.9%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (2): CAT, UAL
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: STT 24.2, NTRS 33.1, IVZ 34.3, DELL 34.3, INTC 34.7, HOOD 34.8, ABB.ST 34.9, BEN 34.9
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
