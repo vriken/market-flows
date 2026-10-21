@@ -1,0 +1,21 @@
+RSI<30 turbo scan — 2026-10-21 13:50 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +6.4% vs 200-day, VIX 17.3 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 12/40 settled · win 58% (≥50) · avg stock +0.75% (≥0.3) · knocked out 17% (≤15) · avg turbo +6.3%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (3): ABB.ST, AMAT, KLAC
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+  IVZ        signal 2026-10-14 · day 5
+  STT        signal 2026-10-14 · day 5
+
+Rule exit at the last close (sell at the open if you still hold):
+  BEN        RSI back to 40 on 2026-10-20, stock 2.33%, turbo est. 43.7%
+
+Watch — above the 200-day, RSI under 35: STT 28.3, INTC 34.4
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
