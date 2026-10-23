@@ -1,0 +1,21 @@
+RSI<30 turbo scan — 2026-10-23 13:40 — Morning — yesterday's closes — 534 stocks checked
+Market: SPY +5.6% vs 200-day, VIX 19.6 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 14/40 settled · win 64% (≥50) · avg stock +1.07% (≥0.3) · knocked out 14% (≤15) · avg turbo +13.5%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  SEB-A.ST   price 203.60  RSI 26.5  market bull · day -6.4%, closed in the bottom third of its range
+             20x → financing ≈ 193.42, est. knock-out risk over 5 days 33%
+             highest financing at 20% risk (typical for 20x) 189.16 · at 10% risk 182.45
+             sell at the first close with RSI 40+, at the latest 2026-10-29 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (12): CAT, ATCO-A.ST, ABB.ST, APH, AMAT, COHR, FIX, EME, KLAC, LRCX, PWR, VRT
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+  SNDK       signal 2026-10-16 · day 5
+
+Watch — above the 200-day, RSI under 35: SNDK 31.3, ANET 32.4, DXCM 32.7, STT 34.1, MU 34.7
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), Q (under 250 days of data), VYLR (under 250 days of data)
