@@ -1,0 +1,19 @@
+RSI<30 turbo scan — 2026-10-26 14:04 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +5.0% vs 200-day, VIX 19.2 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 15/40 settled · win 60% (≥50) · avg stock +0.69% (≥0.3) · knocked out 20% (≤15) · avg turbo +5.9%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (6): GE, GEV, GL, PH, ADDT-B.ST, LIFCO-B.ST
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Rule exit at the last close (sell at the open if you still hold):
+  SNDK       knocked out on 2026-10-23, stock -4.72%, turbo est. -100.0%
+
+Watch — above the 200-day, RSI under 35: SEB-A.ST 25.0, SNDK 30.4, DXCM 32.1, INTC 32.8, ANET 33.7, STT 34.1, FCX 34.2, KEYS 34.8, SWED-A.ST 34.8
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
