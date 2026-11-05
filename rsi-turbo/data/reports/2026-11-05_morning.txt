@@ -1,0 +1,16 @@
+RSI<30 turbo scan — 2026-11-05 15:40 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +4.3% vs 200-day, VIX 17.1 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 18/40 settled · win 56% (≥50) · avg stock -0.21% (≥0.3) · knocked out 28% (≤15) · avg turbo -3.4%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (5): CMI, DDOG, LRCX, TER, TPL
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: FTNT 26.6, ZBRA 29.4, DELL 31.3, PLTR 33.5, MPC 34.5, TWLO 34.6
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
