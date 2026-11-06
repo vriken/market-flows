@@ -1,0 +1,24 @@
+RSI<30 turbo scan — 2026-11-06 15:17 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +0.8% vs 200-day, VIX 26.7 (caution; the next session's signals use 5x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 18/40 settled · win 56% (≥50) · avg stock -0.21% (≥0.3) · knocked out 28% (≤15) · avg turbo -3.4%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  HPE        price 44.16  RSI 29.6  market bull · day -11.8%, closed in the bottom third of its range
+             20x → financing ≈ 41.95, est. knock-out risk over 5 days >50%
+             highest financing at 20% risk (typical for 20x) 37.03 · at 10% risk 33.93
+             sell at the first close with RSI 40+, at the latest 2026-11-12 · stake 1–1.5% of the portfolio
+  PLTR       price 154.99  RSI 25.4  market bull · day -9.7%, closed in the bottom third of its range
+             20x → financing ≈ 147.24, est. knock-out risk over 5 days >50%
+             highest financing at 20% risk (typical for 20x) 135.23 · at 10% risk 126.41
+             sell at the first close with RSI 40+, at the latest 2026-11-12 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (29): NVDA, GOOGL, AMD, QQQ, IREN, AKAM, AMAT, BKR, COHR, FIX, GLW, DELL, DVN, EME, FLEX, FCX, JBL, KEYS, KLAC, LITE
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: ZBRA 26.2, NTAP 30.5, P 31.0, MPC 31.1, TWLO 31.2, VLO 32.4, PANW 33.0, ILMN 33.1, OXY 33.4, SPY 33.6, PSX 33.9
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
