@@ -1,0 +1,16 @@
+RSI<30 turbo scan — 2026-11-09 17:20 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +3.1% vs 200-day, VIX 20.7 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 18/40 settled · win 56% (≥50) · avg stock -0.21% (≥0.3) · knocked out 28% (≤15) · avg turbo -3.4%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+No signal, below the 200-day (4): AXON, CSCO, MCHP, ROK
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: ZBRA 26.5, MPC 30.2, NTAP 30.4, HPE 30.9, PLTR 31.2, VLO 31.3, TWLO 31.8, PANW 32.8, PSX 33.4, OXY 33.5, P 33.7, CRM 33.8, IFF 34.1, TRGP 34.9
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
