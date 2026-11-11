@@ -1,0 +1,20 @@
+RSI<30 turbo scan — 2026-11-11 15:23 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +3.0% vs 200-day, VIX 18.3 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 19/40 settled · win 53% (≥50) · avg stock -0.33% (≥0.3) · knocked out 26% (≤15) · avg turbo -6.0%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  ZBRA       price 321.38  RSI 28.5  market bull · day -1.6%, closed in the middle third of its range
+             20x → financing ≈ 305.31, est. knock-out risk over 5 days 43%
+             highest financing at 20% risk (typical for 20x) 292.28 · at 10% risk 278.93
+             sell at the first close with RSI 40+, at the latest 2026-11-17 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (1): SNDK
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: CRM 34.3, VLO 34.6
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
