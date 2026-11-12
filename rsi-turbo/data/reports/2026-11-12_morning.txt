@@ -1,0 +1,18 @@
+RSI<30 turbo scan — 2026-11-12 16:15 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +3.8% vs 200-day, VIX 18.4 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 21/40 settled · win 57% (≥50) · avg stock +0.89% (≥0.3) · knocked out 24% (≤15) · avg turbo +18.1%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Rule exit at the last close (sell at the open if you still hold):
+  HPE        RSI back to 40 on 2026-11-11, stock 13.79%, turbo est. 271.9%
+  PLTR       RSI back to 40 on 2026-11-11, stock 11.23%, turbo est. 221.0%
+
+Watch — above the 200-day, RSI under 35: ZBRA 33.4
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
