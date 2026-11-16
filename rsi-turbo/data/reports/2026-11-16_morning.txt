@@ -1,0 +1,14 @@
+RSI<30 turbo scan — 2026-11-16 16:47 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY +2.2% vs 200-day, VIX 21.4 (bull; the next session's signals use 20x)
+Open positions in your journal: 3 of 30
+Paper trading, every v2 signal: 21/40 settled · win 57% (≥50) · avg stock +0.89% (≥0.3) · knocked out 24% (≤15) · avg turbo +18.1%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 0% (≤15) · avg turbo -55.6%
+
+No buy signals.
+
+SELL before the close:
+  BAC        signal 2026-09-28 · rule exit 2026-10-05 (day 5)  (yours)
+
+Watch — above the 200-day, RSI under 35: ZBRA 34.6, ILMN 35.0, IFF 35.0
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
