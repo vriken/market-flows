@@ -1,0 +1,13 @@
+RSI<30 turbo scan — 2026-11-18 16:40 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY -0.1% vs 200-day, VIX 24.5 (caution; the next session's signals use 5x)
+Open positions in your journal: 2 of 30
+Paper trading, every v2 signal: 22/40 settled · win 55% (≥50) · avg stock +0.72% (≥0.3) · knocked out 23% (≤15) · avg turbo +14.5%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 100% (≤15) · avg turbo -100.0%
+
+No buy signals.
+
+No signal, below the 200-day (4): HEM.ST, IREN, CRM, NOW
+
+Watch — above the 200-day, RSI under 35: ZBRA 30.2, IFF 32.0, SCA-B.ST 32.5, TWLO 32.7, PLTR 32.8
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
