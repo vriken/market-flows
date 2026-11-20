@@ -1,0 +1,21 @@
+RSI<30 turbo scan — 2026-11-20 16:27 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY -2.9% vs 200-day, VIX 27.8 (caution; the next session's signals use 5x)
+Open positions in your journal: 2 of 30
+Paper trading, every v2 signal: 23/40 settled · win 52% (≥50) · avg stock +0.62% (≥0.3) · knocked out 22% (≤15) · avg turbo +12.3%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 100% (≤15) · avg turbo -100.0%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  VEEV       price 262.92  RSI 24.7  market caution · day -5.2%, closed in the bottom third of its range
+             5x → financing ≈ 210.34, est. knock-out risk over 5 days 1%
+             highest financing at 20% risk (typical for 20x) 245.77 · at 10% risk 237.79
+             sell at the first close with RSI 40+, at the latest 2026-11-26 · stake 1–1.5% of the portfolio
+  SCA-B.ST   price 112.35  RSI 29.0  market caution · day -1.7%, closed in the bottom third of its range
+             5x → financing ≈ 89.88, est. knock-out risk over 5 days <1%
+             highest financing at 20% risk (typical for 20x) 107.16 · at 10% risk 104.72
+             sell at the first close with RSI 40+, at the latest 2026-11-26 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (6): ALB, GOOG, COF, SNDK, SKYD, TWLO
+
+Watch — above the 200-day, RSI under 35: WDAY 31.6, MRK 31.9, IT 32.3, ZBRA 33.1, STT 33.9, MPC 34.3, VLO 34.7, PM 34.8, NTAP 34.8, PFE 34.9, XOM 35.0
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
