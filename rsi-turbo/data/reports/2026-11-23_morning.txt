@@ -1,0 +1,21 @@
+RSI<30 turbo scan — 2026-11-23 19:10 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY -1.1% vs 200-day, VIX 27.5 (caution; the next session's signals use 5x)
+Open positions in your journal: 2 of 30
+Paper trading, every v2 signal: 23/40 settled · win 52% (≥50) · avg stock +0.62% (≥0.3) · knocked out 22% (≤15) · avg turbo +12.3%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 100% (≤15) · avg turbo -100.0%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  NTAP       price 157.65  RSI 29.4  market caution · day -7.4%, closed in the bottom third of its range
+             5x → financing ≈ 126.12, est. knock-out risk over 5 days 10%
+             highest financing at 20% risk (typical for 20x) 135.60 · at 10% risk 125.85
+             sell at the first close with RSI 40+, at the latest 2026-11-27 · stake 1–1.5% of the portfolio
+  ZBRA       price 301.53  RSI 29.3  market caution · day -3.5%, closed in the bottom third of its range
+             5x → financing ≈ 241.22, est. knock-out risk over 5 days 4%
+             highest financing at 20% risk (typical for 20x) 273.56 · at 10% risk 260.76
+             sell at the first close with RSI 40+, at the latest 2026-11-27 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (34): GOOGL, NFLX, INTC, BAC, SPY, QQQ, APTV, AXON, C, CFG, DELL, FFIV, FSLR, GS, HPE, HBAN, INTU, MRVL, MCHP, MU
+
+Watch — above the 200-day, RSI under 35: SCA-B.ST 28.0, VEEV 28.2, HEXA-B.ST 30.6, IQV 32.5, PM 32.7, WDAY 33.1, SWKS 33.4, VLO 33.6, ILMN 33.6, PFE 33.8, MRK 33.8, MPC 34.1, PYPL 34.2, IT 34.4, PSX 34.7
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
