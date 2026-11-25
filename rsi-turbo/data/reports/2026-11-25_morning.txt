@@ -1,0 +1,13 @@
+RSI<30 turbo scan — 2026-11-25 18:14 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY -3.2% vs 200-day, VIX 32.7 (caution; the next session's signals use 5x)
+Open positions in your journal: 2 of 30
+Paper trading, every v2 signal: 25/40 settled · win 56% (≥50) · avg stock +1.17% (≥0.3) · knocked out 20% (≤15) · avg turbo +14.3%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 100% (≤15) · avg turbo -100.0%
+
+No buy signals.
+
+No signal, below the 200-day (5): ALB, ADM, BG, FCX, SNDK
+
+Watch — above the 200-day, RSI under 35: SCA-B.ST 28.7, MPC 31.1, VLO 31.4, PSX 33.5, PM 34.1
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
