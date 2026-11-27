@@ -1,0 +1,20 @@
+RSI<30 turbo scan — 2026-11-27 17:40 — Morning — yesterday's closes — 535 stocks checked
+Market: SPY -0.7% vs 200-day, VIX 25.2 (caution; the next session's signals use 5x)
+Open positions in your journal: 2 of 30
+Paper trading, every v2 signal: 26/40 settled · win 58% (≥50) · avg stock +1.23% (≥0.3) · knocked out 19% (≤15) · avg turbo +14.2%
+Signals you took: 1/40 settled · win 0% (≥50) · avg stock -2.65% (≥0.3) · knocked out 100% (≤15) · avg turbo -100.0%
+
+BUY today — RSI(14) crossed below 30 at the last close, above the 200-day:
+  MPC        price 346.27  RSI 28.9  market caution · day -2.5%, closed in the top third (already bounced — weaker) of its range
+             5x → financing ≈ 277.02, est. knock-out risk over 5 days 5%
+             highest financing at 20% risk (typical for 20x) 310.43 · at 10% risk 294.15
+             sell at the first close with RSI 40+, at the latest 2026-12-02 · stake 1–1.5% of the portfolio
+
+No signal, below the 200-day (2): DDOG, SNDK
+
+Rule exit at the last close (sell at the open if you still hold):
+  SCA-B.ST   RSI back to 40 on 2026-11-26, stock 2.54%, turbo est. 11.6%
+
+Watch — above the 200-day, RSI under 35: VLO 31.0, PSX 33.0, PM 34.8, VEEV 34.8
+
+Skipped: FDXF (under 250 days of data), HONA (under 250 days of data), VYLR (under 250 days of data)
